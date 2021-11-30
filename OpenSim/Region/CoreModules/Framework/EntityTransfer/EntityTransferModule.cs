@@ -2931,7 +2931,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
             return true;
         }
 
-        private int GetStateSource(SceneObjectGroup sog)
+        public int GetStateSource(SceneObjectGroup sog)
         {
             ScenePresence sp = Scene.GetScenePresence(sog.OwnerID);
 
