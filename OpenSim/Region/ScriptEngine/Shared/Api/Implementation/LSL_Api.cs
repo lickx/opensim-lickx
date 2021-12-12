@@ -112,6 +112,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         protected float m_recoilScaleFactor = 0.0f;
         protected bool m_AllowGodFunctions;
 
+        protected string m_SlurlPrefix = "http://slurl.com/secondlife";
+
         protected double m_timer = Util.GetTimeStampMS();
         protected bool m_waitingForScriptAnswer = false;
         protected bool m_automaticLinkPermission = false;
@@ -434,6 +436,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 //    it by this factor. May be zero to turn off recoil all together.
                 m_recoilScaleFactor = seConfig.GetFloat("RecoilScaleFactor", m_recoilScaleFactor);
                 m_AllowGodFunctions = seConfig.GetBoolean("AllowGodFunctions", false);
+
+                m_SlurlPrefix = seConfig.GetString("SlurlPrefix", m_SlurlPrefix);
 
                 m_disable_underground_movement = seConfig.GetBoolean("DisableUndergroundMovement", true);
             }
@@ -4839,11 +4843,13 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 byte[] bucket = new byte[1];
                 bucket[0] = (byte)item.Type;
 
+                Vector3 pos = m_host.AbsolutePosition;
+
                 GridInstantMessage msg = new GridInstantMessage(World,
                         m_host.OwnerID, m_host.Name, destId,
                         (byte)InstantMessageDialog.TaskInventoryOffered,
-                        m_host.OwnerID == m_host.GroupID, "'"+item.Name+"'. ("+m_host.Name+" is located at "+
-                        World.RegionInfo.RegionName+" "+ m_host.AbsolutePosition.ToString() + ")",
+                        m_host.OwnerID == m_host.GroupID,
+                        string.Format("'{0}'  ( {1}/{2}/{3}/{4}/{5}/ )", item.Name, m_SlurlPrefix, World.RegionInfo.RegionName, (int)pos.X, (int)pos.Y, (int)pos.Z),
                         agentItem.ID, true, m_host.AbsolutePosition,
                         bucket, true);
 
@@ -7832,8 +7838,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         m_host.OwnerID, m_host.Name, destID,
                         (byte)InstantMessageDialog.TaskInventoryOffered,
                         m_host.OwnerID == m_host.GroupID,
-                        string.Format("'{0}'", category),
-                        //string.Format("'{0}'  ( http://slurl.com/secondlife/{1}/{2}/{3}/{4} )", category, World.Name, (int)pos.X, (int)pos.Y, (int)pos.Z),
+                        string.Format("'{0}'  ( {1}/{2}/{3}/{4}/{5}/ )", category, m_SlurlPrefix, World.Name, (int)pos.X, (int)pos.Y, (int)pos.Z),
                         folderID, false, pos,
                         bucket, false);
 
