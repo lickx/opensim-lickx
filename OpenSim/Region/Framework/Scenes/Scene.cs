@@ -33,6 +33,7 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Timers;
 using System.Xml;
@@ -279,8 +280,8 @@ namespace OpenSim.Region.Framework.Scenes
             get { return m_minRegionViewDistance; }
         }
 
-        private List<string> m_AllowedViewers = new List<string>();
-        private List<string> m_BannedViewers = new List<string>();
+        private static string m_AllowedViewers = string.Empty;
+        private static string m_BannedViewers = string.Empty;
 
         // TODO: need to figure out how allow client agents but deny
         // root agents when ACL denies access to root agent
@@ -1083,29 +1084,10 @@ namespace OpenSim.Region.Framework.Scenes
 
                 string[] possibleAccessControlConfigSections = new string[] { "Startup", "AccessControl"};
 
-                string grant = Util.GetConfigVarFromSections<string>(
-                    config, "AllowedClients", possibleAccessControlConfigSections, string.Empty);
-
-                if (grant.Length > 0)
-                {
-                    foreach (string viewer in grant.Split(','))
-                    {
-                        m_AllowedViewers.Add(viewer.Trim().ToLower());
-                    }
-                }
-
-                grant = Util.GetConfigVarFromSections<string>(config, "DeniedClients", possibleAccessControlConfigSections, string.Empty);
-                // Deal with the mess of someone having used a different word at some point
-                if (string.IsNullOrWhiteSpace(grant))
-                    grant = Util.GetConfigVarFromSections<string>(config, "BannedClients", possibleAccessControlConfigSections, string.Empty);
-
-                if (grant.Length > 0)
-                {
-                    foreach (string viewer in grant.Split(','))
-                    {
-                        m_BannedViewers.Add(viewer.Trim().ToLower());
-                    }
-                }
+                m_AllowedViewers = Util.GetConfigVarFromSections<string>(
+                        config, "AllowedClients", possibleAccessControlConfigSections, string.Empty);
+                m_BannedViewers = Util.GetConfigVarFromSections<string>(
+                        config, "DeniedClients", possibleAccessControlConfigSections, string.Empty);
 
                 FrameTime                 = startupConfig.GetFloat( "FrameTime", FrameTime);
                 FrameTimeWarnPercent      = startupConfig.GetInt( "FrameTimeWarnPercent", FrameTimeWarnPercent);
@@ -4027,17 +4009,12 @@ namespace OpenSim.Region.Framework.Scenes
             string cV = null;
 
             //Check if the specific viewer is listed in the allowed viewer list
-            if (m_AllowedViewers.Count > 0)
+            if (!String.IsNullOrWhiteSpace(m_AllowedViewers))
             {
-                cV = curViewer.Trim().ToLower();
-                foreach (string viewer in m_AllowedViewers)
-                {
-                    if (viewer == cV.Substring(0, Math.Min(viewer.Length, curViewer.Length)))
-                    {
-                        ViewerDenied = false;
-                        break;
-                    }
-                }
+                Regex arx = new Regex(m_AllowedViewers);
+                Match am = arx.Match(curViewer);
+
+                if (am.Success) ViewerDenied = false;
             }
             else
             {
@@ -4045,18 +4022,12 @@ namespace OpenSim.Region.Framework.Scenes
             }
 
             //Check if the viewer is in the banned list
-            if (m_BannedViewers.Count > 0)
+            if (!String.IsNullOrWhiteSpace(m_BannedViewers))
             {
-                if (cV == null)
-                    cV = curViewer.Trim().ToLower();
-                foreach (string viewer in m_BannedViewers)
-                {
-                    if (viewer == cV.Substring(0, Math.Min(viewer.Length, curViewer.Length)))
-                    {
-                        ViewerDenied = true;
-                        break;
-                    }
-                }
+                Regex drx = new Regex(m_BannedViewers);
+                Match dm = drx.Match(curViewer);
+
+                if (dm.Success) ViewerDenied = true;
             }
 
             if (ViewerDenied)
