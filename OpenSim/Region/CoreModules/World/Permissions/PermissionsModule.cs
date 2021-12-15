@@ -1937,28 +1937,9 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                 return false;
 
             UUID sogOwnerID = sog.OwnerID;
-            UUID sogCreatorID = sog.RootPart.CreatorID;
-            if (sogOwnerID == userID && sogCreatorID == userID) {
 
-                if (saleType == (byte)SaleType.Contents)
-                {
-                    List<UUID> invList = sog.RootPart.Inventory.GetInventoryList();
-
-                    bool okToSell = true;
-
-                    foreach (UUID invID in invList)
-                    {
-                        TaskInventoryItem item1 = sog.RootPart.Inventory.GetInventoryItem(invID);
-                        if (item1.OwnerID != item1.CreatorID)
-                        {
-                            return false;
-                            break;
-                        }
-                    }
-
-                }
+            if(sogOwnerID == userID)
                 return true;
-            }
 
             // else only group owned can be sold by members with powers
             UUID sogGroupID = sog.GroupID;
@@ -1993,29 +1974,9 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
             UUID userID = sp.UUID;
             UUID sogOwnerID = sog.OwnerID;
-            UUID sogCreatorID = sog.RootPart.CreatorID;
 
-            if (sogOwnerID == userID && sogCreatorID == userID) {
-
-                if (saleType == (byte)SaleType.Contents)
-                {
-                    List<UUID> invList = sog.RootPart.Inventory.GetInventoryList();
-
-                    bool okToSell = true;
-
-                    foreach (UUID invID in invList)
-                    {
-                        TaskInventoryItem item1 = sog.RootPart.Inventory.GetInventoryItem(invID);
-                        if (item1.OwnerID != item1.CreatorID)
-                        {
-                            return false;
-                            break;
-                        }
-                    }
-
-                }
+            if(sogOwnerID == userID)
                 return true;
-            }
 
             // else only group owned can be sold by members with powers
             UUID sogGroupID = sog.GroupID;
@@ -2460,12 +2421,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             // dest is locked
             if((destsog.EffectiveOwnerPerms & (uint)PermissionMask.Move) == 0)
                 return false;
-
-            if (destsog.RootPart.ObjectSaleType > 0 && destsog.RootPart.CreatorID != item.CreatorIdAsUuid)
-            {
-                sp.ControllingClient.SendAgentAlertMessage("Can't sell item as you are not the creator", false);
-                return false;
-            }
 
             UUID destOwner = destsog.OwnerID;
             UUID spID = sp.UUID;
