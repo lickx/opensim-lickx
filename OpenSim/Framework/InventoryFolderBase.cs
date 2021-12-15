@@ -50,7 +50,7 @@ namespace OpenSim.Framework
         /// <summary>
         /// This is used to denote the version of folder
         /// </summary>
-        private ushort _version;
+        private int _version;
 
         public virtual UUID ParentID
         {
@@ -64,7 +64,7 @@ namespace OpenSim.Framework
             set { _type = value; }
         }
 
-        public virtual ushort Version
+        public virtual int Version
         {
             get { return _version; }
             set { _version = value; }
@@ -91,7 +91,7 @@ namespace OpenSim.Framework
         }
 
         public InventoryFolderBase(
-            UUID id, string name, UUID owner, short type, UUID parent, ushort version) : this(id, name, owner, parent)
+            UUID id, string name, UUID owner, short type, UUID parent, int version) : this(id, name, owner, parent)
         {
             Type = type;
             Version = version;
