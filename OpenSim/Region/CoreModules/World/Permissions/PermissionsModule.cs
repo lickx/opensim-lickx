@@ -1131,6 +1131,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
         #endregion
 
         #region Generic Permissions
+        /* this still does nothing but waste time
         protected bool GenericCommunicationPermission(UUID user, UUID target)
         {
             // Setting this to true so that cool stuff can happen until we define what determines Generic Communication Permission
@@ -1149,6 +1150,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
             return permission;
         }
+        */
 
         public bool GenericEstatePermission(UUID user)
         {
@@ -1556,6 +1558,8 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
         private bool CanInstantMessage(UUID user, UUID target)
         {
+            return true; // we still did not define this
+            /*
             DebugPermissionInformation(MethodInfo.GetCurrentMethod().Name);
             if (m_bypassPermissions) return m_bypassPermissionsValue;
 
@@ -1566,14 +1570,18 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                 user = part.OwnerID;
 
             return GenericCommunicationPermission(user, target);
+            */
         }
 
         private bool CanInventoryTransfer(UUID user, UUID target)
         {
+            return true; // we still did not define this
+            /*
             DebugPermissionInformation(MethodInfo.GetCurrentMethod().Name);
             if (m_bypassPermissions) return m_bypassPermissionsValue;
 
             return GenericCommunicationPermission(user, target);
+            */
         }
 
         private bool CanIssueEstateCommand(UUID user, bool ownerCommand)
