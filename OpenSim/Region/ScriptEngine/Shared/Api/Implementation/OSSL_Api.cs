@@ -2139,6 +2139,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             }
 
             MessageObject(objUUID, message);
+            ScriptSleep(25); // mostly a thread yield
         }
 
         private void MessageObject(UUID objUUID, string message)
@@ -4319,17 +4320,19 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 foreach (object point in attachmentPoints.Data)
                 {
-                    listObjToInt(point, out int ipoint);
-                    resp.Add(new LSL_Integer(ipoint));
-                    if (ipoint == 0)
+                    if(listObjToInt(point, out int ipoint))
                     {
-                        // indicates zero attachments
-                        resp.Add(new LSL_Integer(0));
-                    }
-                    else
-                    {
-                        // gets the number of attachments on the attachment point
-                        resp.Add(new LSL_Integer(target.GetAttachments((uint)ipoint).Count));
+                        resp.Add(new LSL_Integer(ipoint));
+                        if (ipoint <= 0)
+                        {
+                            // indicates zero attachments
+                            resp.Add(new LSL_Integer(0));
+                        }
+                        else
+                        {
+                            // gets the number of attachments on the attachment point
+                            resp.Add(new LSL_Integer(target.GetAttachments((uint)ipoint).Count));
+                        }
                     }
                 }
             }
@@ -4341,83 +4344,75 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         {
             CheckThreatLevel(ThreatLevel.Moderate, "osMessageAttachments");
 
-            if (!UUID.TryParse(avatar.ToString(), out UUID targetUUID))
-                return;
-
-            if (targetUUID == UUID.Zero)
+            if (!UUID.TryParse(avatar.ToString(), out UUID targetUUID) || targetUUID == UUID.Zero)
                 return;
 
             if (!World.TryGetScenePresence(targetUUID, out ScenePresence target))
                 return;
-
             if (target.IsDeleted || target.IsInTransit)
                return;
+            if(target.GetAttachmentsCount() == 0)
+                return;
 
-            List<int> aps = new List<int>();
-            if(attachmentPoints.Length != 0)
+            bool invertPoints = (options & ScriptBaseClass.OS_ATTACH_MSG_INVERT_POINTS) != 0;
+            bool msgAll = false;
+
+            List<int> aps;
+            if(attachmentPoints.Length > 0)
             {
+                aps = new List<int>(attachmentPoints.Length);
                 foreach (object point in attachmentPoints.Data)
                 {
-                    if (int.TryParse(point.ToString(), out int ipoint))
+                    if (!listObjToInt(point, out int ipoint))
+                        return;
+                    if(ipoint == ScriptBaseClass.OS_ATTACH_MSG_ALL)
                     {
-                        aps.Add(ipoint);
+                        if(invertPoints)
+                            return;
+                        msgAll = true;
+                        break;
                     }
+                    else if(ipoint > 0)
+                        aps.Add(ipoint);
                 }
-                // parsing failed
-                if(aps.Count != attachmentPoints.Length)
-                    return;
             }
-
-            List<SceneObjectGroup> attachments = new List<SceneObjectGroup>();
-
-            bool msgAll;
-            bool invertPoints = (options & ScriptBaseClass.OS_ATTACH_MSG_INVERT_POINTS) != 0;
+            else
+                aps = new List<int>();
 
             if(aps.Count == 0)
             {
-                if(!invertPoints)
+                if (!invertPoints && !msgAll)
                     return;
                 msgAll = true;
                 invertPoints = false;
             }
-            else
-                msgAll = aps.Contains(ScriptBaseClass.OS_ATTACH_MSG_ALL);
 
-            if (msgAll && invertPoints)
-                return;
-
+            List<SceneObjectGroup> attachments;
             if (msgAll || invertPoints)
             {
                 attachments = target.GetAttachments();
             }
             else
             {
+                attachments = new List<SceneObjectGroup>();
                 foreach (int point in aps)
-                {
-                    if (point > 0)
-                    {
-                        attachments.AddRange(target.GetAttachments((uint)point));
-                    }
-                }
+                    attachments.AddRange(target.GetAttachments((uint)point));
             }
 
             // if we have no attachments at this point, exit now
             if (attachments.Count == 0)
-            {
                 return;
-            }
 
-            bool optionObjCreator = (options &
-                        ScriptBaseClass.OS_ATTACH_MSG_OBJECT_CREATOR) != 0;
-            bool optionScriptCreator = (options &
-                        ScriptBaseClass.OS_ATTACH_MSG_SCRIPT_CREATOR) != 0;
+            bool optionObjCreator = (options & ScriptBaseClass.OS_ATTACH_MSG_OBJECT_CREATOR) != 0;
+            bool optionScriptCreator = (options & ScriptBaseClass.OS_ATTACH_MSG_SCRIPT_CREATOR) != 0;
 
             UUID hostCreatorID = m_host.CreatorID;
             UUID itemCreatorID = m_item.CreatorID;
 
+            int penalty = 200;
             foreach (SceneObjectGroup sog in attachments)
             {
-                if(sog.IsDeleted || sog.inTransit)
+                if(sog.IsDeleted || sog.inTransit || ((sog.ScriptEvents & scriptEvents.dataserver) == 0))
                     continue;
 
                 if (invertPoints && aps.Contains((int)sog.AttachmentPoint))
@@ -4432,8 +4427,15 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
                 SceneObjectPart[] parts = sog.Parts;
                 foreach(SceneObjectPart p in parts)
-                    MessageObject(p.UUID, message);
+                {
+                    if((p.ScriptEvents & scriptEvents.dataserver) != 0)
+                    {
+                        MessageObject(p.UUID, message);
+                        penalty += 10;
+                    }
+                }
             }
+            ScriptSleep(penalty);
         }
 
         #endregion
