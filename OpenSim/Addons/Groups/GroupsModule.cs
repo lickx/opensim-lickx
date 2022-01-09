@@ -249,8 +249,8 @@ namespace OpenSim.Groups
             // There might be some problem with the thread we're generating this on but not
             //   doing the update at this time causes problems (Mantis #7920 and #7915)
             // TODO: move sending this update to a later time in the rootification of the client.
-            //if(!sp.m_haveGroupInformation)
-            //    SendAgentGroupDataUpdate(sp.ControllingClient, false);
+            if(!sp.m_haveGroupInformation)
+                SendAgentGroupDataUpdate(sp.ControllingClient, false);
         }
 
         private void OnMakeChild(ScenePresence sp)
@@ -477,7 +477,7 @@ namespace OpenSim.Groups
                         return;
                     }
 
-                    if (itemID != UUID.Zero && ownerID != UUID.Zero)
+                    if (!itemID.IsZero() && !ownerID.IsZero())
                     {
                         item = scene.InventoryService.GetItem(ownerID, itemID);
                         if(item != null)
@@ -597,11 +597,8 @@ namespace OpenSim.Groups
                 string giver = notice.noticeData.AttachmentOwnerID;
                 UUID attachmentUUID = notice.noticeData.AttachmentItemID;
 
-                if (attachmentUUID == null ||
-                        attachmentUUID.IsZero() ||
-                        giver == null ||
-                        giver == UUID.Zero.ToString()
-                        )
+                if (attachmentUUID == null || attachmentUUID.IsZero() ||
+                        giver == null || giver == UUID.ZeroString )
                     return;
 
                 if (m_debugEnabled)
@@ -930,7 +927,7 @@ namespace OpenSim.Groups
             UUID groupID = m_groupData.CreateGroup(remoteClient.AgentId, name, charter, showInList, insigniaID, membershipFee, openEnrollment,
                 allowPublish, maturePublish, remoteClient.AgentId, out reason);
 
-            if (groupID != UUID.Zero)
+            if (!groupID.IsZero())
             {
                 if (money != null && money.GroupCreationCharge > 0)
                     money.ApplyCharge(remoteClient.AgentId, money.GroupCreationCharge, MoneyTransactionType.GroupCreate, name);

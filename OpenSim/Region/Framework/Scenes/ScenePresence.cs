@@ -223,7 +223,7 @@ namespace OpenSim.Region.Framework.Scenes
                     if (land != null)
                         m_currentParcelHide = !land.LandData.SeeAVs;
 
-                    if (m_previusParcelUUID != UUID.Zero || checksame)
+                    if (!m_previusParcelUUID.IsZero() || checksame)
                         ParcelCrossCheck(m_currentParcelUUID, m_previusParcelUUID, m_currentParcelHide, m_previusParcelHide, oldhide,checksame);
                 }
              }
@@ -1245,7 +1245,7 @@ namespace OpenSim.Region.Framework.Scenes
                     // if ParentUUID is NOT UUID.Zero, we are looking to
                     // be sat on an object that isn't there yet. Should
                     // be treated as if sat.
-                    if(ParentID == 0 && !SitGround && ParentUUID == UUID.Zero) // skip it if sitting
+                    if(ParentID == 0 && !SitGround && ParentUUID.IsZero()) // skip it if sitting
                         Animator.UpdateMovementAnimations();
                 }
                 else
@@ -1367,7 +1367,7 @@ namespace OpenSim.Region.Framework.Scenes
                 //                "[SCENE]: Upgrading child to root agent for {0} in {1}",
                 //                Name, m_scene.RegionInfo.RegionName);
 
-                if (ParentUUID != UUID.Zero)
+                if (!ParentUUID.IsZero())
                 {
                     m_log.DebugFormat("[SCENE PRESENCE]: Sitting avatar back on prim {0}", ParentUUID);
                     SceneObjectPart part = m_scene.GetSceneObjectPart(ParentUUID);
@@ -3433,7 +3433,7 @@ namespace OpenSim.Region.Framework.Scenes
             //look for prims with explicit sit targets that are available
             foreach (SceneObjectPart part in partArray)
             {
-                if (part.IsSitTargetSet && part.SitTargetAvatar == UUID.Zero && part.SitActiveRange >= 0)
+                if (part.IsSitTargetSet && part.SitTargetAvatar.IsZero() && part.SitActiveRange >= 0)
                 {
                     //switch the target to this prim
                     return part;
@@ -3468,7 +3468,7 @@ namespace OpenSim.Region.Framework.Scenes
             if (PhysicsActor != null)
                 m_sitAvatarHeight = PhysicsActor.Size.Z * 0.5f;
 
-            if (part.IsSitTargetSet && part.SitTargetAvatar == UUID.Zero)
+            if (part.IsSitTargetSet && part.SitTargetAvatar.IsZero())
             {
                 offset = part.SitTargetPosition;
                 sitOrientation = part.SitTargetOrientation;
@@ -4691,7 +4691,7 @@ namespace OpenSim.Region.Framework.Scenes
             // Also don't do this while sat, sitting avatars cross with the
             // object they sit on. ParentUUID denoted a pending sit, don't
             // interfere with it.
-            if (ParentID != 0 || PhysicsActor == null || ParentUUID != UUID.Zero)
+            if (ParentID != 0 || PhysicsActor == null || !ParentUUID.IsZero())
                 return;
 
             Vector3 pos2 = AbsolutePosition;
@@ -4709,7 +4709,7 @@ namespace OpenSim.Region.Framework.Scenes
             if (Scene.PositionIsInCurrentRegion(pos2))
                 return;
 
-            if (!CrossToNewRegion() && m_requestedSitTargetUUID == UUID.Zero)
+            if (!CrossToNewRegion() && m_requestedSitTargetUUID.IsZero())
             {
                 // we don't have entity transfer module
                 Vector3 pos = AbsolutePosition;
@@ -4734,7 +4734,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         public void CrossToNewRegionFail()
         {
-            if (m_requestedSitTargetUUID == UUID.Zero)
+            if (m_requestedSitTargetUUID.IsZero())
             {
                 bool isFlying = Flying;
                 RemoveFromPhysicalScene();
@@ -6222,7 +6222,7 @@ namespace OpenSim.Region.Framework.Scenes
             // first check telehub
 
             UUID TelehubObjectID = m_scene.RegionInfo.RegionSettings.TelehubObject;
-            if ( TelehubObjectID != UUID.Zero)
+            if ( !TelehubObjectID.IsZero())
             {
                 SceneObjectGroup telehubSOG =  m_scene.GetSceneObjectGroup(TelehubObjectID);
                 if(telehubSOG != null)
@@ -6436,7 +6436,7 @@ namespace OpenSim.Region.Framework.Scenes
                 return false;
 
             SceneObjectGroup telehub = null;
-            if (m_scene.RegionInfo.RegionSettings.TelehubObject != UUID.Zero && (telehub = m_scene.GetSceneObjectGroup(m_scene.RegionInfo.RegionSettings.TelehubObject)) != null)
+            if (!m_scene.RegionInfo.RegionSettings.TelehubObject.IsZero() && (telehub = m_scene.GetSceneObjectGroup(m_scene.RegionInfo.RegionSettings.TelehubObject)) != null)
             {
                 if (!m_scene.RegionInfo.EstateSettings.AllowDirectTeleport)
                 {
@@ -6493,7 +6493,7 @@ namespace OpenSim.Region.Framework.Scenes
             if (!m_scene.RegionInfo.EstateSettings.AllowDirectTeleport)
             {
                 SceneObjectGroup telehub = null;
-                if (m_scene.RegionInfo.RegionSettings.TelehubObject != UUID.Zero && (telehub = m_scene.GetSceneObjectGroup(m_scene.RegionInfo.RegionSettings.TelehubObject)) != null)
+                if (!m_scene.RegionInfo.RegionSettings.TelehubObject.IsZero() && (telehub = m_scene.GetSceneObjectGroup(m_scene.RegionInfo.RegionSettings.TelehubObject)) != null)
                 {
                     if(CheckAndAdjustTelehub(telehub, ref pos, ref positionChanged))
                         return true;
@@ -6902,7 +6902,7 @@ namespace OpenSim.Region.Framework.Scenes
                     // now on a private parcel
                     allpresences = m_scene.GetScenePresences();
 
-                    if (previusParcelHide && previusParcelID != UUID.Zero)
+                    if (previusParcelHide && !previusParcelID.IsZero())
                     {
                         foreach (ScenePresence p in allpresences)
                         {
@@ -6951,7 +6951,7 @@ namespace OpenSim.Region.Framework.Scenes
                 else
                 {
                     // now on public parcel
-                    if (previusParcelHide && previusParcelID != UUID.Zero)
+                    if (previusParcelHide && !previusParcelID.IsZero())
                     {
                         // was on private area
                         allpresences = m_scene.GetScenePresences();

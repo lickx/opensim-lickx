@@ -2492,7 +2492,7 @@ namespace OpenSim.Region.Framework.Scenes
                         }
 
                     }
-                    if (RayTargetID != UUID.Zero)
+                    if (!RayTargetID.IsZero())
                     {
                         SceneObjectPart target = GetSceneObjectPart(RayTargetID);
 
@@ -5163,11 +5163,11 @@ Label_GroupsDone:
                 if ((parcel.LandData.Flags & (uint)ParcelFlags.AllowOtherScripts) != 0)
                     return true;
 
-                if ((part.OwnerID == parcel.LandData.OwnerID) || Permissions.IsGod(part.OwnerID))
+                if ((part.OwnerID.Equals(parcel.LandData.OwnerID)) || Permissions.IsGod(part.OwnerID))
                     return true;
 
                 if (((parcel.LandData.Flags & (uint)ParcelFlags.AllowGroupScripts) != 0)
-                    && (parcel.LandData.GroupID != UUID.Zero) && (parcel.LandData.GroupID == part.GroupID))
+                    && (!parcel.LandData.GroupID.IsZero()) && (parcel.LandData.GroupID.Equals(part.GroupID)))
                     return true;
             }
             else
@@ -6245,7 +6245,7 @@ Environment.Exit(1);
                 if (!RegionInfo.EstateSettings.AllowDirectTeleport)
                 {
                     SceneObjectGroup telehub;
-                    if (RegionInfo.RegionSettings.TelehubObject != UUID.Zero && (telehub = GetSceneObjectGroup  (RegionInfo.RegionSettings.TelehubObject)) != null && checkTeleHub)
+                    if (!RegionInfo.RegionSettings.TelehubObject.IsZero() && (telehub = GetSceneObjectGroup  (RegionInfo.RegionSettings.TelehubObject)) != null && checkTeleHub)
                     {
                         bool banned = true;
                         bool validTelehub = false;
@@ -6461,5 +6461,7 @@ Environment.Exit(1);
                 return lastSource == sourceID;
             return false;
         }
+
+
     }
 }

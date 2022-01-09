@@ -375,18 +375,18 @@ namespace OpenSim.Services.LLLoginService
                 // If a scope id is requested, check that the account is in
                 // that scope, or unscoped.
                 //
-                if (scopeID != UUID.Zero)
+                if (scopeID.IsZero())
                 {
-                    if (account.ScopeID != scopeID && account.ScopeID != UUID.Zero)
+                    scopeID = account.ScopeID;
+                }
+                else
+                {
+                    if (account.ScopeID.NotEqual(scopeID) && !account.ScopeID.IsZero())
                     {
                         m_log.InfoFormat(
                             "[LLOGIN SERVICE]: Login failed, reason: user {0} {1} not found", firstName, lastName);
                         return LLFailedLoginResponse.UserProblem;
                     }
-                }
-                else
-                {
-                    scopeID = account.ScopeID;
                 }
 
                 //
@@ -411,7 +411,7 @@ namespace OpenSim.Services.LLLoginService
 
                 if(!m_allowDuplicatePresences)
                 {
-                    if(guinfo != null && guinfo.Online && guinfo.LastRegionID != UUID.Zero)
+                    if(guinfo != null && guinfo.Online && !guinfo.LastRegionID.IsZero())
                     {
                         if(SendAgentGodKillToRegion(scopeID, account.PrincipalID, guinfo))
                         {
@@ -480,7 +480,7 @@ namespace OpenSim.Services.LLLoginService
                 // spamming the console.
                 if (guinfo != null)
                 {
-                    if (guinfo.HomeRegionID == UUID.Zero)
+                    if (guinfo.HomeRegionID.IsZero())
                     {
                         if(startLocation == "home")
                             m_log.WarnFormat(
