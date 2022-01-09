@@ -883,25 +883,25 @@ namespace OpenSim.Region.Framework.Scenes
             m_extraSettings = simDataService.GetExtra(RegionInfo.RegionID);
 
             bool updatedTerrainTextures = false;
-            if (rs.TerrainTexture1 == UUID.Zero)
+            if (rs.TerrainTexture1.IsZero())
             {
                 rs.TerrainTexture1 = RegionSettings.DEFAULT_TERRAIN_TEXTURE_1;
                 updatedTerrainTextures = true;
             }
 
-            if (rs.TerrainTexture2 == UUID.Zero)
+            if (rs.TerrainTexture2.IsZero())
             {
                 rs.TerrainTexture2 = RegionSettings.DEFAULT_TERRAIN_TEXTURE_2;
                 updatedTerrainTextures = true;
             }
 
-            if (rs.TerrainTexture3 == UUID.Zero)
+            if (rs.TerrainTexture3.IsZero())
             {
                 rs.TerrainTexture3 = RegionSettings.DEFAULT_TERRAIN_TEXTURE_3;
                 updatedTerrainTextures = true;
             }
 
-            if (rs.TerrainTexture4 == UUID.Zero)
+            if (rs.TerrainTexture4.IsZero())
             {
                 rs.TerrainTexture4 = RegionSettings.DEFAULT_TERRAIN_TEXTURE_4;
                 updatedTerrainTextures = true;
@@ -2448,7 +2448,7 @@ namespace OpenSim.Region.Framework.Scenes
                         if (physresults != null && physresults.Count > 0)
                         {
                             // look for terrain ?
-                            if(RayTargetID == UUID.Zero)
+                            if(RayTargetID.IsZero())
                             {
                                 foreach (ContactResult r in physresults)
                                 {
@@ -3019,7 +3019,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// <returns>True if the SceneObjectGroup was added, False if it was not</returns>
         public bool AddSceneObject(SceneObjectGroup sceneObject)
         {
-            if (sceneObject.OwnerID == UUID.Zero)
+            if (sceneObject.OwnerID.IsZero())
             {
                 m_log.ErrorFormat("[SCENE]: Owner ID for {0} was zero", sceneObject.UUID);
                 return false;
@@ -3083,7 +3083,7 @@ namespace OpenSim.Region.Framework.Scenes
 //                    RootPrim.RemFlag(PrimFlags.TemporaryOnRez);
 //                    RootPrim.AddFlag(PrimFlags.TemporaryOnRez);
                 }
-                if (sceneObject.OwnerID == UUID.Zero)
+                if (sceneObject.OwnerID.IsZero())
                 {
                     m_log.ErrorFormat("[SCENE]: Owner ID for {0} was zero after attachment processing. BUG!", sceneObject.UUID);
                     return false;
@@ -3091,7 +3091,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
             else
             {
-                if (sceneObject.OwnerID == UUID.Zero)
+                if (sceneObject.OwnerID.IsZero())
                 {
                     m_log.ErrorFormat("[SCENE]: Owner ID for non-attachment {0} was zero", sceneObject.UUID);
                     return false;
