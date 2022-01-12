@@ -721,7 +721,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     }
                                 }
 
-                                if (newPosition != Vector3.Zero)
+                                if (!newPosition.IsZero())
                                     defso.RootPart.GroupPosition = newPosition;
 
                                 if (!Scene.AddSceneObject(defso))
