@@ -134,7 +134,7 @@ namespace OpenSim.Groups
 
         public ExtendedGroupRecord GetGroupRecord(string RequestingAgentID, UUID GroupID, string GroupName)
         {
-            if (GroupID.IsZero() && (GroupName == null || (GroupName != null && GroupName == string.Empty)))
+            if (GroupID.IsZero() && string.IsNullOrEmpty(GroupName))
                 return null;
 
             Dictionary<string, object> sendData = new Dictionary<string, object>();
@@ -682,7 +682,7 @@ namespace OpenSim.Groups
                          ServerUtils.BuildQueryString(sendData),
                          m_Auth);
 
-            if (reply == string.Empty)
+            if (reply.Length == 0)
                 return null;
 
             Dictionary<string, object> replyData = ServerUtils.ParseXmlResponse(

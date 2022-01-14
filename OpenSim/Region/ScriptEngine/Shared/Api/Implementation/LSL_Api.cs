@@ -3606,10 +3606,10 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         PhysicsActor pa = group.RootPart.PhysActor;
 
                         //Recoil.
-                        if (pa != null && pa.IsPhysical && (Vector3)vel != Vector3.Zero)
+                        if (pa != null && pa.IsPhysical && !((Vector3)vel).IsZero())
                         {
                             Vector3 recoil = -vel * groupmass * m_recoilScaleFactor;
-                            if (recoil != Vector3.Zero)
+                            if (!recoil.IsZero())
                             {
                                 llApplyImpulse(recoil, 0);
                             }
@@ -5205,7 +5205,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
             }
 
-            if (message == string.Empty)
+            if (message.Length == 0)
             {
                 Error("llTextBox", "Empty message");
             }
@@ -8120,7 +8120,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
             }
 
-            if (message == string.Empty)
+            if (message.Length == 0)
             {
                 Error("llDialog", "Empty message");
             }
@@ -8132,7 +8132,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             string[] buts = new string[length];
             for (int i = 0; i < length; i++)
             {
-                if (buttons.Data[i].ToString() == String.Empty)
+                if (buttons.Data[i].ToString().Length == 0)
                 {
                     Error("llDialog", "Button label cannot be blank");
                     return;
@@ -13805,9 +13805,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             ScriptSleep(300);
 
-            if (str1 == string.Empty)
+            if (str1.Length == 0)
                 return string.Empty;
-            if (str2 == string.Empty)
+            if (str2.Length == 0)
                 return str1;
 
             int len = str2.Length;
@@ -13887,9 +13887,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public LSL_String llXorBase64StringsCorrect(string str1, string str2)
         {
 
-            if (str1 == string.Empty)
+            if (str1.Length == 0)
                 return string.Empty;
-            if (str2 == string.Empty)
+            if (str2.Length == 0)
                 return str1;
 
             int len = str2.Length;
@@ -14176,7 +14176,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 {
                     // The rest of those would be added to the body in SL.
                     // Let's not do that.
-                    if (urlParts[i] == string.Empty)
+                    if (urlParts[i].Length == 0)
                         break;
 
                     // See if this could be a valid header
@@ -17397,7 +17397,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 }
             }
 
-            if (state == String.Empty)
+            if (state.Length == 0)
             {
                 llShout(ScriptBaseClass.DEBUG_CHANNEL, "Invalid animation state " + animState);
                 return;
@@ -17474,7 +17474,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 }
             }
 
-            if (state == String.Empty)
+            if (state.Length == 0)
             {
                 return;
             }
@@ -17512,7 +17512,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 }
             }
 
-            if (state == String.Empty)
+            if (state.Length == 0)
             {
                 return String.Empty;
             }
