@@ -1184,6 +1184,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(!(World.Permissions.IsGod(m_host.OwnerID))) // user god always needed
                 return string.Empty;
 
+            /*
             if(!UUID.TryParse(agent, out UUID avatarID))
                 return string.Empty;
 
@@ -1192,7 +1193,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 return target.ControllingClient.RemoteEndPoint.Address.ToString();
             }
-
+            */
             return string.Empty;
         }
 
