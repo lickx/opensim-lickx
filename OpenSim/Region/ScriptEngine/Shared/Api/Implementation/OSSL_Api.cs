@@ -1225,6 +1225,14 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(!(World.Permissions.IsGod(m_host.OwnerID))) // user god always needed
                 return "";
 
+            UUID avatarID = (UUID)agent;
+
+            if (World.Entities.ContainsKey((UUID)agent) && World.Entities[avatarID] is ScenePresence)
+            {
+                ScenePresence target = (ScenePresence)World.Entities[avatarID];
+                return target.ControllingClient.RemoteEndPoint.Address.ToString();
+            }
+
             // fall through case, just return nothing
             return "";
         }
