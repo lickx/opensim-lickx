@@ -29,9 +29,10 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using DotNetOpenMail;
-using DotNetOpenMail.SmtpAuth;
 using log4net;
+using MailKit;
+using MailKit.Net.Smtp;
+using MimeKit;
 using Nini.Config;
 using OpenMetaverse;
 using OpenSim.Framework;
@@ -42,7 +43,7 @@ using Mono.Addins;
 namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 {
     [Extension(Path = "/OpenSim/RegionModules", NodeName = "RegionModule", Id = "EmailModule")]
-    public class EmailModule : ISharedRegionModule, IEmailModule
+    public class EmailModule2 : ISharedRegionModule, IEmailModule
     {
         //
         // Log
@@ -55,8 +56,10 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
         private IConfigSource m_Config;
         private string m_HostName = string.Empty;
         //private string m_RegionName = string.Empty;
+        private bool SMTP_SERVER_TLS = false;
         private string SMTP_SERVER_HOSTNAME = string.Empty;
         private int SMTP_SERVER_PORT = 25;
+        private string SMTP_SERVER_FROM = string.Empty;
         private string SMTP_SERVER_LOGIN = string.Empty;
         private string SMTP_SERVER_PASSWORD = string.Empty;
 
@@ -69,8 +72,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
         private int m_MaxEmailSize = 4096;  // largest email allowed by default, as per lsl docs.
 
         // Scenes by Region Handle
-        private Dictionary<ulong, Scene> m_Scenes =
-            new Dictionary<ulong, Scene>();
+        private Dictionary<ulong, Scene> m_Scenes = new Dictionary<ulong, Scene>();
 
         private bool m_Enabled = false;
 
@@ -86,27 +88,24 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 
             IConfig startupConfig = m_Config.Configs["Startup"];
 
-            m_Enabled = (startupConfig.GetString("emailmodule", "DefaultEmailModule") == "DefaultEmailModule");
+            if(startupConfig.GetString("emailmodule", "DefaultEmailModule") != "DefaultEmailModule2")
+                return;
 
             //Load SMTP SERVER config
             try
             {
                 if ((SMTPConfig = m_Config.Configs["SMTP"]) == null)
-                {
-                    m_Enabled = false;
                     return;
-                }
 
                 if (!SMTPConfig.GetBoolean("enabled", false))
-                {
-                    m_Enabled = false;
                     return;
-                }
 
                 m_HostName = SMTPConfig.GetString("host_domain_header_from", m_HostName);
                 m_InterObjectHostname = SMTPConfig.GetString("internal_object_host", m_InterObjectHostname);
+                SMTP_SERVER_TLS = SMTPConfig.GetBoolean("SMTP_SERVER_TLS", SMTP_SERVER_TLS);
                 SMTP_SERVER_HOSTNAME = SMTPConfig.GetString("SMTP_SERVER_HOSTNAME", SMTP_SERVER_HOSTNAME);
                 SMTP_SERVER_PORT = SMTPConfig.GetInt("SMTP_SERVER_PORT", SMTP_SERVER_PORT);
+                SMTP_SERVER_FROM = SMTPConfig.GetString("SMTP_SERVER_FROM", SMTP_SERVER_FROM);
                 SMTP_SERVER_LOGIN = SMTPConfig.GetString("SMTP_SERVER_LOGIN", SMTP_SERVER_LOGIN);
                 SMTP_SERVER_PASSWORD = SMTPConfig.GetString("SMTP_SERVER_PASSWORD", SMTP_SERVER_PASSWORD);
                 m_MaxEmailSize = SMTPConfig.GetInt("email_max_size", m_MaxEmailSize);
@@ -114,10 +113,9 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
             catch (Exception e)
             {
                 m_log.Error("[EMAIL]: DefaultEmailModule not configured: " + e.Message);
-                m_Enabled = false;
                 return;
             }
-
+            m_Enabled = true;
         }
 
         public void AddRegion(Scene scene)
@@ -159,7 +157,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 
         public string Name
         {
-            get { return "DefaultEmailModule"; }
+            get { return "DefaultEmailModule2"; }
         }
 
         public Type ReplaceableInterface
@@ -284,38 +282,46 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
             if (!resolveNamePositionRegionName(objectID, out LastObjectName, out LastObjectPosition, out LastObjectRegionName))
                 return;
 
+            string objectIDstr = objectID.ToString();
             if (!address.EndsWith(m_InterObjectHostname))
             {
                 // regular email, send it out
                 try
                 {
                     //Creation EmailMessage
-                    EmailMessage emailMessage = new EmailMessage();
-                    //From
-                    emailMessage.FromAddress = new EmailAddress(objectID.ToString() + "@" + m_HostName);
-                    //To - Only One
-                    emailMessage.AddToAddress(new EmailAddress(address));
-                    //Subject
-                    emailMessage.Subject = subject;
-                    //TEXT Body
-                    if (!resolveNamePositionRegionName(objectID, out LastObjectName, out LastObjectPosition, out LastObjectRegionName))
-                        return;
-                    emailMessage.BodyText = "Object-Name: " + LastObjectName +
-                              "\nRegion: " + LastObjectRegionName + "\nLocal-Position: " +
-                              LastObjectPosition + "\n\n" + body;
+                    MimeMessage mmsg = new MimeMessage();
 
-                    //Config SMTP Server
-                    //Set SMTP SERVER config
-                    SmtpServer smtpServer=new SmtpServer(SMTP_SERVER_HOSTNAME,SMTP_SERVER_PORT);
-                    // Add authentication only when requested
-                    //
-                    if (SMTP_SERVER_LOGIN != String.Empty && SMTP_SERVER_PASSWORD != String.Empty)
+                    if(!string.IsNullOrEmpty(SMTP_SERVER_FROM))
                     {
-                        //Authentication
-                        smtpServer.SmtpAuthToken=new SmtpAuthToken(SMTP_SERVER_LOGIN, SMTP_SERVER_PASSWORD);
+                        mmsg.From.Add(MailboxAddress.Parse(SMTP_SERVER_FROM));
+                        mmsg.Subject = "(OSObj" + objectIDstr + ") " + subject;
                     }
-                    //Send Email Message
-                    emailMessage.Send(smtpServer);
+                    else
+                    {
+                        mmsg.From.Add(MailboxAddress.Parse(objectIDstr + "@" + m_HostName));
+                        mmsg.Subject = subject;
+                    }
+
+                    mmsg.To.Add(MailboxAddress.Parse(address));
+                    mmsg.Body = new TextPart("plain") {
+                        Text = "Object-Name: " + LastObjectName +
+                              "\nRegion: " + LastObjectRegionName + "\nLocal-Position: " +
+                              LastObjectPosition + "\n\n" + body
+                        };
+
+                    using (var client = new SmtpClient())
+                    {
+                        if(SMTP_SERVER_TLS)
+                            client.Connect(SMTP_SERVER_HOSTNAME, SMTP_SERVER_PORT, MailKit.Security.SecureSocketOptions.StartTls);
+                        else
+                            client.Connect(SMTP_SERVER_HOSTNAME, SMTP_SERVER_PORT);
+
+                        if (!string.IsNullOrEmpty(SMTP_SERVER_LOGIN) && !string.IsNullOrEmpty(SMTP_SERVER_PASSWORD))
+                            client.Authenticate(SMTP_SERVER_LOGIN, SMTP_SERVER_PASSWORD);
+
+                        client.Send(mmsg);
+                        client.Disconnect(true);
+                    }
 
                     //Log
                     m_log.Info("[EMAIL]: EMail sent to: " + address + " from object: " + objectID.ToString() + "@" + m_HostName);
@@ -411,8 +417,8 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 
                         for (i = 0; i < queue.Count; i++)
                         {
-                            if ((string.IsNullOrEmpty(sender) || sender.Equals(queue[i].sender)) &&
-                                (string.IsNullOrEmpty(subject) || subject.Equals(queue[i].subject)))
+                            if ((sender == null || sender.Equals("") || sender.Equals(queue[i].sender)) &&
+                                (subject == null || subject.Equals("") || subject.Equals(queue[i].subject)))
                             {
                                 break;
                             }
@@ -435,7 +441,6 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                     m_MailQueues.Add(objectID, new List<Email>());
                 }
             }
-
             return null;
         }
     }

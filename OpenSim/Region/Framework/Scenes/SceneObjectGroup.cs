@@ -1077,7 +1077,7 @@ namespace OpenSim.Region.Framework.Scenes
             if(setrot)
                 rotation = Quaternion.Conjugate(currentRot) * rotation;
 
-            bool dorot = setrot | (Math.Abs(rotation.W) < 0.99999);
+            bool dorot = setrot || (Math.Abs(rotation.W) < 0.99999);
 
             Vector3 vel = Vector3.Zero;
             Vector3 avel = Vector3.Zero;
@@ -2478,7 +2478,7 @@ namespace OpenSim.Region.Framework.Scenes
 
                 }
 
-                if (m_scene.UseBackup && HasGroupChanged)
+                if (HasGroupChanged && m_scene.UseBackup)
                 {
                     // don't backup while it's selected or you're asking for changes mid stream.
                     if (isTimeToPersist() || forcedBackup)
