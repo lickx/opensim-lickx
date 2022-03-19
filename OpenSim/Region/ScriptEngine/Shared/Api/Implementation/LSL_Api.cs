@@ -614,7 +614,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 Error("llResetOtherScript", "Can't find script '" + name + "'");
                 return;
             }
-            if(item == m_item.ItemID)
+            if(item.Equals(m_item.ItemID))
                 llResetScript();
             else
             {
@@ -1315,7 +1315,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 World.SimChat(binText,
                     ChatTypeEnum.Shout, channelID, m_host.ParentGroup.RootPart.AbsolutePosition, m_host.Name, m_host.UUID, true);
-
             }
 
             IWorldComm wComm = m_ScriptEngine.World.RequestModuleInterface<IWorldComm>();
@@ -1488,7 +1487,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             DetectParams detectedParams = m_ScriptEngine.GetDetectParams(m_item.ItemID, number);
             if (detectedParams == null)
                 return new LSL_Integer(0);
-            if (m_host.GroupID == detectedParams.Group)
+            if (m_host.GroupID.Equals(detectedParams.Group))
                 return new LSL_Integer(1);
             return new LSL_Integer(0);
         }
@@ -2649,7 +2648,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 {
                     foreach (KeyValuePair<UUID, TaskInventoryItem> inv in part.TaskInventory)
                     {
-                        if (inv.Value.AssetID == texface.TextureID)
+                        if (inv.Value.AssetID.Equals(texface.TextureID))
                         {
                             texture = inv.Value.Name.ToString();
                             break;
@@ -2717,7 +2716,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             // we're only checking prim limits if it's moving to a different parcel under the assumption that if the object got onto the parcel without exceeding the prim limits.
 
-            bool sameParcel = here.GlobalID == there.GlobalID;
+            bool sameParcel = here.GlobalID.Equals(there.GlobalID);
 
             if (!sameParcel && !World.Permissions.CanRezObject(
                 m_host.ParentGroup.PrimCount, m_host.ParentGroup.OwnerID, pos))
@@ -3995,7 +3994,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     address = account.Email;
                 }
 
-                m_emailModule.SendEmail(m_host.UUID, address, subject, message);
+                m_emailModule.SendEmail(m_host.UUID, m_host.ParentGroup.OwnerID, address, subject, message);
                 // no dataserver event
             };
 
@@ -4055,14 +4054,14 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 UserAccount account = null;
                 if (target == ScriptBaseClass.TARGETED_EMAIL_OBJECT_OWNER)
                 {
-                    if(parent.OwnerID == parent.GroupID)
+                    if(parent.OwnerID.Equals(parent.GroupID))
                         return;
                     account = m_userAccountService.GetUserAccount(RegionScopeID, parent.OwnerID);
                 }
                 else if (target == ScriptBaseClass.TARGETED_EMAIL_ROOT_CREATOR)
                 {
                     // non standard avoid creator spam
-                    if(m_item.CreatorID == parent.RootPart.CreatorID)
+                    if(m_item.CreatorID.Equals(parent.RootPart.CreatorID))
                     {
                         account = m_userAccountService.GetUserAccount(RegionScopeID, parent.RootPart.CreatorID);
                     }
@@ -4083,7 +4082,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     return;
                 }
 
-                m_emailModule.SendEmail(m_host.UUID, address, subject, message);
+                m_emailModule.SendEmail(m_host.UUID, m_host.ParentGroup.OwnerID, address, subject, message);
             };
 
             m_AsyncCommands.DataserverPlugin.RegisterRequest(m_host.LocalId,
@@ -4855,7 +4854,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 GridInstantMessage msg = new GridInstantMessage(World,
                         m_host.OwnerID, m_host.Name, destId,
                         (byte)InstantMessageDialog.TaskInventoryOffered,
-                        m_host.OwnerID == m_host.GroupID,
+                        m_host.OwnerID.Equals(m_host.GroupID),
                         string.Format("'{0}'  ( {1}/{2}/{3}/{4}/{5}/ )", item.Name, m_SlurlPrefix, World.RegionInfo.RegionName, (int)pos.X, (int)pos.Y, (int)pos.Z),
                         agentItem.ID, true, m_host.AbsolutePosition,
                         bucket, true);
@@ -5106,7 +5105,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 if (presence == null || presence.IsDeleted || presence.IsChildAgent || presence.IsNPC || presence.IsSatOnObject || presence.IsInTransit)
                     return;
 
-                if (m_item.PermsGranter == agentId)
+                if (m_item.PermsGranter.Equals(agentId))
                 {
                     if ((m_item.PermsMask & ScriptBaseClass.PERMISSION_TELEPORT) != 0)
                     {
@@ -5117,7 +5116,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
                 // special opensim legacy extra permissions, possible to remove
                 // agent must be wearing the object
-                if (m_host.ParentGroup.AttachmentPoint != 0 && m_host.OwnerID == presence.UUID)
+                if (m_host.ParentGroup.AttachmentPoint != 0 && m_host.OwnerID.Equals(presence.UUID))
                 {
                     DoLLTeleport(presence, destination, targetPos, targetLookAt);
                     return;
@@ -5130,7 +5129,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 // agent must be over the owners land
                 ILandObject agentLand = World.LandChannel.GetLandObject(presence.AbsolutePosition);
                 ILandObject objectLand = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
-                if (m_host.OwnerID == objectLand.LandData.OwnerID && m_host.OwnerID == agentLand.LandData.OwnerID)
+                if (m_host.OwnerID.Equals(objectLand.LandData.OwnerID) && m_host.OwnerID.Equals(agentLand.LandData.OwnerID))
                 {
                     DoLLTeleport(presence, destination, targetPos, targetLookAt);
                 }
@@ -5153,7 +5152,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 if (presence == null || presence.IsDeleted || presence.IsChildAgent || presence.IsNPC || presence.IsSatOnObject || presence.IsInTransit)
                     return;
 
-                if (m_item.PermsGranter == agentId)
+                if (m_item.PermsGranter.Equals(agentId))
                 {
                     if ((m_item.PermsMask & ScriptBaseClass.PERMISSION_TELEPORT) != 0)
                     {
@@ -5372,8 +5371,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         return;
 
                     // Need provisions for Group Owned here
-                    if (m_host.OwnerID == targetlandObj.LandData.OwnerID ||
-                        targetlandObj.LandData.IsGroupOwned || m_host.OwnerID == targetID)
+                    if (m_host.OwnerID.Equals(targetlandObj.LandData.OwnerID) ||
+                        targetlandObj.LandData.IsGroupOwned || m_host.OwnerID.Equals(targetID))
                     {
                         pushAllowed = true;
                     }
@@ -5392,9 +5391,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         if ((targetlandObj.LandData.Flags & (uint)ParcelFlags.RestrictPushObject) == (uint)ParcelFlags.RestrictPushObject)
                         {
                             // Need provisions for Group Owned here
-                            if (m_host.OwnerID == targetlandObj.LandData.OwnerID ||
+                            if (m_host.OwnerID.Equals(targetlandObj.LandData.OwnerID) ||
                                 targetlandObj.LandData.IsGroupOwned ||
-                                m_host.OwnerID == targetID)
+                                m_host.OwnerID.Equals(targetID))
                             {
                                 pushAllowed = true;
                             }
@@ -5867,7 +5866,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             // type 'obj' and wrongly returns ""
             if (!(item is LSL_String ||
                        item is LSL_Key ||
-                       item.ToString() == "00000000-0000-0000-0000-000000000000"))
+                       item.ToString().Equals("00000000-0000-0000-0000-000000000000")))
             {
                 return String.Empty;
             }
@@ -6683,8 +6682,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             land = World.LandChannel.GetLandObject(ssp.AbsolutePosition);
                             if (land != null)
                             {
-                                if (parcelOwned && land.LandData.OwnerID == id ||
-                                    parcel && land.LandData.GlobalID == id)
+                                if (parcelOwned && land.LandData.OwnerID.Equals(id) ||
+                                    parcel && land.LandData.GlobalID.Equals(id))
                                 {
                                     result.Add(new LSL_Key(ssp.UUID.ToString()));
                                 }
@@ -6925,7 +6924,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     if (land == null)
                         return;
 
-                    if (m_host.OwnerID == land.LandData.OwnerID)
+                    if (m_host.OwnerID.Equals(land.LandData.OwnerID))
                     {
                         Vector3 p = World.GetNearestAllowedPosition(presence, land);
                         presence.TeleportOnEject(p);
@@ -6951,7 +6950,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     ScenePresence presence = World.GetScenePresence(key);
                     if (presence != null) // object is an avatar
                     {
-                        if (m_host.OwnerID == World.LandChannel.GetLandObject(presence.AbsolutePosition).LandData.OwnerID)
+                        if (m_host.OwnerID.Equals(World.LandChannel.GetLandObject(presence.AbsolutePosition).LandData.OwnerID))
                             return 1;
                     }
                     else // object is not an avatar
@@ -6959,7 +6958,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         SceneObjectPart obj = World.GetSceneObjectPart(key);
 
                         if (obj != null &&
-                            m_host.OwnerID == World.LandChannel.GetLandObject(obj.AbsolutePosition).LandData.OwnerID)
+                            m_host.OwnerID.Equals(World.LandChannel.GetLandObject(obj.AbsolutePosition).LandData.OwnerID))
                         return 1;
                     }
                 }
@@ -7004,7 +7003,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return 0;
 
             // Check if it's a group key
-            if (uuid == m_host.ParentGroup.RootPart.GroupID)
+            if (uuid.Equals(m_host.ParentGroup.RootPart.GroupID))
                 return 1;
 
             // Handle object case
@@ -7019,7 +7018,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 {
                     // This will handle both deed and non-deed and also the no
                     // group case
-                    if (part.ParentGroup.RootPart.GroupID == m_host.ParentGroup.RootPart.GroupID)
+                    if (part.ParentGroup.RootPart.GroupID.Equals(m_host.ParentGroup.RootPart.GroupID))
                         return 1;
                     return 0;
                 }
@@ -7033,7 +7032,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     return 0;
 
                 IClientAPI client = presence.ControllingClient;
-                if (m_host.ParentGroup.RootPart.GroupID == client.ActiveGroupId)
+                if (m_host.ParentGroup.RootPart.GroupID.Equals(client.ActiveGroupId))
                     return 1;
 
                 return 0;
@@ -7070,8 +7069,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         ILandObject parcel = World.LandChannel.GetLandObject(av.AbsolutePosition);
                         if (parcel != null)
                         {
-                            if (m_host.OwnerID == parcel.LandData.OwnerID ||
-                                (m_host.OwnerID == m_host.GroupID && m_host.GroupID == parcel.LandData.GroupID
+                            if (m_host.OwnerID.Equals(parcel.LandData.OwnerID) ||
+                                (m_host.OwnerID.Equals(m_host.GroupID) && m_host.GroupID.Equals(parcel.LandData.GroupID)
                                 && parcel.LandData.IsGroupOwned) || World.Permissions.IsGod(m_host.OwnerID))
                             {
                                 av.StandUp();
@@ -7834,7 +7833,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 GridInstantMessage msg = new GridInstantMessage(World,
                         m_host.OwnerID, m_host.Name, destID,
                         (byte)InstantMessageDialog.TaskInventoryOffered,
-                        m_host.OwnerID == m_host.GroupID,
+                        m_host.OwnerID.Equals(m_host.GroupID),
                         string.Format("'{0}'  ( {1}/{2}/{3}/{4}/{5}/ )", category, m_SlurlPrefix, World.Name, (int)pos.X, (int)pos.Y, (int)pos.Z),
                         folderID, false, pos,
                         bucket, false);
@@ -7973,7 +7972,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     int idx = land.LandData.ParcelAccessList.FindIndex(
                             delegate(LandAccessEntry e)
                             {
-                                if (e.AgentID == key && e.Flags == AccessList.Access)
+                                if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
                                     return true;
                                 return false;
                             });
@@ -8178,7 +8177,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             }
 
             // target must be a different prim than the one containing the script
-            if (m_host.UUID == destId)
+            if (m_host.UUID.Equals(destId))
             {
                 return;
             }
@@ -10612,7 +10611,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             mat.AlphaMaskCutoff = (byte)materialMaskCutoff;
 
             UUID id = m_materialsModule.AddNewMaterial(mat); // id is a hash of entire material hash, so this means no change
-            if(oldid == id)
+            if(oldid.Equals(id))
                 return false;
 
             texface.MaterialID = id;
@@ -10675,7 +10674,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             mapID = m_materialsModule.AddNewMaterial(mat);
 
-            if(oldid == mapID)
+            if(oldid.Equals(mapID))
                 return false;
 
             texface.MaterialID = mapID;
@@ -10748,7 +10747,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             mapID = m_materialsModule.AddNewMaterial(mat);
 
-            if(oldid == mapID)
+            if(oldid.Equals(mapID))
                 return false;
 
             texface.MaterialID = mapID;
@@ -11054,8 +11053,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
                 Vector3 box = presence.Appearance.AvatarBoxSize * 0.5f;
 
-                if (presence.Animator.Animations.ImplicitDefaultAnimation.AnimID
-                    == DefaultAvatarAnimations.AnimsUUIDbyName["SIT_GROUND_CONSTRAINED"])
+                if (presence.Animator.Animations.ImplicitDefaultAnimation.AnimID.Equals(
+                    DefaultAvatarAnimations.AnimsUUIDbyName["SIT_GROUND_CONSTRAINED"]))
                 {
                     // This is for ground sitting avatars TODO!
                     lower = new LSL_Vector(-box.X - 0.1125, -box.Y, box.Z * -1.0f);
@@ -11128,7 +11127,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 upper = new Vector3(m_lABB2SitX0, m_lABB2SitY0, m_lABB2SitZ0 + m_lABB2SitZ1 * height);
             }
             // When avatar is groundsitting
-            else if (sp.Animator.Animations.ImplicitDefaultAnimation.AnimID == DefaultAvatarAnimations.AnimsUUIDbyName["SIT_GROUND_CONSTRAINED"])
+            else if (sp.Animator.Animations.ImplicitDefaultAnimation.AnimID.Equals(DefaultAvatarAnimations.AnimsUUIDbyName["SIT_GROUND_CONSTRAINED"]))
             {
                 lower = new Vector3(m_lABB1GrsX0, m_lABB1GrsY0, m_lABB1GrsZ0 + m_lABB1GrsZ1 * height);
                 upper = new Vector3(m_lABB2GrsX0, m_lABB2GrsY0, m_lABB2GrsZ0 + m_lABB2GrsZ1 * height);
@@ -11727,7 +11726,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 foreach(KeyValuePair<UUID, TaskInventoryItem> inv in part.TaskInventory)
                 {
-                    if(inv.Value.InvType == (int)InventoryType.Texture && inv.Value.AssetID == origID)
+                    if(inv.Value.InvType == (int)InventoryType.Texture && inv.Value.AssetID.Equals(origID))
                         return origID.ToString();
                 }
             }
@@ -12997,7 +12996,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public void llLoadURL(string avatar_id, string message, string url)
         {
-            if(m_host.OwnerID == m_host.GroupID)
+            if(m_host.OwnerID.Equals(m_host.GroupID))
                 return;
             try
             {
@@ -13247,7 +13246,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     // now send to all (non-child) agents in the parcel
                     World.ForEachRootScenePresence(delegate(ScenePresence sp)
                     {
-                        if (sp.currentParcelUUID == landData.GlobalID)
+                        if (sp.currentParcelUUID.Equals(landData.GlobalID))
                         {
                             sp.ControllingClient.SendParcelMediaUpdate(landData.MediaURL,
                                                                           landData.MediaID,
@@ -13280,7 +13279,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     // send to all (non-child) agents in the parcel
                     World.ForEachRootScenePresence(delegate(ScenePresence sp)
                     {
-                        if (sp.currentParcelUUID == landData.GlobalID)
+                        if (sp.currentParcelUUID.Equals(landData.GlobalID))
                         {
                             sp.ControllingClient.SendParcelMediaCommand(cmndFlags,
                                             commandToSend.Value, time);
@@ -13512,7 +13511,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     int idx = land.LandData.ParcelAccessList.FindIndex(
                             delegate(LandAccessEntry e)
                             {
-                                if (e.AgentID == key && e.Flags == AccessList.Ban)
+                                if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
                                     return true;
                                 return false;
                             });
@@ -13549,7 +13548,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     int idx = land.LandData.ParcelAccessList.FindIndex(
                             delegate(LandAccessEntry e)
                             {
-                                if (e.AgentID == key && e.Flags == AccessList.Access)
+                                if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
                                     return true;
                                 return false;
                             });
@@ -13575,7 +13574,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     int idx = land.LandData.ParcelAccessList.FindIndex(
                             delegate(LandAccessEntry e)
                             {
-                                if (e.AgentID == key && e.Flags == AccessList.Ban)
+                                if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
                                     return true;
                                 return false;
                             });
@@ -14234,7 +14233,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void llResetLandBanList()
         {
             LandData land = World.LandChannel.GetLandObject(m_host.AbsolutePosition).LandData;
-            if (land.OwnerID == m_host.OwnerID && land.ParcelAccessList.Count > 0)
+            if (land.ParcelAccessList.Count > 0 && land.OwnerID.Equals(m_host.OwnerID))
             {
                 var todelete = new List<LandAccessEntry>();
                 foreach (LandAccessEntry entry in land.ParcelAccessList)
@@ -14251,7 +14250,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void llResetLandPassList()
         {
             LandData land = World.LandChannel.GetLandObject(m_host.AbsolutePosition).LandData;
-            if (land.OwnerID == m_host.OwnerID && land.ParcelAccessList.Count > 0)
+            if (land.ParcelAccessList.Count > 0 && land.OwnerID.Equals(m_host.OwnerID))
             {
                 var todelete = new List<LandAccessEntry>();
                 foreach (LandAccessEntry entry in land.ParcelAccessList)
@@ -14671,7 +14670,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             }
                             else
                             {
-                                if (obj.ParentGroup.RootPart == obj)
+                                if (obj.ParentGroup.RootPart.LocalId == obj.LocalId)
                                     rot = obj.ParentGroup.GroupRotation;
                                 else
                                     rot = obj.GetWorldRotation();
@@ -15069,7 +15068,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(prim, out UUID id))
                 return;
             SceneObjectPart obj = World.GetSceneObjectPart(id);
-            if (obj == null || obj.OwnerID != m_host.OwnerID)
+            if (obj == null || obj.OwnerID.NotEqual(m_host.OwnerID))
                 return;
 
             uint rulesParsed = 0;
@@ -15111,7 +15110,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return result;
 
             SceneObjectPart obj = World.GetSceneObjectPart(id);
-            if (obj == null || obj.OwnerID != m_host.OwnerID)
+            if (obj == null || obj.OwnerID.NotEqual(m_host.OwnerID))
                 return result;
 
             LSL_List remaining = GetPrimParams(obj, rules, ref result);
@@ -15171,7 +15170,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             string[] parts = name.Split(new char[] {' '});
             if (parts.Length < 2)
                 return name.ToLower();
-            if (parts[1] == "Resident")
+            if (parts[1].Equals("Resident"))
                 return parts[0].ToLower();
 
             return name.Replace(" ", ".").ToLower();
@@ -15847,10 +15846,10 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     if (m_castRayCalls[i].CalledMs < fromCalledMs)
                         m_castRayCalls.RemoveAt(i);
                     // Use current region (in multi-region sims)
-                    else if (m_castRayCalls[i].RegionId == regionId)
+                    else if (m_castRayCalls[i].RegionId.Equals(regionId))
                     {
                         // Reduce available time with recent calls
-                        if (m_castRayCalls[i].UserId == userId)
+                        if (m_castRayCalls[i].UserId.Equals(userId))
                             msAvailable -= m_castRayCalls[i].UsedMs;
                     }
                 }
@@ -16864,7 +16863,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     break;
                 }
 
-                if (m_host.OwnerID == m_host.GroupID)
+                if (m_host.OwnerID.Equals(m_host.GroupID))
                 {
                     replydata = "GROUP_OWNED";
                     break;
@@ -17517,13 +17516,13 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             foreach (KeyValuePair<string, UUID> kvp in DefaultAvatarAnimations.AnimsUUIDbyName)
             {
-                if (kvp.Value == animID)
+                if (kvp.Value.Equals(animID))
                     return kvp.Key.ToLower();
             }
 
             foreach (TaskInventoryItem item in m_host.Inventory.GetInventoryItems())
             {
-                if (item.AssetID == animID)
+                if (item.AssetID.Equals(animID))
                     return item.Name;
             }
 
