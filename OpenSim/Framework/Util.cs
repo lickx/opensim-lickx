@@ -1269,10 +1269,8 @@ namespace OpenSim.Framework
 
         private static byte[] ComputeSHA1Hash(byte[] src)
         {
-            byte[] ret;
-            using (SHA1CryptoServiceProvider SHA1 = new SHA1CryptoServiceProvider())
-                ret = SHA1.ComputeHash(src);
-            return ret;
+             using (SHA1 sha = SHA1.Create())
+                return sha.ComputeHash(src);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
