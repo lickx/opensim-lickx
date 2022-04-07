@@ -156,7 +156,7 @@ namespace Prebuild.Core.Nodes
         private readonly List<PackageReferenceNode> m_PackageReferences = new List<PackageReferenceNode>();
         private readonly List<ReferenceNode> m_References = new List<ReferenceNode>();
         private readonly List<AuthorNode> m_Authors = new List<AuthorNode>();
-        private FilesNode m_Files;
+        private FilesNode m_Files = new FilesNode();
 
         private readonly Dictionary<FrameworkVersion, string> m_frameworkVersionToCondionalVersion = new Dictionary<FrameworkVersion, string>()
         {
@@ -616,6 +616,7 @@ namespace Prebuild.Core.Nodes
             if (m_useFramework)
                 m_Framework = (FrameworkVersion)Helper.EnumAttributeValue(node, "frameworkVersion", typeof(FrameworkVersion), m_Framework);
 
+            m_Framework = (FrameworkVersion)Helper.EnumAttributeValue(node, "forceFrameworkVersion", typeof(FrameworkVersion), m_Framework);
             m_StartupObject = Helper.AttributeValue(node, "startupObject", m_StartupObject);
             m_RootNamespace = Helper.AttributeValue(node, "rootNamespace", m_RootNamespace);
 
