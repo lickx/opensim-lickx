@@ -449,7 +449,7 @@ namespace OpenSim.Region.Framework.Scenes.Animation
 
                 m_animTickJump = Environment.TickCount - PREJUMP_DELAY - 1;
                 currentControlState = motionControlStates.jumping;
-                m_scenePresence.Jump(18f);
+                m_scenePresence.Jump(9.4f);
                 return "JUMP";
             }
 
@@ -465,7 +465,7 @@ namespace OpenSim.Region.Framework.Scenes.Animation
                 // jump up
                 isJumping = true;
                 currentControlState = motionControlStates.jumping;
-                m_scenePresence.Jump(18f);
+                m_scenePresence.Jump(9.4f);
                 return "JUMP";
             }
 
@@ -498,18 +498,20 @@ namespace OpenSim.Region.Framework.Scenes.Animation
             {
                 Falling = false;
                 currentControlState = motionControlStates.landing;
-                
-                // TODO: SOFT_LAND support
-                float fallVsq = m_lastFallVelocity * m_lastFallVelocity;
-                if (fallVsq > 300f) // aprox 20*h
+
+                if ((controlFlags & (AgentManager.ControlFlags.AGENT_CONTROL_FINISH_ANIM)) == 0)
                 {
-                    m_animTickLand = Environment.TickCount + 3000;
-                    return "STANDUP";
-                }
-                if (fallVsq > 160f)
-                {
-                    m_animTickLand = Environment.TickCount + 1500;
-                    return "SOFT_LAND";
+                    float fallVsq = m_lastFallVelocity * m_lastFallVelocity;
+                    if (fallVsq > 300f) // aprox 20*h
+                    {
+                        m_animTickLand = Environment.TickCount + 3000;
+                        return "STANDUP";
+                    }
+                    if (fallVsq > 160f)
+                    {
+                        m_animTickLand = Environment.TickCount + 1500;
+                        return "SOFT_LAND";
+                    }
                 }
                 m_animTickLand = Environment.TickCount + 600;
                 return "LAND";
