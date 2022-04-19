@@ -736,32 +736,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     }
                                 }
 
-                                if (!newPosition.IsZero())
-                                    defso.RootPart.GroupPosition = newPosition;
-
-                                if (!Scene.AddSceneObject(defso))
-                                {
-                                    m_log.DebugFormat(
-                                    "[HG ENTITY TRANSFER MODULE]: Problem adding scene object {0} {1} into {2} ",
-                                        defso.Name, defso.UUID, Scene.Name);
- 
-                                     return;
-                                }
-
-                                if (defso.IsAttachment)
-                                {
-                                    ScenePresence sp = Scene.GetScenePresence(defso.OwnerID);
-                                    if (sp != null && !sp.IsChildAgent)
-                                    {
-                                         m_log.DebugFormat(
-                                             "[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachment {0} for HG root agent {1}",
-                                             defso.Name, defso.OwnerID);
-                                         defso.RootPart.ParentGroup.CreateScriptInstances(
-                                             0, false, Scene.DefaultScriptEngine, GetStateSource(defso));
-                                         defso.aggregateScriptEvents();
-                                         defso.ResumeScripts();
-                                    }
-                                }
+                                base.HandleIncomingSceneObject(defso, newPosition);
 
                                 defso = null;
                                 aCircuit = null;
@@ -776,6 +751,121 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                 }
             }
 
+            return true;
+        }
+
+        public override bool HandleIncomingAttachments(ScenePresence sp, List<SceneObjectGroup> attachments)
+        {
+            UUID OwnerID = sp.UUID;
+            if (m_sceneRegionInfo.EstateSettings.IsBanned(OwnerID))
+            {
+                m_log.DebugFormat(
+                    "[HG TRANSFER MODULE]: Attachments of banned avatar {0} into {1}", sp.Name, m_sceneName);
+                return false;
+            }
+
+            if (OwnerID.IsZero() || m_scene.UserManagementModule.IsLocalGridUser(OwnerID))
+                return base.HandleIncomingAttachments(sp, attachments);
+
+            // foreign user
+            AgentCircuitData aCircuit = m_scene.AuthenticateHandler.GetAgentCircuitData(OwnerID);
+            if (aCircuit != null)
+            {
+                if ((aCircuit.teleportFlags & (uint)Constants.TeleportFlags.ViaHGLogin) == 0)
+                {
+                    // first region in local grid did pull the necessary attachments from the source grid.
+                    base.HandleIncomingAttachments(sp, attachments);
+                }
+                else
+                {
+                    if (aCircuit.ServiceURLs != null && aCircuit.ServiceURLs.ContainsKey("AssetServerURI"))
+                    {
+                        ScenePresence defsp = sp;
+                        List<SceneObjectGroup> deftatt = attachments;
+                        List<SceneObjectGroup> toadd = new List<SceneObjectGroup>(deftatt.Count);
+                        m_incomingSceneObjectEngine.QueueJob(
+                            string.Format("HG UUID Gather attachments {0}", defsp.Name), () =>
+                            {
+                                string url = aCircuit.ServiceURLs["AssetServerURI"].ToString();
+                                IDictionary<UUID, sbyte> ids = new Dictionary<UUID, sbyte>();
+                                HGUuidGatherer uuidGatherer = new HGUuidGatherer(m_scene.AssetService, url, ids);
+
+                                foreach (SceneObjectGroup defso in deftatt)
+                                {
+                                    uuidGatherer.AddForInspection(defso);
+                                    while (!uuidGatherer.Complete)
+                                    {
+                                        if (sp.IsDeleted)
+                                        {
+                                            deftatt = null;
+                                            defsp = null;
+                                            uuidGatherer = null;
+                                            toadd = null;
+                                            return;
+                                        }
+                                        uuidGatherer.GatherNext();
+                                    }
+                                    toadd.Add(defso);
+                                }
+                                deftatt = null;
+
+                                foreach (UUID id in ids.Keys)
+                                {
+                                    int tickStart = Util.EnvironmentTickCount();
+
+                                    uuidGatherer.FetchAsset(id);
+
+                                    int ticksElapsed = Util.EnvironmentTickCountSubtract(tickStart);
+
+                                    if (sp.IsDeleted || ticksElapsed > 30000)
+                                    {
+                                        m_log.WarnFormat(
+                                            "[HG ENTITY TRANSFER]: Aborting fetch attachments assets for HG user {0}", sp.Name);
+
+                                        defsp = null;
+                                        uuidGatherer = null;
+                                        toadd = null;
+                                        return;
+                                    }
+                                }
+
+                                if (sp.IsDeleted)
+                                    return;
+
+                                if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
+                                {
+                                    m_log.DebugFormat(
+                                        "[ENTITY TRANSFER MODULE]: Denied Attachments for banned avatar {0}", sp.Name);
+                                    return;
+                                }
+
+                                foreach(SceneObjectGroup so in attachments)
+                                {
+                                    if (!m_scene.AddSceneObject(so))
+                                    {
+                                        m_log.DebugFormat(
+                                            "[ENTITY TRANSFER MODULE]: Problem adding attachment {0} {1} into {2} ",
+                                            so.Name, so.UUID, m_sceneName);
+                                        continue;
+                                    }
+                                    m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachment {0} for HG root agent {1}",
+    so.Name, so.OwnerID);
+                                    so.RootPart.ParentGroup.CreateScriptInstances(
+                                        0, false, Scene.DefaultScriptEngine, GetStateSource(so));
+                                    so.aggregateScriptEvents();
+                                    so.ResumeScripts();
+                                }
+
+                                defsp = null;
+                                uuidGatherer = null;
+                                toadd = null;
+                            },
+                            OwnerID.ToString());
+                    }
+                }
+            }
+
+            sp.GotAttachmentsData = true;
             return true;
         }
 

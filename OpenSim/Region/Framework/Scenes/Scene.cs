@@ -2995,6 +2995,21 @@ namespace OpenSim.Region.Framework.Scenes
             return true;
         }
 
+        public bool IncomingAttechments(ScenePresence sp, List<SceneObjectGroup> attachments)
+        {
+            //m_log.DebugFormat(" >>> IncomingCreateObject(sog) <<< {0} deleted? {1} isAttach? {2}", ((SceneObjectGroup)sog).AbsolutePosition,
+            //    ((SceneObjectGroup)sog).IsDeleted, ((SceneObjectGroup)sog).RootPart.IsAttachment);
+
+            if (!EntityTransferModule.HandleIncomingAttachments(sp, attachments) || sp.IsDeleted)
+                return false;
+
+            // Do this as late as possible so that listeners have full access to the incoming object
+            foreach(SceneObjectGroup newObject in attachments)
+                EventManager.TriggerOnIncomingSceneObject(newObject);
+
+            return true;
+        }
+
         /// <summary>
         /// Adds a Scene Object group to the Scene.
         /// Verifies that the creator of the object is not banned from the simulator.
@@ -4978,6 +4993,9 @@ Label_GroupsDone:
 
         public bool CrossAgentToNewRegion(ScenePresence agent, bool isFlying)
         {
+            if(!AllowAvatarCrossing)
+                return false;
+
             if (EntityTransferModule != null)
             {
                 return EntityTransferModule.Cross(agent, isFlying);

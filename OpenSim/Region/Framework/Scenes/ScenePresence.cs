@@ -81,7 +81,7 @@ namespace OpenSim.Region.Framework.Scenes
         //            m_log.DebugFormat("[SCENE PRESENCE]: Destructor called on {0}", Name);
         //        }
 
-
+        public bool GotAttachmentsData = false;
         public int EnvironmentVersion = -1;
         private ViewerEnvironment m_environment = null;
         public ViewerEnvironment Environment
@@ -573,7 +573,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// <summary>
         /// Record user movement inputs.
         /// </summary>
-        public uint MovementFlag { get; private set; }
+        public uint MovementFlags { get; private set; }
 
         /// <summary>
         /// Is the agent stop control flag currently active?
@@ -1070,7 +1070,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         // velocities
         private const float AgentControlStopSlowVel = 0.2f * 4.096f;
-        public const float AgentControlMidVel = 0.4f * 4.096f;
+        public const float AgentControlMidVel = 0.6f * 4.096f;
         public const float AgentControlNormalVel = 1.0f * 4.096f;
 
         // old normal speed was tuned to match sl normal plus Fast modifiers
@@ -1552,7 +1552,7 @@ namespace OpenSim.Region.Framework.Scenes
             // If we don't reset the movement flag here, an avatar that crosses to a neighbouring sim and returns will
             // stall on the border crossing since the existing child agent will still have the last movement
             // recorded, which stops the input from being processed.
-            MovementFlag = 0;
+            MovementFlags = 0;
 
             m_scene.AuthenticateHandler.UpdateAgentChildStatus(ControllingClient.CircuitCode, false);
 
@@ -1663,7 +1663,7 @@ namespace OpenSim.Region.Framework.Scenes
             // as teleporting back
             TeleportFlags = TeleportFlags.Default;
 
-            MovementFlag = 0;
+            MovementFlags = 0;
 
             // It looks like Animator is set to null somewhere, and MakeChild
             // is called after that. Probably in aborted teleports.
@@ -2696,30 +2696,26 @@ namespace OpenSim.Region.Framework.Scenes
                 float agent_velocity = AgentControlNormalVel;
 
                 bool bAllowUpdateMoveToPosition = false;
-                uint currflags = (uint)flags & (CONTROL_FLAG_NUDGE_MASK | CONTROL_FLAG_NORM_MASK);
-                uint oldflags = MovementFlag & (CONTROL_FLAG_NUDGE_MASK | CONTROL_FLAG_NORM_MASK);
-                MovementFlag &= ~(CONTROL_FLAG_NUDGE_MASK | CONTROL_FLAG_NORM_MASK);
+                uint oldflags = MovementFlags & (CONTROL_FLAG_NUDGE_MASK | CONTROL_FLAG_NORM_MASK);
+                MovementFlags = (uint)flags & (CONTROL_FLAG_NUDGE_MASK | CONTROL_FLAG_NORM_MASK);
 
-                if (currflags != 0)
+                if (MovementFlags != 0)
                 {
                     DCFlagKeyPressed = true;
                     mvToTarget = false;
 
-                    MovementFlag |= currflags;
-                    //update_movementflag |= (currflags ^ oldflags) != 0;
+                    //update_movementflag |= (MovementFlags ^ oldflags) != 0;
                     update_movementflag = true;
 
                     if (m_delayedStop < 0 && (flags & (ACFlags.AGENT_CONTROL_FAST_AT | ACFlags.AGENT_CONTROL_FAST_UP)) == 0)
                         agent_velocity = AgentControlMidVel;
 
-                    if ((currflags & CONTROL_FLAG_NUDGE_MASK) != 0)
-                    {
-                        currflags |= (currflags >>= 19);
-                    }
+                    if ((MovementFlags & CONTROL_FLAG_NUDGE_MASK) != 0)
+                        MovementFlags |= (MovementFlags >> 19);
 
                     for (int i = 0, mask = 1; i < 6; ++i, mask <<= 1)
                     {
-                        if((currflags & mask) != 0)
+                        if((MovementFlags & mask) != 0)
                             agent_control_v3 += Dir_Vectors[i];
                     }
                 }
@@ -2816,7 +2812,7 @@ namespace OpenSim.Region.Framework.Scenes
                     if (AgentControlStopActive)
                     {
                         //if (MovementFlag == 0 && Animator.Falling)
-                        if (MovementFlag == 0 && Animator.currentControlState == ScenePresenceAnimator.motionControlStates.falling)
+                        if (MovementFlags == 0 && Animator.currentControlState == ScenePresenceAnimator.motionControlStates.falling)
                         {
                             AddNewMovement(agent_control_v3, AgentControlStopSlowVel, true);
                         }
@@ -2832,10 +2828,10 @@ namespace OpenSim.Region.Framework.Scenes
                             AddNewMovement(agent_control_v3, agent_velocity);
                         else
                         {
-                            if (MovementFlag != 0)
+                            if (MovementFlags != 0)
                                 AddNewMovement(agent_control_v3, agent_velocity);
                             else
-                                m_delayedStop = Util.GetTimeStampMS() + 200.0;
+                                m_delayedStop = Util.GetTimeStampMS() + 250.0;
                         }
                     }
                 }
@@ -3004,8 +3000,8 @@ namespace OpenSim.Region.Framework.Scenes
 
                 const uint noMovFlagsMask = (uint)(~CONTROL_FLAG_NORM_MASK);
 
-                MovementFlag &= noMovFlagsMask;
-                MovementFlag |= tmpAgentControlFlags;
+                MovementFlags &= noMovFlagsMask;
+                MovementFlags |= tmpAgentControlFlags;
 
                 m_AgentControlFlags &= unchecked((ACFlags)noMovFlagsMask);
                 m_AgentControlFlags |= (ACFlags)tmpAgentControlFlags;
@@ -3734,7 +3730,7 @@ namespace OpenSim.Region.Framework.Scenes
             // m_log.DebugFormat(
             //    "[SCENE PRESENCE]: Adding new movement {0} with rotation {1}, thisAddSpeedModifier {2} for {3}",
             //        vec, Rotation, thisAddSpeedModifier, Name);
-            m_delayedStop = -1;
+            //m_delayedStop = -1;
             // rotate from avatar coord space to world
             Quaternion rot = Rotation;
             if (!Flying && !IsNPC)
@@ -4002,6 +3998,16 @@ namespace OpenSim.Region.Framework.Scenes
             // give some extra time to make sure viewers did process seeds
             if (++NeedInitialData < 6) // needs fix if update rate changes on heartbeat
                return;
+
+            /*
+            if(!GotAttachmentsData)
+            {
+                if(++NeedInitialData == 300) // 30s in current heartbeat
+                    m_log.WarnFormat("[ScenePresence({0}] slow attachment assets transfer for {1}", Scene.Name, Name);
+            }
+            else if((m_teleportFlags & TeleportFlags.ViaHGLogin) != 0)
+                m_log.WarnFormat("[ScenePresence({0}] got hg attachment assets transfer for {1}, cntr = {2}", Scene.Name, Name, NeedInitialData);
+            */
 
             NeedInitialData = -1;
 
