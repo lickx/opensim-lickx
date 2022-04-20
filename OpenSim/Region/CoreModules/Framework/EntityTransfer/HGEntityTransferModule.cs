@@ -886,7 +886,32 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     }
                                 }
 
-                                base.HandleIncomingAttachments(sp, toadd);
+                                if (sp.IsDeleted)
+                                    return;
+
+                                if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
+                                {
+                                    m_log.DebugFormat(
+                                        "[ENTITY TRANSFER MODULE]: Denied Attachments for banned avatar {0}", sp.Name);
+                                    return;
+                                }
+
+                                foreach(SceneObjectGroup so in attachments)
+                                {
+                                    if (!m_scene.AddSceneObject(so))
+                                    {
+                                        m_log.DebugFormat(
+                                            "[ENTITY TRANSFER MODULE]: Problem adding attachment {0} {1} into {2} ",
+                                            so.Name, so.UUID, m_sceneName);
+                                        continue;
+                                    }
+                                    m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachment {0} for HG root agent {1}",
+    so.Name, so.OwnerID);
+                                    so.RootPart.ParentGroup.CreateScriptInstances(
+                                        0, false, Scene.DefaultScriptEngine, GetStateSource(so));
+                                    so.aggregateScriptEvents();
+                                    so.ResumeScripts();
+                                }
 
                                 defsp = null;
                                 uuidGatherer = null;
