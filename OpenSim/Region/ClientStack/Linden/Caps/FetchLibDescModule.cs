@@ -28,11 +28,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
-using System.IO;
 using System.Reflection;
-using System.Text;
-using System.Threading;
 using log4net;
 using Nini.Config;
 using Mono.Addins;
@@ -41,7 +37,6 @@ using OpenSim.Framework;
 using OpenSim.Framework.Servers.HttpServer;
 using OpenSim.Region.Framework.Interfaces;
 using OpenSim.Region.Framework.Scenes;
-using OpenSim.Framework.Capabilities;
 using OpenSim.Services.Interfaces;
 using Caps = OpenSim.Framework.Capabilities.Caps;
 using OpenSim.Capabilities.Handlers;
@@ -54,8 +49,8 @@ namespace OpenSim.Region.ClientStack.Linden
     /// <summary>
     /// This module implements both WebFetchInventoryDescendents and FetchInventoryDescendents2 capabilities.
     /// </summary>
-    [Extension(Path = "/OpenSim/RegionModules", NodeName = "RegionModule", Id = "WebFetchInvDescModule")]
-    public class WebFetchInvDescModule : INonSharedRegionModule
+    [Extension(Path = "/OpenSim/RegionModules", NodeName = "RegionModule", Id = "FetchLibDescModule")]
+    public class FetchLibDescModule : INonSharedRegionModule
     {
         class APollRequest
         {
@@ -82,30 +77,24 @@ namespace OpenSim.Region.ClientStack.Linden
         /// </remarks>
         public static int ProcessedRequestsCount { get; set; }
 
-        private static Stat s_queuedRequestsStat;
-        private static Stat s_processedRequestsStat;
-
         public Scene Scene { get; private set; }
 
-        private IInventoryService m_InventoryService;
         private ILibraryService m_LibraryService;
 
         private bool m_Enabled;
         private ExpiringKey<UUID> m_badRequests;
 
-        private string m_fetchInventoryDescendents2Url;
+        private string m_fetchLibDescendents2Url;
 
-        private static FetchInvDescHandler m_webFetchHandler;
+        private static FetchLibDescHandler m_FetchHandler;
 
         private static ObjectJobEngine m_workerpool = null;
 
-        private static int m_NumberScenes = 0;
-
         #region ISharedRegionModule Members
 
-        public WebFetchInvDescModule() : this(true) {}
+        public FetchLibDescModule() : this(true) {}
 
-        public WebFetchInvDescModule(bool processQueuedResultsAsync)
+        public FetchLibDescModule(bool processQueuedResultsAsync)
         {
             ProcessQueuedRequestsAsync = processQueuedResultsAsync;
         }
@@ -116,8 +105,8 @@ namespace OpenSim.Region.ClientStack.Linden
             if (config == null)
                 return;
 
-            m_fetchInventoryDescendents2Url = config.GetString("Cap_FetchInventoryDescendents2", string.Empty);
-            m_Enabled = m_fetchInventoryDescendents2Url.Length > 0;
+            m_fetchLibDescendents2Url = config.GetString("Cap_FetchLibDescendents2", string.Empty);
+            m_Enabled = m_fetchLibDescendents2Url.Length > 0;
         }
 
         public void AddRegion(Scene s)
@@ -133,13 +122,7 @@ namespace OpenSim.Region.ClientStack.Linden
             if (!m_Enabled)
                 return;
 
-            m_NumberScenes--;
-
             Scene.EventManager.OnRegisterCaps -= RegisterCaps;
-
-            StatsManager.DeregisterStat(s_processedRequestsStat);
-            StatsManager.DeregisterStat(s_queuedRequestsStat);
-
             Scene = null;
         }
 
@@ -148,52 +131,18 @@ namespace OpenSim.Region.ClientStack.Linden
             if (!m_Enabled)
                 return;
 
-            if (s_processedRequestsStat == null)
-                s_processedRequestsStat =
-                    new Stat(
-                        "ProcessedFetchInventoryRequests",
-                        "Number of processed fetch inventory requests",
-                        "These have not necessarily yet been dispatched back to the requester.",
-                        "",
-                        "inventory",
-                        "httpfetch",
-                        StatType.Pull,
-                        MeasuresOfInterest.AverageChangeOverTime,
-                        stat => { stat.Value = ProcessedRequestsCount; },
-                        StatVerbosity.Debug);
-
-            if (s_queuedRequestsStat == null)
-                s_queuedRequestsStat =
-                    new Stat(
-                        "QueuedFetchInventoryRequests",
-                        "Number of fetch inventory requests queued for processing",
-                        "",
-                        "",
-                        "inventory",
-                        "httpfetch",
-                        StatType.Pull,
-                        MeasuresOfInterest.AverageChangeOverTime,
-                        stat => { stat.Value = m_workerpool.Count; },
-                        StatVerbosity.Debug);
-
-            StatsManager.RegisterStat(s_processedRequestsStat);
-            StatsManager.RegisterStat(s_queuedRequestsStat);
-
-            m_InventoryService = Scene.InventoryService;
             m_LibraryService = Scene.LibraryService;
 
             // We'll reuse the same handler for all requests.
-            m_webFetchHandler = new FetchInvDescHandler(m_InventoryService, m_LibraryService, Scene);
+            m_FetchHandler = new FetchLibDescHandler(m_LibraryService, Scene);
 
             Scene.EventManager.OnRegisterCaps += RegisterCaps;
 
             if(m_badRequests == null)
                 m_badRequests = new ExpiringKey<UUID>(30000);
 
-            m_NumberScenes++;
-
             if (ProcessQueuedRequestsAsync && m_workerpool == null)
-                m_workerpool = new ObjectJobEngine(DoInventoryRequests, "InventoryWorker",2000,2);
+                m_workerpool = new ObjectJobEngine(DoInventoryRequests, "LibInventoryWorker", 2000, 2);
         }
 
         public void PostInitialise()
@@ -207,7 +156,7 @@ namespace OpenSim.Region.ClientStack.Linden
 
             if (ProcessQueuedRequestsAsync)
             {
-                if (m_NumberScenes <= 0 && m_workerpool != null)
+                if (m_workerpool != null)
                 {
                     m_workerpool.Dispose();
                     m_workerpool = null;
@@ -218,7 +167,7 @@ namespace OpenSim.Region.ClientStack.Linden
             //m_queue.Dispose();
         }
 
-        public string Name { get { return "WebFetchInvDescModule"; } }
+        public string Name { get { return "FetchLibDescModule"; } }
 
         public Type ReplaceableInterface
         {
@@ -234,9 +183,9 @@ namespace OpenSim.Region.ClientStack.Linden
             private Dictionary<UUID, Hashtable> responses = new Dictionary<UUID, Hashtable>();
             private HashSet<UUID> dropedResponses = new HashSet<UUID>();
 
-            private WebFetchInvDescModule m_module;
+            private FetchLibDescModule m_module;
 
-            public PollServiceInventoryEventArgs(WebFetchInvDescModule module, string url, UUID pId) :
+            public PollServiceInventoryEventArgs(FetchLibDescModule module, string url, UUID pId) :
                 base(null, url, null, null, null, null, pId, int.MaxValue)
             {
                 m_module = module;
@@ -314,7 +263,7 @@ namespace OpenSim.Region.ClientStack.Linden
                 }
 
                 OSHttpResponse osresponse = new OSHttpResponse(requestinfo.request);
-                m_webFetchHandler.FetchInventoryDescendentsRequest(requestinfo.request, osresponse, m_module.m_badRequests);
+                m_FetchHandler.FetchRequest(requestinfo.request, osresponse, m_module.m_badRequests, requestinfo.thepoll.Id);
                 requestinfo.request.InputStream.Dispose();
 
                 lock (responses)
@@ -339,30 +288,38 @@ namespace OpenSim.Region.ClientStack.Linden
 
         private void RegisterCaps(UUID agentID, Caps caps)
         {
+            RegisterFetchLibDescendentsCap(agentID, caps, "FetchLibDescendents2", m_fetchLibDescendents2Url);
+        }
+
+        private void RegisterFetchLibDescendentsCap(UUID agentID, Caps caps, string capName, string url)
+        {
+            string capUrl;
+
             // handled by the simulator
-            if (m_fetchInventoryDescendents2Url == "localhost")
+            if (url == "localhost")
             {
+                capUrl = "/" + UUID.Random();
+
                 // Register this as a poll service
-                PollServiceInventoryEventArgs args = new PollServiceInventoryEventArgs(this, "/" + UUID.Random(), agentID);
+                PollServiceInventoryEventArgs args = new PollServiceInventoryEventArgs(this, capUrl, agentID);
                 //args.Type = PollServiceEventArgs.EventType.Inventory;
 
-                caps.RegisterPollHandler("FetchInventoryDescendents2", args);
+                caps.RegisterPollHandler(capName, args);
             }
             // external handler
             else
             {
+                capUrl = url;
                 IExternalCapsModule handler = Scene.RequestModuleInterface<IExternalCapsModule>();
                 if (handler != null)
-                    handler.RegisterExternalUserCapsHandler(agentID, caps, "FetchInventoryDescendents2", m_fetchInventoryDescendents2Url);
+                    handler.RegisterExternalUserCapsHandler(agentID, caps, capName, capUrl);
                 else
-                    caps.RegisterHandler("FetchInventoryDescendents2", m_fetchInventoryDescendents2Url);
+                    caps.RegisterHandler(capName, capUrl);
             }
         }
 
         private static void DoInventoryRequests(object o)
         {
-            if(m_NumberScenes <= 0)
-                return;
             APollRequest poolreq = o as APollRequest;
             if (poolreq != null && poolreq.thepoll != null)
                 poolreq.thepoll.Process(poolreq);
