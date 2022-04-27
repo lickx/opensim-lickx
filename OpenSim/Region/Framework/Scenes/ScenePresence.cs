@@ -2707,7 +2707,7 @@ namespace OpenSim.Region.Framework.Scenes
                     //update_movementflag |= (MovementFlags ^ oldflags) != 0;
                     update_movementflag = true;
 
-                    if (m_delayedStop < 0 && (flags & (ACFlags.AGENT_CONTROL_FAST_AT | ACFlags.AGENT_CONTROL_FAST_UP)) == 0)
+                    if (!m_setAlwaysRun && (flags & (ACFlags.AGENT_CONTROL_FAST_AT | ACFlags.AGENT_CONTROL_FAST_UP)) == 0)
                         agent_velocity = AgentControlMidVel;
 
                     if ((MovementFlags & CONTROL_FLAG_NUDGE_MASK) != 0)
@@ -3730,7 +3730,7 @@ namespace OpenSim.Region.Framework.Scenes
             // m_log.DebugFormat(
             //    "[SCENE PRESENCE]: Adding new movement {0} with rotation {1}, thisAddSpeedModifier {2} for {3}",
             //        vec, Rotation, thisAddSpeedModifier, Name);
-            //m_delayedStop = -1;
+            m_delayedStop = -1;
             // rotate from avatar coord space to world
             Quaternion rot = Rotation;
             if (!Flying && !IsNPC)
@@ -3791,8 +3791,8 @@ namespace OpenSim.Region.Framework.Scenes
 
         #region Overridden Methods
 
-       const float ROTATION_TOLERANCE = 0.005f;
-       const float VELOCITY_TOLERANCE = 0.005f;
+       const float ROTATION_TOLERANCE = 0.01f;
+       const float VELOCITY_TOLERANCE = 0.1f;
        const float LOWVELOCITYSQ = 0.1f;
        const float POSITION_LARGETOLERANCE = 5f;
        const float POSITION_SMALLTOLERANCE = 0.05f;
@@ -3825,7 +3825,10 @@ namespace OpenSim.Region.Framework.Scenes
                 if(IsSatOnObject)
                     m_delayedStop = -1;  
                 else if(Util.GetTimeStampMS() > m_delayedStop)
+                {
+                    m_delayedStop = -1;
                     AddNewMovement(Vector3.Zero, 0);
+                }
             }
 
             if (Appearance.AvatarSize.NotEqual(m_lastSize))
@@ -3836,8 +3839,12 @@ namespace OpenSim.Region.Framework.Scenes
             if (!IsSatOnObject)
             {
                 if (State != m_lastState ||
-                    !m_bodyRot.ApproxEquals(m_lastRotation, ROTATION_TOLERANCE) ||
-                    !CollisionPlane.ApproxEquals(m_lastCollisionPlane, POSITION_SMALLTOLERANCE))
+                    Math.Abs(m_bodyRot.X - m_lastRotation.X) > ROTATION_TOLERANCE ||
+                    Math.Abs(m_bodyRot.Y - m_lastRotation.Y) > ROTATION_TOLERANCE ||
+                    Math.Abs(m_bodyRot.Z - m_lastRotation.Z) > ROTATION_TOLERANCE ||
+                    Math.Abs(CollisionPlane.X - m_lastCollisionPlane.X) > POSITION_SMALLTOLERANCE ||
+                    Math.Abs(CollisionPlane.Y - m_lastCollisionPlane.Y) > POSITION_SMALLTOLERANCE ||
+                    Math.Abs(CollisionPlane.W - m_lastCollisionPlane.W) > POSITION_SMALLTOLERANCE)
                 {
                     SendTerseUpdateToAllClients();
                 }
