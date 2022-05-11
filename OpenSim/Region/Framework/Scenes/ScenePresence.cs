@@ -70,16 +70,24 @@ namespace OpenSim.Region.Framework.Scenes
         public ScriptControlled eventControls;
     }
 
+    enum AgentUpdateFlags: byte
+    {
+        None =           0,
+        HideTitle =      0x01,
+        CliAutoPilot =   0x02,
+        MuteCollisions = 0x80
+    }
+
     public delegate void SendCoarseLocationsMethod(UUID scene, ScenePresence presence, List<Vector3> coarseLocations, List<UUID> avatarUUIDs);
 
     public class ScenePresence : EntityBase, IScenePresence, IDisposable
     {
         private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
-        //        ~ScenePresence()
-        //        {
-        //            m_log.DebugFormat("[SCENE PRESENCE]: Destructor called on {0}", Name);
-        //        }
+        //~ScenePresence()
+        //{
+        //    m_log.DebugFormat("[SCENE PRESENCE]: Destructor called on {0}", Name);
+        //}
 
         public bool GotAttachmentsData = false;
         public int EnvironmentVersion = -1;
@@ -134,6 +142,9 @@ namespace OpenSim.Region.Framework.Scenes
                 IsNPC = (m_presenceType == PresenceType.Npc);
             }
         }
+
+        public bool HideTitle;
+        public bool MuteCollisions;
 
         private ScenePresenceStateMachine m_stateMachine;
 
@@ -2635,6 +2646,15 @@ namespace OpenSim.Region.Framework.Scenes
             DrawDistance = agentData.Far;
 
             ACFlags allFlags = (ACFlags)agentData.ControlFlags;
+
+            bool newHideTitle = (agentData.Flags & (byte)AgentUpdateFlags.HideTitle) != 0;
+            if(HideTitle != newHideTitle)
+            {
+                HideTitle = newHideTitle;
+                SendAvatarDataToAllAgents();
+            }
+
+            MuteCollisions = (agentData.Flags & (byte)AgentUpdateFlags.MuteCollisions) != 0;
 
             // FIXME: This does not work as intended because the viewer only sends the lbutton down when the button
             // is first pressed, not whilst it is held down.  If this is required in the future then need to look
