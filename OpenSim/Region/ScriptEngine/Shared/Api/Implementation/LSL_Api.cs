@@ -5152,9 +5152,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 Error("llTextBox", "Message longer than 512 bytes");
             }
-            else
+            else if(m_host.GetOwnerName(out string fname, out string lname))
             {
-                dm.SendTextBoxToUser(av, message, chatChannel, m_host.Name, m_host.UUID, m_host.OwnerID);
+                dm.SendTextBoxToUser(av, message, chatChannel, m_host.Name, m_host.UUID, fname, lname, m_host.OwnerID);
                 ScriptSleep(m_sleepMsOnTextBox);
             }
         }
@@ -8009,6 +8009,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
             }
 
+            if (!m_host.GetOwnerName(out string fname, out string lname))
+                return;
+
             int length = buttons.Length;
             if (length < 1)
             {
@@ -8033,7 +8036,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             string[] buts = new string[length];
             for (int i = 0; i < length; i++)
             {
-                if (buttons.Data[i].ToString().Length == 0)
+                buts[i] = buttons.Data[i].ToString();
+                if (buts[i].Length == 0)
                 {
                     Error("llDialog", "Button label cannot be blank");
                     return;
@@ -8049,7 +8053,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             }
 
             dm.SendDialogToUser(
-                av, m_host.Name, m_host.UUID, m_host.OwnerID,
+                av, m_host.Name, m_host.UUID, m_host.OwnerID, fname, lname,
                 message, new UUID("00000000-0000-2222-3333-100000001000"), chat_channel, buts);
 
             ScriptSleep(m_sleepMsOnDialog);
