@@ -276,7 +276,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
 
         public IntPtr TopSpace; // the global space
         public IntPtr ActiveSpace; // space for active prims
-        public IntPtr CharsSpace; // space for active prims
         public IntPtr StaticSpace; // space for the static things around
 
         public readonly object OdeLock = new object();
@@ -359,7 +358,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                     world = SafeNativeMethods.WorldCreate();
                     TopSpace = SafeNativeMethods.SimpleSpaceCreate(IntPtr.Zero);
                     ActiveSpace = SafeNativeMethods.SimpleSpaceCreate(TopSpace);
-                    CharsSpace = SafeNativeMethods.SimpleSpaceCreate(TopSpace);
                     float sx = m_regionWidth + 16;
                     float sy = m_regionHeight + 16;
                     SafeNativeMethods.Vector3 px = new SafeNativeMethods.Vector3(sx * 0.5f, sy  * 0.5f, 0);
@@ -379,7 +377,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
 
                 // move to high level
                 SafeNativeMethods.SpaceSetSublevel(ActiveSpace, 1);
-                SafeNativeMethods.SpaceSetSublevel(CharsSpace, 1);
                 SafeNativeMethods.SpaceSetSublevel(StaticSpace, 1);
 
                 SafeNativeMethods.GeomSetCategoryBits(ActiveSpace, (uint)(CollisionCategories.Space |
@@ -394,13 +391,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                                                         CollisionCategories.Phantom |
                                                         CollisionCategories.VolumeDtc
                                                         ));
-                SafeNativeMethods.GeomSetCategoryBits(CharsSpace, (uint)(CollisionCategories.Space |
-                                        CollisionCategories.Geom |
-                                        CollisionCategories.Character |
-                                        CollisionCategories.Phantom |
-                                        CollisionCategories.VolumeDtc
-                                        ));
-                SafeNativeMethods.GeomSetCollideBits(CharsSpace, 0);
 
                 SafeNativeMethods.GeomSetCategoryBits(StaticSpace, (uint)(CollisionCategories.Space |
                                                         CollisionCategories.Geom |
@@ -2448,119 +2438,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                 length = length,
                 Normal = direction,
                 Origin = position,
-                Count = Count,
-                filter = flags
-            };
-
-            lock (SyncObject)
-            {
-                m_rayCastManager.QueueRequest(req);
-                if (!Monitor.Wait(SyncObject, 500))
-                    return new List<ContactResult>();
-            }
-
-            if (ourResults == null)
-                return new List<ContactResult>();
-            return ourResults;
-        }
-
-        public override List<ContactResult> BoxProbe(Vector3 position, Vector3 size, Quaternion orientation, int Count, RayFilterFlags flags)
-        {
-            List<ContactResult> ourResults = null;
-            object SyncObject = new object();
-
-            ProbeBoxCallback retMethod = delegate(List<ContactResult> results)
-            {
-                lock (SyncObject)
-                {
-                    ourResults = results;
-                    Monitor.PulseAll(SyncObject);
-                }
-            };
-
-            ODERayRequest req = new ODERayRequest
-            {
-                actor = null,
-                callbackMethod = retMethod,
-                Normal = size,
-                Origin = position,
-                orientation = orientation,
-                Count = Count,
-                filter = flags
-            };
-
-            lock (SyncObject)
-            {
-                m_rayCastManager.QueueRequest(req);
-                if (!Monitor.Wait(SyncObject, 500))
-                    return new List<ContactResult>();
-            }
-
-            if (ourResults == null)
-                return new List<ContactResult>();
-            return ourResults;
-        }
-
-        public override List<ContactResult> SphereProbe(Vector3 position, float radius, int Count, RayFilterFlags flags)
-        {
-            List<ContactResult> ourResults = null;
-            object SyncObject = new object();
-
-            ProbeSphereCallback retMethod = delegate(List<ContactResult> results)
-            {
-                ourResults = results;
-                Monitor.PulseAll(SyncObject);
-            };
-
-            ODERayRequest req = new ODERayRequest
-            {
-                actor = null,
-                callbackMethod = retMethod,
-                length = radius,
-                Origin = position,
-                Count = Count,
-                filter = flags
-            };
-
-            lock (SyncObject)
-            {
-                m_rayCastManager.QueueRequest(req);
-                if (!Monitor.Wait(SyncObject, 500))
-                    return new List<ContactResult>();
-            }
-
-            if (ourResults == null)
-                return new List<ContactResult>();
-            return ourResults;
-        }
-
-        public override List<ContactResult> PlaneProbe(PhysicsActor actor, Vector4 plane, int Count, RayFilterFlags flags)
-        {
-            IntPtr geom = IntPtr.Zero;;
-
-            if (actor != null)
-            {
-                if (actor is OdePrim)
-                    geom = ((OdePrim)actor).m_prim_geom;
-                else if (actor is OdeCharacter)
-                    geom = ((OdePrim)actor).m_prim_geom;
-            }
-
-            List<ContactResult> ourResults = null;
-            object SyncObject = new object();
-
-            ProbePlaneCallback retMethod = delegate(List<ContactResult> results)
-            {
-                ourResults = results;
-                Monitor.PulseAll(SyncObject);
-            };
-
-            ODERayRequest req = new ODERayRequest
-            {
-                actor = null,
-                callbackMethod = retMethod,
-                length = plane.W,
-                Normal = new Vector3(plane.X, plane.Y, plane.Z),
                 Count = Count,
                 filter = flags
             };
