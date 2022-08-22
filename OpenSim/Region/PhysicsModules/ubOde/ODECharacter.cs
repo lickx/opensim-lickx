@@ -171,7 +171,7 @@ namespace OpenSim.Region.PhysicsModule.ubOde
 
         public OdeCharacter(uint localID, String avName, ODEScene parent_scene, Vector3 pos, Vector3 pSize, float pfeetOffset, float density, float walk_divisor, float rundivisor)
         {
-            m_localID = localID;
+            m_baseLocalID = localID;
             m_parent_scene = parent_scene;
 
             m_sceneGravityZ = parent_scene.gravityz;
@@ -284,16 +284,6 @@ namespace OpenSim.Region.PhysicsModule.ubOde
             set
             {
                 m_alwaysRun = value;
-            }
-        }
-
-        private readonly uint m_localID = 0;
-        public override uint LocalID
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                return m_localID;
             }
         }
 
@@ -1069,8 +1059,8 @@ namespace OpenSim.Region.PhysicsModule.ubOde
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal bool Collide(IntPtr me, IntPtr other, bool reverse, ref SafeNativeMethods.ContactGeomClass contact,
-            ref SafeNativeMethods.ContactGeomClass altContact, ref bool useAltcontact, ref bool feetcollision)
+        internal bool Collide(IntPtr me, IntPtr other, bool reverse, ref SafeNativeMethods.ContactGeom contact,
+            ref SafeNativeMethods.ContactGeom altContact, ref bool useAltcontact, ref bool feetcollision)
         {
             feetcollision = false;
             useAltcontact = false;
@@ -2324,9 +2314,10 @@ namespace OpenSim.Region.PhysicsModule.ubOde
             return false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AddChange(changes what, object arg)
         {
-            m_parent_scene.AddChange((PhysicsActor)this, what, arg);
+            m_parent_scene.AddChange(this, what, arg);
         }
 
         private struct strAvatarSize
