@@ -810,6 +810,14 @@
     <Key Name="fileName" Value="d2114404-dd59-4a4d-8e6c-49359e91bbf0.j2c" />
   </Section>
 
+  <!-- Pre-EEP sun -->
+  <Section Name="IMG_SUN">
+    <Key Name="assetID" Value="cce0f112-878f-4586-a2e2-a8f104bba271"/>
+    <Key Name="name" Value="IMG_SUN"/>
+    <Key Name="assetType" Value="0" />
+    <Key Name="fileName" Value="sun.j2c" />
+  </Section>
+
   <Section Name="IMG_SMOKE_POOF">
     <Key Name="assetID" Value="1e63e323-5fe0-452e-92f8-b98bd0f764e3"/>
     <Key Name="name" Value="IMG_SMOKE_POOF"/>
