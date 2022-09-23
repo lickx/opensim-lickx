@@ -746,7 +746,9 @@ namespace OpenSim.Framework.Console
 
         protected void FireOnOutput(string text)
         {
-            OnOutput?.Invoke(text);
+            OnOutputDelegate onOutput = OnOutput;
+            if (onOutput != null)
+                onOutput(text);
         }
 
         /// <summary>

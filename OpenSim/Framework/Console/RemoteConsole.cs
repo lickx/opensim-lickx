@@ -197,10 +197,11 @@ namespace OpenSim.Framework.Console
             string level = null;
             if (components != null && components.Length > 0)
             {
-                ConsoleLevel cl = components[0] as ConsoleLevel;
-                if (cl != null)
+                if (components[0] == null || components[0] is ConsoleLevel)
                 {
-                    level = cl.ToString();
+                    if (components[0] is ConsoleLevel)
+                        level = ((ConsoleLevel)components[0]).ToString();
+
                     if (components.Length > 1)
                     {
                         object[] tmp = new object[components.Length - 1];
@@ -211,7 +212,12 @@ namespace OpenSim.Framework.Console
                         components = null;
                 }
             }
-            string text = (components == null || components.Length == 0) ? format : String.Format(format, components);
+
+            string text;
+            if (components == null || components.Length == 0)
+                text = format;
+            else
+                text = String.Format(format, components);
 
             Output(text, level, false, false, false);
         }
