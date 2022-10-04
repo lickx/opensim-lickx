@@ -52,7 +52,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.Reflection;
-using System.Runtime.Remoting.Lifetime;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -529,19 +528,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 }
             }
             m_sleepMsOnEmail = EMAIL_PAUSE_TIME * 1000;
-        }
-
-        public override Object InitializeLifetimeService()
-        {
-            ILease lease = (ILease)base.InitializeLifetimeService();
-
-            if (lease.CurrentState == LeaseState.Initial)
-            {
-                lease.InitialLeaseTime = TimeSpan.FromMinutes(0);
-//                lease.RenewOnCallTime = TimeSpan.FromSeconds(10.0);
-//                lease.SponsorshipTimeout = TimeSpan.FromMinutes(1.0);
-            }
-            return lease;
         }
 
         protected SceneObjectPart MonitoringObject()
@@ -6003,7 +5989,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public LSL_List llListRandomize(LSL_List src, int stride)
         {
             LSL_List result;
-            BetterRandom rand = new BetterRandom();
+            Random rand = new Random();
 
             int   chunkk;
             int[] chunks;
@@ -7635,7 +7621,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             prules.PartFlags |= 0x02; // Set new angle format.
                             break;
                     }
-
                 }
                 prules.CRC = 1;
 
@@ -12477,7 +12462,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     d = delarray[j];
                     if (d != null)
                     {
-                        int index = src.IndexOf(d, i);
+                        int index = src.IndexOf(d, i, StringComparison.Ordinal);
                         if (index < 0)
                         {
                             delarray[j] = null;     // delim nowhere in src, don't check it anymore
