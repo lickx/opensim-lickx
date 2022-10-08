@@ -150,22 +150,18 @@ namespace OpenSim.Region.CoreModules.Framework.InventoryAccess
         protected void OnCompleteMovementToRegion(IClientAPI client, bool arg2)
         {
             //m_log.DebugFormat("[HG INVENTORY ACCESS MODULE]: OnCompleteMovementToRegion of user {0}", client.Name);
-            object sp = null;
-            if (client.Scene.TryGetScenePresence(client.AgentId, out sp))
+            if (client.SceneAgent is ScenePresence sp)
             {
-                if (sp is ScenePresence)
+                AgentCircuitData aCircuit = sp.Scene.AuthenticateHandler.GetAgentCircuitData(client.AgentId);
+                if (aCircuit != null &&  (aCircuit.teleportFlags & (uint)Constants.TeleportFlags.ViaHGLogin) != 0)
                 {
-                    AgentCircuitData aCircuit = ((ScenePresence)sp).Scene.AuthenticateHandler.GetAgentCircuitData(client.AgentId);
-                    if (aCircuit != null &&  (aCircuit.teleportFlags & (uint)Constants.TeleportFlags.ViaHGLogin) != 0)
+                    if (m_RestrictInventoryAccessAbroad)
                     {
-                        if (m_RestrictInventoryAccessAbroad)
-                        {
-                            IUserManagement uMan = m_Scene.RequestModuleInterface<IUserManagement>();
-                            if (uMan.IsLocalGridUser(client.AgentId))
-                                ProcessInventoryForComingHome(client);
-                            else
-                                ProcessInventoryForArriving(client);
-                        }
+                        IUserManagement uMan = m_Scene.RequestModuleInterface<IUserManagement>();
+                        if (uMan.IsLocalGridUser(client.AgentId))
+                            ProcessInventoryForComingHome(client);
+                        else
+                            ProcessInventoryForArriving(client);
                     }
                 }
             }
