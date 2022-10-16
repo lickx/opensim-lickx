@@ -15304,7 +15304,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 {
                     name = presence.Name;
                 }
-                else if (World.TryGetSceneObjectPart(key, out SceneObjectPart sop ) && sop != null)
+                else if (World.TryGetSceneObjectPart(key, out SceneObjectPart sop ))
                 {
                     name = sop.Name;
                 }
@@ -15359,7 +15359,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 {
                     name = presence.Name;
                 }
-                else if (World.TryGetSceneObjectPart(key, out SceneObjectPart sop) && sop != null)
+                else if (World.TryGetSceneObjectPart(key, out SceneObjectPart sop))
                 {
                     name = sop.Name;
                 }
