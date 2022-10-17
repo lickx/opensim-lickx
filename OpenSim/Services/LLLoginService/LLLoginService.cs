@@ -195,11 +195,9 @@ namespace OpenSim.Services.LLLoginService
             string hgInvServicePlugin = m_LoginServerConfig.GetString("HGInventoryServicePlugin", string.Empty);
             if (!string.IsNullOrWhiteSpace(hgInvServicePlugin))
             {
-                // TODO: Remove HGInventoryServiceConstructorArg after 0.9 release
                 string hgInvServiceArg = m_LoginServerConfig.GetString("HGInventoryServiceConstructorArg", string.Empty);
                 if (!string.IsNullOrWhiteSpace(hgInvServiceArg))
                 {
-                    m_log.Warn("[LLOGIN SERVICE]: You are using HGInventoryServiceConstructorArg, which is deprecated. See example file for correct syntax.");
                     hgInvServicePlugin = hgInvServiceArg + "@" + hgInvServicePlugin;
                 }
                 m_HGInventoryService = ServerUtils.LoadPlugin<IInventoryService>(hgInvServicePlugin, args);
@@ -890,7 +888,7 @@ namespace OpenSim.Services.LLLoginService
                 if(simConnector == null)
                     return null;
 
-                circuitCode = (uint)Util.RandomClass.Next();
+                circuitCode = (uint)Random.Shared.Next();
                 aCircuit = MakeAgent(destination, account, avatar, session, secureSession, circuitCode, position,
                     clientIP.Address.ToString(), viewer, channel, mac, id0);
 
@@ -927,7 +925,7 @@ namespace OpenSim.Services.LLLoginService
                     gatekeeper.HttpPort = (uint)port;
                     gatekeeper.ServerURI = m_GatekeeperURL;
                 }
-                circuitCode = (uint)Util.RandomClass.Next(); ;
+                circuitCode = (uint)Random.Shared.Next();
                 aCircuit = MakeAgent(destination, account, avatar, session, secureSession, circuitCode, position,
                         clientIP.Address.ToString(), viewer, channel, mac, id0);
 
