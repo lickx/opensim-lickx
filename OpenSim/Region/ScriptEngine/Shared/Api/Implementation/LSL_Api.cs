@@ -15263,7 +15263,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         private string Name2Username(string name)
         {
-            string[] parts = name.Split(new char[] {' '});
+            string[] parts = name.Split();
             if (parts.Length < 2)
                 return name.ToLower();
             if (parts[1].Equals("Resident"))
