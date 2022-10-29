@@ -1446,7 +1446,7 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                     //waitForSpaceUnlock(currentspace);
                     SafeNativeMethods.SpaceRemove(currentspace, geom);
 
-                    if (SafeNativeMethods.SpaceGetSublevel(currentspace) > 2 && SafeNativeMethods.SpaceGetNumGeoms(currentspace) == 0)
+                    if (SafeNativeMethods.SpaceGetSublevel(currentspace) == 0 && SafeNativeMethods.SpaceGetNumGeoms(currentspace) == 0)
                     {
                         SafeNativeMethods.SpaceDestroy(currentspace);
                     }
@@ -1467,7 +1467,7 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                         //waitForSpaceUnlock(currentspace);
                         SafeNativeMethods.SpaceRemove(currentspace, geom);
 
-                        if (SafeNativeMethods.SpaceGetSublevel(currentspace) > 2 && SafeNativeMethods.SpaceGetNumGeoms(currentspace) == 0)
+                        if (SafeNativeMethods.SpaceGetSublevel(currentspace) == 0 && SafeNativeMethods.SpaceGetNumGeoms(currentspace) == 0)
                         {
                             SafeNativeMethods.SpaceDestroy(currentspace);
                         }
@@ -2354,7 +2354,7 @@ namespace OpenSim.Region.PhysicsModule.ubOde
             lock (SyncObject)
             {
                 m_rayCastManager.QueueRequest(req);
-                if (!Monitor.Wait(SyncObject, 10000))
+                if (!Monitor.Wait(SyncObject, 500))
                     return null;
                 else
                     return ourresults;
