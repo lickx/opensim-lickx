@@ -271,8 +271,8 @@
     ; script opensim-ode-sh starts opensim setting that limit. You may need to increase it even more on large regions
     ; edit the line ulimit -s 262144, and change this last value
 
-    ;# {DefaultScriptEngine} {} {Default script engine} {XEngine} XEngine
-    ;; Default script engine to use (Xengine if all commented)
+    ;# {DefaultScriptEngine} {} {Default script engine} {XEngine YEngine} YEngine
+    ;; Default script engine to use (Yengine if all commented)
     ; DefaultScriptEngine = "XEngine"
 
     ;; new alternative engine

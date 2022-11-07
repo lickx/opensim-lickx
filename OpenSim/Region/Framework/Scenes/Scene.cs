@@ -986,7 +986,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_persistAfter = startupConfig.GetLong("MaximumTimeBeforePersistenceConsidered", DEFAULT_MAX_TIME_FOR_PERSISTENCE);
                 m_persistAfter *= 10000000;
 
-                m_defaultScriptEngine = startupConfig.GetString("DefaultScriptEngine", "XEngine");
+                m_defaultScriptEngine = startupConfig.GetString("DefaultScriptEngine", "YEngine");
                 m_log.InfoFormat("[SCENE]: Default script engine {0}", m_defaultScriptEngine);
 
                 m_strictAccessControl = startupConfig.GetBoolean("StrictAccessControl", m_strictAccessControl);
