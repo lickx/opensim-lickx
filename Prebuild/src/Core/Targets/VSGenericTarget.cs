@@ -516,7 +516,7 @@ namespace Prebuild.Core.Targets
 
                     ps.WriteLine("  </ItemGroup>");
 
-                    ps.WriteLine("  <Target Name=\"CopyFiles\">");
+                    ps.WriteLine("  <Target Name=\"CopyFiles\" AfterTargets=\"AfterBuild\">");
 
                     foreach (string destPath in project.Files.Destinations)
                     {
@@ -720,14 +720,23 @@ namespace Prebuild.Core.Targets
                             ps.WriteLine("    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>");
                         ps.WriteLine("    <ConfigurationOverrideFile>");
                         ps.WriteLine("    </ConfigurationOverrideFile>");
-                        ps.WriteLine("    <DefineConstants>{0}</DefineConstants>",
-                            conf.Options["CompilerDefines"].ToString() == "" ? this.kernel.ForcedConditionals : conf.Options["CompilerDefines"] + ";" + kernel.ForcedConditionals);
+                        if (string.IsNullOrEmpty(conf.Options["CompilerDefines"].ToString()))
+                        {
+                            ps.WriteLine("    <DefineConstants>{0}</DefineConstants>", kernel.ForcedConditionals);
+                        }
+                        else
+                        {
+                            if (string.IsNullOrEmpty(kernel.ForcedConditionals))
+                                ps.WriteLine("    <DefineConstants>{0}</DefineConstants>", conf.Options["CompilerDefines"]);
+                            else
+                                ps.WriteLine("    <DefineConstants>{0}</DefineConstants>", conf.Options["CompilerDefines"] + ";" + kernel.ForcedConditionals);
+                        }
                         ps.WriteLine("    <DocumentationFile>{0}</DocumentationFile>", Helper.NormalizePath(conf.Options["XmlDocFile"].ToString()));
                         ps.WriteLine("    <DebugSymbols>{0}</DebugSymbols>", conf.Options["DebugInformation"]);
                         ps.WriteLine("    <FileAlignment>{0}</FileAlignment>", conf.Options["FileAlignment"]);
                         ps.WriteLine("    <Optimize>{0}</Optimize>", conf.Options["OptimizeCode"]);
-                        ps.WriteLine("    <TieredCompilation>false</TieredCompilation>");
-
+                        //ps.WriteLine("    <TieredCompilation>false</TieredCompilation>");
+                        ps.WriteLine("    <TieredCompilationQuickJit>false</TieredCompilationQuickJit>");
                         ps.WriteLine("    <UseCommonOutputDirectory>{0}</UseCommonOutputDirectory>", conf.Options["UseCommonOutputDirectory"].ToString());
                         ps.WriteLine("    <AppendTargetFrameworkToOutputPath>{0}</AppendTargetFrameworkToOutputPath>", conf.Options["AppendTargetFrameworkToOutputPath"].ToString());
                         ps.WriteLine("    <AppendRuntimeIdentifierToOutputPath>{0}</AppendRuntimeIdentifierToOutputPath>", conf.Options["AppendRuntimeIdentifierToOutputPath"].ToString());
