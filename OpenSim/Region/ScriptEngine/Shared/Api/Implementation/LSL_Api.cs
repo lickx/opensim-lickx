@@ -5758,7 +5758,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 if (item is LSL_Integer)
                     return (LSL_Integer)item;
                 else if (item is LSL_Float)
-                    return Convert.ToInt32(((LSL_Float)item).value);;
+                    return Convert.ToInt32(((LSL_Float)item).value);
                 return new LSL_Integer(item.ToString());
             }
             catch (FormatException)
@@ -17903,7 +17903,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             sb.Append(",");
                     }
                     sb.Append("]");
-                    return (LSL_String)sb.ToString();;
+                    return (LSL_String)sb.ToString();
                 }
                 else if (type == ScriptBaseClass.JSON_OBJECT)
                 {
