@@ -302,9 +302,8 @@ namespace OpenSim.Region.Framework.Scenes
             Vector3 npos = sceneObject.RootPart.GroupPosition;
             bool clampZ = m_parentScene.ClampNegativeZ;
 
-            if (!(((sceneObject.RootPart.Shape.PCode == (byte)PCode.Prim) && (sceneObject.RootPart.Shape.State != 0))) && (npos.X < 0.0 || npos.Y < 0.0 || (npos.Z < 0.0 && clampZ) ||
-                npos.X > regionSizeX ||
-                npos.Y > regionSizeY))
+            if (!((sceneObject.RootPart.Shape.PCode == (byte)PCode.Prim) && (sceneObject.RootPart.Shape.State != 0)) && (npos.X < 0.0 || npos.Y < 0.0 || (npos.Z < 0.0 && clampZ) ||
+                npos.X > regionSizeX || npos.Y > regionSizeY))
             {
                 if (npos.X < 0.0) npos.X = 1.0f;
                 if (npos.Y < 0.0) npos.Y = 1.0f;
@@ -952,7 +951,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="agentID"></param>
         /// <returns>null if the presence was not found</returns>
-        protected internal ScenePresence GetScenePresence(in UUID agentID)
+        protected internal ScenePresence GetScenePresence(UUID agentID)
         {
             bool entered = false;
             try
@@ -984,7 +983,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// <param name="firstName"></param>
         /// <param name="lastName"></param>
         /// <returns>null if the presence was not found</returns>
-        protected internal ScenePresence GetScenePresence(in string firstName, in string lastName)
+        protected internal ScenePresence GetScenePresence(string firstName, string lastName)
         {
             List<ScenePresence> presences = GetScenePresences();
             foreach (ScenePresence presence in CollectionsMarshal.AsSpan(presences))
@@ -1023,7 +1022,7 @@ namespace OpenSim.Region.Framework.Scenes
             return null;
         }
 
-        protected internal bool TryGetScenePresence(in UUID agentID, out ScenePresence avatar)
+        protected internal bool TryGetScenePresence(UUID agentID, out ScenePresence avatar)
         {
             bool entered = false;
             try
@@ -1048,7 +1047,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-        protected internal bool TryGetAvatarByName(in string name, out ScenePresence avatar)
+        protected internal bool TryGetAvatarByName(string name, out ScenePresence avatar)
         {
             List<ScenePresence> presences = GetScenePresences();
             foreach (ScenePresence presence in CollectionsMarshal.AsSpan(presences))
@@ -1095,7 +1094,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="fullID"></param>
         /// <returns>null if no scene object group containing that prim is found</returns>
-        public SceneObjectGroup GetGroupByPrim(in UUID fullID)
+        public SceneObjectGroup GetGroupByPrim(UUID fullID)
         {
             bool entered = false;
             try
@@ -1162,7 +1161,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="fullID">UUID of the group</param>
         /// <returns>null if no such group was found</returns>
-        protected internal SceneObjectGroup GetSceneObjectGroup(in UUID fullID)
+        protected internal SceneObjectGroup GetSceneObjectGroup(UUID fullID)
         {
             if (Entities.TryGetValue(fullID, out EntityBase entity) && (entity is SceneObjectGroup sog))
                 return sog;
@@ -1186,7 +1185,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="name"></param>
         /// <returns>null if the part was not found</returns>
-        protected internal SceneObjectGroup GetSceneObjectGroup(in string name)
+        protected internal SceneObjectGroup GetSceneObjectGroup(string name)
         {
             foreach(EntityBase entity in Entities.GetEntities().AsSpan())
             {
@@ -1231,7 +1230,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="fullID"></param>
         /// <returns>null if the part was not found</returns>
-        protected internal SceneObjectPart GetSceneObjectPart(in UUID fullID)
+        protected internal SceneObjectPart GetSceneObjectPart(UUID fullID)
         {
             bool entered = false;
             try
@@ -1257,7 +1256,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-        protected internal bool TryGetSceneObjectPart(in UUID fullID, out SceneObjectPart sop)
+        protected internal bool TryGetSceneObjectPart(UUID fullID, out SceneObjectPart sop)
         {
             bool entered = false;
             try
@@ -1292,7 +1291,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// </summary>
         /// <param name="name"></param>
         /// <returns>null if the part was not found</returns>
-        protected internal SceneObjectPart GetSceneObjectPart(in string name)
+        protected internal SceneObjectPart GetSceneObjectPart(string name)
         {
             SceneObjectPart[] parts = GetPartsArray();
             foreach (SceneObjectPart sop in parts)

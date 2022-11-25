@@ -7,6 +7,7 @@ using Mono.Addins;
 using OpenSim.Framework;
 using OpenSim.Region.Framework.Scenes;
 using OpenSim.Region.Framework.Interfaces;
+using OpenMetaverse;
 
 namespace OpenSim.Region.PhysicsModule.ubOde
 {
@@ -55,12 +56,11 @@ namespace OpenSim.Region.PhysicsModule.ubOde
                         //throw new Exception("Invalid physics meshing option");
                     }
 
-                    if (Util.IsWindows())
-                        Util.LoadArchSpecificWindowsDll("ubode.dll");
+                    DllmapConfigHelper.RegisterAssembly(typeof(ubOdeModule).Assembly);
 
-                    SafeNativeMethods.InitODE();
+                    UBOdeNative.InitODE();
 
-                    string ode_config = SafeNativeMethods.GetConfiguration();
+                    string ode_config = UBOdeNative.GetConfiguration();
                     if (string.IsNullOrEmpty(ode_config))
                     {
                         m_log.Error("[ubODE] Native ode library version not supported");

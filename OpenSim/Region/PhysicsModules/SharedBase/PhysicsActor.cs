@@ -164,6 +164,9 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
         }
     }
 
+
+
+
     public abstract class PhysicsActor
     {
         //private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -190,6 +193,7 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
         public event OutOfBounds OnOutOfBounds;
 #pragma warning restore 67
 
+
         public CameraData TryGetCameraData()
         {
             GetCameraData handler = OnPhysicsRequestingCameraData;
@@ -209,7 +213,6 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
             cdata.bounce = 0;
         }
 
-        public AABB2D _AABB2D;
 
         public abstract bool Stopped { get; }
 
@@ -412,7 +415,7 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
         public abstract bool IsColliding { get; set; }
         public abstract bool CollidingGround { get; set; }
         public abstract bool CollidingObj { get; set; }
-        public abstract bool FloatOnWater { set; }
+        public virtual bool FloatOnWater { set { return; } }
         public abstract Vector3 RotationalVelocity { get; set; }
         public abstract bool Kinematic { get; set; }
         public abstract float Buoyancy { get; set; }
@@ -448,11 +451,13 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
 
         public virtual PhysicsInertiaData GetInertiaData()
         {
-            PhysicsInertiaData data = new PhysicsInertiaData();
-            data.TotalMass = this.Mass;
-            data.CenterOfMass = CenterOfMass - Position;
-            data.Inertia = Vector3.Zero;
-            data.InertiaRotation = Vector4.Zero;
+            PhysicsInertiaData data = new()
+            {
+                TotalMass = Mass,
+                CenterOfMass = CenterOfMass - Position,
+                Inertia = Vector3.Zero,
+                InertiaRotation = Vector4.Zero
+            };
             return data;
         }
 
@@ -514,11 +519,6 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
         public override float Buoyancy
         {
             get { return 0f; }
-            set { return; }
-        }
-
-        public override bool  FloatOnWater
-        {
             set { return; }
         }
 
@@ -630,16 +630,11 @@ namespace OpenSim.Region.PhysicsModules.SharedBase
             get { return (int)m_actorType; }
             set {
                 ActorTypes type = (ActorTypes)value;
-                switch (type)
+                m_actorType = type switch
                 {
-                    case ActorTypes.Ground:
-                    case ActorTypes.Water:
-                        m_actorType = type;
-                        break;
-                    default:
-                        m_actorType = ActorTypes.Unknown;
-                        break;
-                }
+                    ActorTypes.Ground or ActorTypes.Water => type,
+                    _ => ActorTypes.Unknown,
+                };
             }
         }
 

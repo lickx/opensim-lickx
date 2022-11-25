@@ -49,7 +49,7 @@ namespace OpenSim.Framework
             // Next we need to rotate this vector into the spawn point's
             // coordinate system
             rot.W = -rot.W;
-            offset = offset * rot;
+            offset *= rot;
 
             Vector3 dir = Vector3.Normalize(offset);
 
@@ -92,10 +92,12 @@ namespace OpenSim.Framework
             if (parts.Length != 3)
                 throw new ArgumentException("Invalid string: " + str);
 
-            SpawnPoint sp = new SpawnPoint();
-            sp.Yaw = float.Parse(parts[0]);
-            sp.Pitch = float.Parse(parts[1]);
-            sp.Distance = float.Parse(parts[2]);
+            SpawnPoint sp = new()
+            {
+                Yaw = float.Parse(parts[0]),
+                Pitch = float.Parse(parts[1]),
+                Distance = float.Parse(parts[2])
+            };
             return sp;
         }
     }
@@ -109,15 +111,14 @@ namespace OpenSim.Framework
         /// <value>
         /// These appear to be terrain textures that are shipped with the client.
         /// </value>
-        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_1 = new UUID("0bc58228-74a0-7e83-89bc-5c23464bcec5");
-        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_2 = new UUID("63338ede-0037-c4fd-855b-015d77112fc8");
-        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_3 = new UUID("303cd381-8560-7579-23f1-f0a880799740");
-        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_4 = new UUID("53a2f406-4895-1d13-d541-d2e3b86bc19c");
+        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_1 = new("0bc58228-74a0-7e83-89bc-5c23464bcec5");
+        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_2 = new("63338ede-0037-c4fd-855b-015d77112fc8");
+        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_3 = new("303cd381-8560-7579-23f1-f0a880799740");
+        public static readonly UUID DEFAULT_TERRAIN_TEXTURE_4 = new("53a2f406-4895-1d13-d541-d2e3b86bc19c");
 
         public void Save()
         {
-            if (OnSave != null)
-                OnSave(this);
+            OnSave?.Invoke(this);
         }
 
         private UUID m_RegionUUID = UUID.Zero;
@@ -287,56 +288,56 @@ namespace OpenSim.Framework
         public double Elevation2NW
         {
             get { return m_Elevation2NW; }
-            set { m_Elevation2NW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation2NW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation1NE = 10;
         public double Elevation1NE
         {
             get { return m_Elevation1NE; }
-            set { m_Elevation1NE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation1NE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation2NE = 60;
         public double Elevation2NE
         {
             get { return m_Elevation2NE; }
-            set { m_Elevation2NE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation2NE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation1SE = 10;
         public double Elevation1SE
         {
             get { return m_Elevation1SE; }
-            set { m_Elevation1SE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation1SE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation2SE = 60;
         public double Elevation2SE
         {
             get { return m_Elevation2SE; }
-            set { m_Elevation2SE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation2SE = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation1SW = 10;
         public double Elevation1SW
         {
             get { return m_Elevation1SW; }
-            set { m_Elevation1SW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation1SW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_Elevation2SW = 60;
         public double Elevation2SW
         {
             get { return m_Elevation2SW; }
-            set { m_Elevation2SW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap); ; }
+            set { m_Elevation2SW = Utils.Clamp(value, Constants.MinTerrainHeightmap, Constants.MaxTerrainHeightmap);}
         }
 
         private double m_WaterHeight = 20;
         public double WaterHeight
         {
             get { return m_WaterHeight; }
-            set { m_WaterHeight = Utils.Clamp(value, Constants.MinWaterHeight, Constants.MaxWaterHeight); }
+            set { m_WaterHeight = Utils.Clamp(value, Constants.MinWaterHeight, Constants.MaxWaterHeight);}
         }
 
         private double m_TerrainRaiseLimit = 100;
@@ -426,7 +427,7 @@ namespace OpenSim.Framework
         {
             get
             {
-                TimeSpan ts = new TimeSpan(0, 0, LoadedCreationDateTime);
+                TimeSpan ts = new(0, 0, LoadedCreationDateTime);
                 DateTime stamp = new DateTime(1970, 1, 1) + ts;
                 return stamp.ToLongDateString();
             }
@@ -436,7 +437,7 @@ namespace OpenSim.Framework
         {
             get
             {
-                TimeSpan ts = new TimeSpan(0, 0, LoadedCreationDateTime);
+                TimeSpan ts = new(0, 0, LoadedCreationDateTime);
                 DateTime stamp = new DateTime(1970, 1, 1) + ts;
                 return stamp.ToLongTimeString();
             }
@@ -479,7 +480,7 @@ namespace OpenSim.Framework
         /// <summary>
         /// Our connected Telehub's SpawnPoints
         /// </summary>
-        public List<SpawnPoint> l_SpawnPoints = new List<SpawnPoint>();
+        public List<SpawnPoint> l_SpawnPoints = new();
 
         // Add a SpawnPoint
         // ** These are not region coordinates **

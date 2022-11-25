@@ -172,6 +172,20 @@ namespace OpenSim.Framework
         private static readonly string regexInvalidPathChars = $"[{new String(Path.GetInvalidPathChars())}]";
         private static readonly object XferLock = new();
 
+        public static readonly char[] SplitCommaArray = new char[] { ',' };
+        public static readonly char[] SplitDotArray = new char[] { '.' };
+        public static readonly char[] SplitColonArray = new char[] { ':' };
+        public static readonly char[] SplitSemicolonArray = new char[] { ';' };
+        public static readonly char[] SplitSlashArray = new char[] { '/' };
+
+        public static readonly XmlReaderSettings SharedXmlReaderSettings = new()
+        {
+            IgnoreWhitespace = true,
+            ConformanceLevel = ConformanceLevel.Fragment,
+            DtdProcessing = DtdProcessing.Ignore,
+            MaxCharactersInDocument = 10_000_000
+        };
+
         /// <summary>
         /// Thread pool used for Util.FireAndForget if FireAndForgetMethod.SmartThreadPool is used
         /// </summary>
@@ -207,38 +221,16 @@ namespace OpenSim.Framework
             return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
         }
 
-        // next should be replaced using .net5 system numerics bitoperations log2
-        // this is just log2 + 1
-        private static readonly byte[] nBitsLookup =
-         {
-            01, 10, 02, 11, 14, 22, 03, 30, 12, 15, 17, 19, 23, 26, 04, 31,
-            09, 13, 21, 29, 16, 18, 25, 08, 20, 28, 24, 07, 27, 06, 05, 32
-        };
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int NumberBits(uint n)
         {
-            n |= (n >> 1);
-            n |= (n >> 2);
-            n |= (n >> 4);
-            n |= (n >> 8);
-            n |= (n >> 16);
-            return nBitsLookup[(n * 0x07C4ACDDu) >> 27];
+            return System.Numerics.BitOperations.Log2(n) + 1;
         }
 
-        private static readonly byte[] intLog2Lookup =
-         {
-            00, 09, 01, 10, 13, 21, 02, 29, 11, 14, 16, 18, 22, 25, 03, 30,
-            08, 12, 20, 28, 15, 17, 24, 07, 19, 27, 23, 06, 26, 05, 04, 31
-        };
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int intLog2(uint n)
         {
-            n |= (n >> 1);
-            n |= (n >> 2);
-            n |= (n >> 4);
-            n |= (n >> 8);
-            n |= (n >> 16);
-            return intLog2Lookup[(n * 0x07C4ACDDu) >> 27];
+            return System.Numerics.BitOperations.Log2(n);
         }
 
         /// <summary>
@@ -565,7 +557,7 @@ namespace OpenSim.Framework
                 string host;
                 int port = 80;
 
-                string[] parts = inputName.Split(new char[] { ':' });
+                string[] parts = inputName.Split(Util.SplitColonArray);
                 int indx;
                 if (parts.Length == 0)
                     return false;
@@ -621,7 +613,7 @@ namespace OpenSim.Framework
                 //          http://grid.example.com "region name"
                 //          http://grid.example.com
 
-                string[] parts = inputName.Split(new char[] { ' ' });
+                string[] parts = inputName.Split();
 
                 if (parts.Length == 0)
                     return false;
@@ -1105,7 +1097,7 @@ namespace OpenSim.Framework
 
             m_log.Debug($"[UTIL]: Loading native Windows library at {nativeLibraryPath}");
 
-            if (Util.LoadLibrary(nativeLibraryPath) == IntPtr.Zero)
+            if (!NativeLibrary.TryLoad(nativeLibraryPath, out _))
             {
                 m_log.Error($"[UTIL]: Couldn't find native Windows library at {nativeLibraryPath}");
                 return false;
@@ -1224,31 +1216,58 @@ namespace OpenSim.Framework
             return (char)(b > 9 ? b + 0x37 : b + '0');
         }
 
-        public static string bytesToHexString(byte[] bytes, bool lowerCaps)
+        public static unsafe string bytesToHexString(byte[] bytes, bool lowerCaps)
         {
             if (bytes == null || bytes.Length == 0)
                 return string.Empty;
 
-            char[] chars = new char[2 * bytes.Length];
-            if (lowerCaps)
+            return string.Create(2 * bytes.Length, bytes, (chars, bytes) =>
             {
-                for (int i = 0, j = 0; i < bytes.Length; ++i)
+                fixed (char* dstb = chars)
+                fixed (byte* srcb = bytes)
                 {
-                    byte b = bytes[i];
-                    chars[j++] = HighNibbleToHexByteCharLowcaps(b);
-                    chars[j++] = LowNibbleToHexByteCharLowcaps(b);
+                    char* dst = dstb;
+                    if (lowerCaps)
+                    {
+                        for (int i = 0; i < bytes.Length; ++i)
+                        {
+                            byte b = srcb[i];
+                            *dst++ = HighNibbleToHexByteCharLowcaps(b);
+                            *dst++ = LowNibbleToHexByteCharLowcaps(b);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < bytes.Length; ++i)
+                        {
+                            byte b = srcb[i];
+                            *dst++ = HighNibbleToHexByteCharLowcaps(b);
+                            *dst++ = LowNibbleToHexByteCharLowcaps(b);
+                        }
+                    }
                 }
-            }
-            else
+            });
+        }
+
+        public static unsafe string bytesToLowcaseHexString(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+                return string.Empty;
+
+            return string.Create(2 * bytes.Length, bytes, (chars, bytes) =>
             {
-                for (int i = 0, j = 0; i < bytes.Length; ++i)
+                fixed (char* dstb = chars)
+                fixed (byte* srcb = bytes)
                 {
-                    byte b = bytes[i];
-                    chars[j++] = HighNibbleToHexByteCharHighcaps(b);
-                    chars[j++] = LowNibbleToHexByteCharHighcaps(b);
+                    char* dst = dstb;
+                    for (int i = 0; i < bytes.Length; ++i)
+                    {
+                        byte b = srcb[i];
+                        *dst++ = HighNibbleToHexByteCharLowcaps(b);
+                        *dst++ = LowNibbleToHexByteCharLowcaps(b);
+                    }
                 }
-            }
-            return new string(chars);
+            });
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1849,7 +1868,7 @@ namespace OpenSim.Framework
         /// <returns></returns>
         public static T GetConfigVarFromSections<T>(IConfigSource config, string varname, string[] sections, object val)
         {
-            foreach (string section in sections)
+            foreach (string section in sections.AsSpan())
             {
                 IConfig cnf = config.Configs[section];
                 if (cnf == null)
@@ -1864,9 +1883,8 @@ namespace OpenSim.Framework
                 else if (typeof(T) == typeof(float))
                     val = cnf.GetFloat(varname, (float)val);
                 else
-                    m_log.Error($"[UTIL]: Unhandled type {typeof(T)}");
+                    m_log.ErrorFormat("[UTIL]: Unhandled type {0}", typeof(T));
             }
-
             return (T)val;
         }
 
@@ -2276,15 +2294,17 @@ namespace OpenSim.Framework
             //return os;
         }
 
-        public static string GetRuntimeInformation()
-        {
-            return RuntimeInformation.ProcessArchitecture.ToString() + "/" + Environment.OSVersion.Platform switch
+         public static readonly string RuntimeInformationStr = RuntimeInformation.ProcessArchitecture.ToString() + "/" + Environment.OSVersion.Platform switch
             {
-                PlatformID.MacOSX => "OSX/DotNet",
-                PlatformID.Unix => "Unix/DotNet",
-                _ => "Win/DotNet",
+                PlatformID.MacOSX or PlatformID.Unix => RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "OSX/DotNet" : "Unix/DotNet",
+                _ => "Win/DotNet"
             };
-        }
+
+        public static readonly string RuntimePlatformStr = Environment.OSVersion.Platform switch
+            {
+                PlatformID.MacOSX or PlatformID.Unix => RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "OSX/DotNet" : "Unix/DotNet",
+                _ => "Win/DotNet"
+            };
 
         /// <summary>
         /// Is the given string a UUID?
@@ -2440,7 +2460,7 @@ namespace OpenSim.Framework
                 else
                 {
                     // uh?
-                    m_log.Debug($"[UTILS]: Got OSD of unexpected type {buffer.Type.ToString()}");
+                    m_log.Debug($"[UTILS]: Got OSD of unexpected type {buffer.Type}");
                     return null;
                 }
             }
@@ -2548,7 +2568,7 @@ namespace OpenSim.Framework
 
             try
             {
-                port1 = uri.Split(new char[] { ':' })[2];
+                port1 = uri.Split(Util.SplitColonArray)[2];
             }
             catch { }
 
@@ -3494,7 +3514,7 @@ namespace OpenSim.Framework
             if (xff.Length == 0)
                 return null;
 
-            string[] parts = xff.Split(new char[] { ',' });
+            string[] parts = xff.Split(Util.SplitCommaArray);
             if (parts.Length > 0)
             {
                 try
@@ -3605,7 +3625,7 @@ namespace OpenSim.Framework
             if (value.Contains(' ') && !value.Contains(','))
                 value = value.Replace(" ", ", ");
 
-            return (T)Enum.Parse(typeof(T), value); ;
+            return (T)Enum.Parse(typeof(T), value);
         }
         #endregion
 
@@ -4186,7 +4206,7 @@ namespace OpenSim.Framework
             // in the agent circuit data for foreigners
             if (lastName.Contains('@'))
             {
-                string[] parts = firstName.Split(new char[] { '.' });
+                string[] parts = firstName.Split(Util.SplitDotArray);
                 if (parts.Length == 2)
                     return CalcUniversalIdentifier(id, agentsURI, parts[0].Trim() + " " + parts[1].Trim());
             }

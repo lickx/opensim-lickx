@@ -876,7 +876,7 @@ namespace OpenSim.Region.Framework.Scenes
 
             PhysicsEnabled = !RegionInfo.RegionSettings.DisablePhysics;
 
-            m_simulatorVersion = simulatorVersion + " (" + Util.GetRuntimeInformation() + ")";
+            m_simulatorVersion = simulatorVersion + " (" + Util.RuntimeInformationStr + ")";
 
             #region Region Config
 
@@ -986,7 +986,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_persistAfter = startupConfig.GetLong("MaximumTimeBeforePersistenceConsidered", DEFAULT_MAX_TIME_FOR_PERSISTENCE);
                 m_persistAfter *= 10000000;
 
-                m_defaultScriptEngine = startupConfig.GetString("DefaultScriptEngine", "XEngine");
+                m_defaultScriptEngine = startupConfig.GetString("DefaultScriptEngine", "YEngine");
                 m_log.InfoFormat("[SCENE]: Default script engine {0}", m_defaultScriptEngine);
 
                 m_strictAccessControl = startupConfig.GetBoolean("StrictAccessControl", m_strictAccessControl);
@@ -2580,7 +2580,7 @@ namespace OpenSim.Region.Framework.Scenes
                 sceneObject.RootPart.CreatorIdentification = UserManagementModule.GetUserUUI(ownerID);
 
 
-            sceneObject.InvalidateDeepEffectivePerms();;
+            sceneObject.InvalidateDeepEffectivePerms();
             sceneObject.ScheduleGroupForFullAnimUpdate();
 
             return sceneObject;
@@ -5340,7 +5340,7 @@ Label_GroupsDone:
         /// <param name="fullID"></param>
         /// <param name="sop"></param>
         /// <returns></returns>
-        public bool TryGetSceneObjectPart(in UUID fullID, out SceneObjectPart sop)
+        public bool TryGetSceneObjectPart(UUID fullID, out SceneObjectPart sop)
         {
             return m_sceneGraph.TryGetSceneObjectPart(fullID, out sop);
         }
