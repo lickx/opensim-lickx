@@ -4168,42 +4168,16 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if ((m_item.PermsMask & ScriptBaseClass.PERMISSION_TRIGGER_ANIMATION) != 0)
             {
                 ScenePresence presence = World.GetScenePresence(m_item.PermsGranter);
-                UUID animID;
 
-                if (presence == null)
-                    return;
-
-                if (anim == "sit")
+                if (presence != null)
                 {
-                    // special case, first lookup in AnimationOverrides
-                    foreach (KeyValuePair<string, string> kvp in MovementAnimationsForLSL)
-                    {
-                        if (kvp.Value.ToLower() == ("sitting"))
-                        {
-                            state = kvp.Key;
-                            break;
-                        }
-                    }
+                    UUID animID = ScriptUtils.GetAssetIdFromKeyOrItemName(m_host, anim);
 
-                    if (state.Length > 0)
-                    {
-                        // stop AnimationOverride sit
-                        if (presence.TryGetAnimationOverride(state, out UUID animID) || animID.IsZero())
-                        {
-                            presence.Animator.RemoveAnimation(animID, true);
-                            return;
-                        }
-                    }
+                    if (animID.IsZero())
+                        presence.Animator.RemoveAnimation(anim);
+                    else
+                        presence.Animator.RemoveAnimation(animID, true);
                 }
-                
-                // fall through, usual handling
-                animID = ScriptUtils.GetAssetIdFromKeyOrItemName(m_host, anim);
-
-                if (animID.IsZero())
-                    presence.Animator.RemoveAnimation(anim);
-                else
-                    presence.Animator.RemoveAnimation(animID, true);
- 
             }
         }
 
