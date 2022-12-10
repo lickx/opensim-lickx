@@ -440,6 +440,16 @@
 	;; if you don't trust grid admins, what are you doing there?
     allow_grid_gods = true
 
+    ;; This allows some control over permissions
+    ;; please note that this still doesn't duplicate SL, and is not intended to
+    ;# {region_owner_is_god} {} {Allow region owner gods} {true false} false
+    ;; Allow region owners to assume god powers in their regions
+    ; region_owner_is_god = false
+
+    ;# {region_manager_is_god} {} {Allow region manager gods} {true false} false
+    ;; Allow region managers to assume god powers in regions they manage
+    ; region_manager_is_god = false
+
     ;# {simple_build_permissions} {} {Allow building in parcel by access list (no groups)} {true false} false
     ;; More control over permissions
     ;; This is definitely not SL!
