@@ -4146,7 +4146,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 ScenePresence presence = World.GetScenePresence(m_item.PermsGranter);
 
-                if (presence != null)
+                if (presence is not null)
                 {
                     // Do NOT try to parse UUID, animations cannot be triggered by ID
                     UUID animID = ScriptUtils.GetAssetIdFromItemName(m_host, anim, (int)AssetType.Animation);
@@ -4168,16 +4168,13 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 ScenePresence presence = World.GetScenePresence(m_item.PermsGranter);
 
-                if (presence != null)
+                if (presence is not null)
                 {
                     UUID animID = ScriptUtils.GetAssetIdFromKeyOrItemName(m_host, anim);
                     if (animID.IsNotZero())
                         presence.Animator.RemoveAnimation(animID, true);
-                    else if (MovementAnimationsForLSL.TryGetValue(anim.ToUpper(), out string lslMovementAnimation))
-                    {
-                        if (presence.TryGetAnimationOverride(anim.ToUpper(), out UUID sitanimID))
-                            presence.Animator.RemoveAnimation(sitanimID, true);
-                    }
+                    else if (presence.TryGetAnimationOverride(anim.ToUpper(), out UUID sitanimID))
+                        presence.Animator.RemoveAnimation(sitanimID, true);
                     else
                         presence.Animator.RemoveAnimation(anim);
                 }
@@ -4190,7 +4187,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             UUID animID = ScriptUtils.GetAssetIdFromItemName(m_host, anim, (int)AssetType.Animation);
             if (animID.IsZero())
                 animID = DefaultAvatarAnimations.GetDefaultAnimation(anim);
-            if (!animID.IsZero())
+            if (animID.IsNotZero())
                 m_host.AddAnimation(animID, anim);
         }
 
@@ -4201,9 +4198,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public LSL_List llGetObjectAnimationNames()
         {
-            LSL_List ret = new LSL_List();
+            LSL_List ret = new();
 
-            if(m_host.AnimationsNames == null || m_host.AnimationsNames.Count == 0)
+            if(m_host.AnimationsNames is null || m_host.AnimationsNames.Count == 0)
                 return ret;
 
             foreach (string name in m_host.AnimationsNames.Values)
@@ -4245,7 +4242,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(agent, out UUID agentID) || agentID.IsZero())
                 return;
 
-            if (agentID == UUID.Zero || perm == 0) // Releasing permissions
+            if (agentID.IsZero() || perm == 0) // Releasing permissions
             {
                 llReleaseControls();
 
@@ -4255,7 +4252,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 m_ScriptEngine.PostScriptEvent(m_item.ItemID, new EventParams(
                         "run_time_permissions", new Object[] {
                         new LSL_Integer(0) },
-                        new DetectParams[0]));
+                        Array.Empty<DetectParams>()));
 
                 return;
             }
