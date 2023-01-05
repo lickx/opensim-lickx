@@ -4844,7 +4844,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     if (account == null)
                     {
                         GridUserInfo info = World.GridUserService.GetGridUserInfo(destId.ToString());
-                        if(info == null || info.Online == false)
+                        if(info == null)
                         {
                             Error("llGiveInventory", "Can't find destination '" + destId.ToString() + "'");
                             return;
