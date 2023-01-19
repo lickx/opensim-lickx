@@ -706,6 +706,18 @@ namespace OpenSim.Groups
 
             m_groupData.SetAgentActiveGroup(GetRequestingAgentIDStr(remoteClient), GetRequestingAgentIDStr(remoteClient), groupID);
 
+            ScenePresence sp = ((Scene)(remoteClient.Scene)).GetScenePresence(remoteClient.AgentId);
+            List<SceneObjectGroup> attachments = sp.GetAttachments();
+
+            foreach(SceneObjectGroup so in attachments)
+            {
+                //m_log.DebugFormat("[GROUPS MODULE]: Setting new group and checking scripts in attachment {0} for {1}", so.Name, so.OwnerID);
+                so.SetGroup(groupID, remoteClient);
+                so.RootPart.ParentGroup.CreateScriptInstances(
+                    0, false, sp.Scene.DefaultScriptEngine, sp.GetStateSource());
+                so.ResumeScripts();
+            }
+
             // Changing active group changes title, active powers, all kinds of things
             // anyone who is in any region that can see this client, should probably be
             // updated with new group info.  At a minimum, they should get ScenePresence
