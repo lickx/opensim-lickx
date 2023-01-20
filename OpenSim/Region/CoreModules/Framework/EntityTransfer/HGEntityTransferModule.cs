@@ -896,6 +896,9 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     return;
                                 }
 
+                                IClientAPI remoteClient = sp.ControllingClient;
+                                UUID groupID = remoteClient.ActiveGroupId;
+
                                 foreach(SceneObjectGroup so in attachments)
                                 {
                                     if (!m_scene.AddSceneObject(so))
@@ -907,6 +910,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     }
                                     m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachment {0} for HG root agent {1}",
     so.Name, so.OwnerID);
+                                    so.SetGroup(groupID, remoteClient);
                                     so.RootPart.ParentGroup.CreateScriptInstances(
                                         0, false, Scene.DefaultScriptEngine, GetStateSource(so));
                                     so.aggregateScriptEvents();
