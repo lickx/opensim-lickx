@@ -466,16 +466,16 @@
     ;; If set to true, then all permissions checks are carried out
     ; serverside_object_permissions = true
 
-	; if next 2 are false, several admin powers are only active if god powers requested on viewer
-	; this reduces mistakes
-	; set both to true to enable previous behaviour
+    ; if next 2 are false, several admin powers are only active if god powers requested on viewer
+    ; this reduces mistakes
+    ; set both to true to enable previous behaviour
     automatic_gods = false
     implicit_gods = false
-	
-	;# {allow_grid_gods} {} {Allow grid gods?} {true false} false
+    
+    ;# {allow_grid_gods} {} {Allow grid gods?} {true false} false
     ;; This allows users with a UserLevel of 200 or more to assume god
     ;; powers in the regions in this simulator.
-	;; if you don't trust grid admins, what are you doing there?
+    ;; if you don't trust grid admins, what are you doing there?
     allow_grid_gods = true
 
     ;; This allows some control over permissions
@@ -497,12 +497,6 @@
     ;; Owners specific avatars by adding them to the Access List of the parcel
     ;; without having to use the Groups feature
     ; simple_build_permissions = false
-
-    ; Hardens permissions regarding putting objects (and contents) for sale and 'take copy'
-    ; - Allow "take copy" only if the item was created by the item's current owner
-    ; - Allow selling only if the item was created by the item's current owner
-    ; - Keep allowing selling ANY no-copy items (gacha's etc)
-    ;harden_permissions = false
 
     ; Disallow "take copy" of ANY object set as "Allow anyone to take a copy"
     ;take_copy_restricted = false
@@ -567,7 +561,7 @@
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} true
     ;; Enable sending email to the world.
     ; enableEmailToSMTP = true
-	
+    
     ;# {internal_object_host} {[Startup]emailmodule:DefaultEmailModule enabled:true} {Host name to treat as internal (object to object) email?} {} lsl.opensim.local
     ; internal_object_host = lsl.opensim.local
 
