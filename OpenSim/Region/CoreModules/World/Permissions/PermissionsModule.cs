@@ -94,7 +94,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
         private bool m_forceGridAdminsOnly;
         private bool m_forceAdminModeAlwaysOn;
         private bool m_allowAdminActionsWithoutGodMode;
-        private bool m_hardenPermissions = false;
         private bool m_takeCopyRestricted = false;
 
         /// <value>
@@ -189,7 +188,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             else
                 m_log.Debug("[PERMISSIONS]: Enabling all region service permission checks");
 
-            m_hardenPermissions = Util.GetConfigVarFromSections<bool>(config, "harden_permissions", sections, false);
             m_takeCopyRestricted = Util.GetConfigVarFromSections<bool>(config, "take_copy_restricted", sections, false);
 
             string grant = Util.GetConfigVarFromSections<string>(config, "GrantLSL",
@@ -1914,30 +1912,8 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                     (sogEffectiveOwnerPerms & (uint)PermissionMask.Copy) == 0)
                 return false;
 
-            UUID sogOwnerID = sog.OwnerID;
-            UUID sogCreatorID = sog.RootPart.CreatorID;
-            if (sogOwnerID.Equals(userID))
-            {
-                if (m_hardenPermissions) {
-                    // Can't sell copyable object that the owner didn't create
-                    if (sogOwnerID.NotEqual(sogCreatorID) && saleType == (byte)SaleType.Copy)
-                        return false;
-
-                    if (saleType == (byte)SaleType.Contents)
-                    {
-                        List<UUID> invList = sog.RootPart.Inventory.GetInventoryList();
-
-                        foreach (UUID invID in invList)
-                        {
-                            TaskInventoryItem item1 = sog.RootPart.Inventory.GetInventoryItem(invID);
-                            // Can't sell copyable contents that the owner didn't create
-                            if (item1.OwnerID.NotEqual(item1.CreatorID) && (item1.CurrentPermissions & (uint)PermissionMask.Copy) != 0)
-                                return false;
-                        }
-                    }
-                }
+            if(sog.OwnerID.Equals(userID))
                 return true;
-            }
 
             // else only group owned can be sold by members with powers
             if(sog.GroupID.IsZero() || sog.OwnerID.NotEqual(sog.GroupID))
@@ -1969,32 +1945,8 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                     (sogEffectiveOwnerPerms & (uint)PermissionMask.Copy) == 0)
                 return false;
 
-            UUID userID = sp.UUID;
-            UUID sogOwnerID = sog.OwnerID;
-            UUID sogCreatorID = sog.RootPart.CreatorID;
-
-            if(sogOwnerID.Equals(userID))
-            {
-                if (m_hardenPermissions)
-                {
-                    // Can't sell copyable object that you did not create
-                    if (sogCreatorID.NotEqual(userID) && saleType == (byte)SaleType.Copy)
-                        return false;
-
-                    if (saleType == (byte)SaleType.Contents)
-                    {
-                        List<UUID> invList = sog.RootPart.Inventory.GetInventoryList();
-                        foreach (UUID invID in invList)
-                        {
-                            TaskInventoryItem item1 = sog.RootPart.Inventory.GetInventoryItem(invID);
-                            // Can't sell copyable contents that you did not create
-                            if (item1.OwnerID.NotEqual(item1.CreatorID) && (item1.CurrentPermissions & (uint)PermissionMask.Copy) != 0)
-                                return false;
-                        }
-                    }
-                }
+            if(sog.OwnerID.Equals(sp.UUID))
                 return true;
-            }
 
             // else only group owned can be sold by members with powers
             if(sog.GroupID.IsZero() || sog.OwnerID.NotEqual(sog.GroupID))
@@ -2077,31 +2029,10 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             {
                 if (m_takeCopyRestricted)
                 {
-                    sp.ControllingClient.SendAgentAlertMessage("'Take copy' is disabled in this sim", false);
+                    //sp.ControllingClient.SendAgentAlertMessage("'Take copy' is disabled in this sim", false);
                     return false;
                 }
-
-                if (m_hardenPermissions)
-                {
-                    if (sog.OwnerID.NotEqual(sog.RootPart.CreatorID))
-                    {
-                        sp.ControllingClient.SendAgentAlertMessage("Can't take a copy of an object that the owner did not create", false);
-                        return false;
-                    }
-
-                    List<UUID> invList = sog.RootPart.Inventory.GetInventoryList();
-                    foreach (UUID invID in invList)
-                    {
-                        TaskInventoryItem item1 = sog.RootPart.Inventory.GetInventoryItem(invID);
-                        if (item1.OwnerID.NotEqual(item1.CreatorID))
-                        {
-                            sp.ControllingClient.SendAgentAlertMessage("Can't take a copy of an object containing items that the owner did not create", false);
-                            return false;
-                        }
-                    }
-                }
             }
-
             return true;
         }
 
@@ -2459,17 +2390,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             if((destsog.EffectiveOwnerPerms & (uint)PermissionMask.Move) == 0)
                 return false;
 
-            if (m_hardenPermissions)
-            {
-                if (destsog.RootPart.ObjectSaleType > 0 && destsog.RootPart.OwnerID.NotEqual(item.CreatorIdAsUuid) && (item.CurrentPermissions & (uint)PermissionMask.Copy) != 0)
-                {
-                    sp.ControllingClient.SendAgentAlertMessage("Can't sell copyable items that you did not create", false);
-                    return false;
-                }
-            }
-
-            UUID destOwner = destsog.OwnerID;
-            UUID spID = sp.UUID;
             bool spNotOwner = sp.UUID.NotEqual(destsog.OwnerID);
 
             // scripts can't be dropped
