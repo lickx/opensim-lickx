@@ -2392,7 +2392,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
             bool spNotOwner = sp.UUID.NotEqual(destsog.OwnerID);
 
-            // scripts can't be droped
+            // scripts can't be dropped
             if(spNotOwner && item.InvType == (int)InventoryType.LSL)
                 return false;
 
