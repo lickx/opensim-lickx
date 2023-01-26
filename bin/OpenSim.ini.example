@@ -101,7 +101,7 @@
     ;# {ConsoleHistoryTimeStamp} {} {Time stamp commands in history file} {} false
     ;; Time stamp commands in history file (default false)
     ; ConsoleHistoryTimeStamp = false
-    
+
     ;# {save_crashes} {} {Save crashes to disk?} {true false} false
     ;; Set this to true if you want to log crashes to disk
     ;; this can be useful when submitting bug reports.
@@ -266,7 +266,7 @@
     ;# {DefaultScriptEngine} {} {Default script engine} {YEngine}
     ;; Default script engine to use. Currently, we only have YEngine
     ; DefaultScriptEngine = "YEngine"
-    
+
     ;# {HttpProxy} {} {Proxy URL for llHTTPRequest and dynamic texture loading} {} http://proxy.com:8080
     ;; Http proxy setting for llHTTPRequest and dynamic texture loading, if
     ;; required
@@ -364,7 +364,7 @@
     ; NoVerifyCertHostname = true
     ;; having both options true does provide encryption but with low security
     ;; set both true if you don't care to use SSL, they are needed to contact regions or grids that do use it.
-    
+
 [AccessControl]
     ;# {AllowedClients} {} {Bar (|) separated list of allowed clients} {}
     ;; Bar (|) separated list of viewers which may gain access to the regions.
@@ -471,7 +471,7 @@
     ; set both to true to enable previous behaviour
     automatic_gods = false
     implicit_gods = false
-    
+
     ;# {allow_grid_gods} {} {Allow grid gods?} {true false} false
     ;; This allows users with a UserLevel of 200 or more to assume god
     ;; powers in the regions in this simulator.
@@ -561,7 +561,7 @@
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} true
     ;; Enable sending email to the world.
     ; enableEmailToSMTP = true
-    
+
     ;# {internal_object_host} {[Startup]emailmodule:DefaultEmailModule enabled:true} {Host name to treat as internal (object to object) email?} {} lsl.opensim.local
     ; internal_object_host = lsl.opensim.local
 
@@ -625,15 +625,15 @@
     ; to use others like self signed certificates with those viewers,
     ; their debug option NoVerifySSLCert needs to be set true, You need to inform users about this
     ; the main unsecure port will still open for some services. this may change in future.
-    
+
     ; set http_listener_ssl to enable main server ssl. it will replace unsecure port on most functions
     ;# {http_listener_ssl}{} {enable main server ssl port} {} false
     ;http_listener_ssl = false
-    
+
     ; Set port for main SSL connections
     ;# {http_listener_sslport}{} {main server ssl port} {} 9001
     ;http_listener_sslport = 9001 ;
-    
+
     ; currently if using ssl, regions ExternalHostName must the the same and equal to http_listener_cn
     ; this may be removed in future
     ;# {http_listener_cn}{} {main server ssl externalHostName} {} ""
@@ -687,8 +687,8 @@
     ;# {ExternalHostNameForLSL} {} {Hostname to use for HTTP-IN URLs. This should be reachable from the internet.} {}
     ;; Hostname to use in llRequestURL/llRequestSecureURL
     ;; if not defined - llRequestURL/llRequestSecureURL are disabled
-	;; this should be reachable from internet and point this machine
-	;; for standalones it can be
+    ;; this should be reachable from internet and point this machine
+    ;; for standalones it can be
     ExternalHostNameForLSL = ${Const|BaseHostname}
 
     ;# {shard} {} {Name to use for X-Secondlife-Shard header? (press enter if unsure)} {} OpenSim
@@ -1141,7 +1141,7 @@
 
 [InterestManagement]
      ;; This section controls how state updates are prioritized for each client
-     
+
      ;# {UpdatePrioritizationScheme} {} {Update prioritization scheme?} {BestAvatarResponsiveness SimpleAngularDistance} BestAvatarResponsiveness
      ;; Valid values are BestAvatarResponsiveness and SimpleAngularDistance
      ;; SimpleAngularDistance does use more cpu
