@@ -643,6 +643,8 @@
     ;# {ExternalHostNameForLSL} {} {Hostname to use for HTTP-IN URLs. This should be reachable from the internet.} {}
     ;; Hostname to use in llRequestURL/llRequestSecureURL
     ;; if not defined - llRequestURL/llRequestSecureURL are disabled
+	;; this should be reachable from internet and point this machine
+	;; for standalones it can be
     ExternalHostNameForLSL = ${Const|BaseHostname}
 
     ;# {shard} {} {Name to use for X-Secondlife-Shard header? (press enter if unsure)} {} OpenSim
