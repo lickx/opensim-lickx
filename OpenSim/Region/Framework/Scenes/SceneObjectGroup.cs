@@ -3100,21 +3100,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// <returns>null if no child part with that linknum or child part</returns>
         public SceneObjectPart GetLinkNumPart(int linknum)
         {
-            if (linknum < 2)
-            {
-                // unlike SL 0 or 1 will mean root
-                // one reason is that we do not consider siting avatars on root linknumber
-                return linknum < 0 ? null : RootPart;
-            }
-
-            Span<SceneObjectPart> parts = m_parts.GetArray().AsSpan();
-            if (linknum <= parts.Length)
-            {
-                SceneObjectPart sop = parts[linknum - 1];
-                if (sop.LinkNum == linknum)
-                    return sop;
-            }
-
+            SceneObjectPart[] parts = m_parts.GetArray();
             for (int i = 0; i < parts.Length; i++)
             {
                 if (parts[i].LinkNum == linknum)
