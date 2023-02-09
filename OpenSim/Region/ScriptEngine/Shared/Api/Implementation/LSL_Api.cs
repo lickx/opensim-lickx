@@ -1500,31 +1500,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public LSL_Float llGround(LSL_Vector offset)
         {
-            Vector3 pos = m_host.GetWorldPosition() + (Vector3)offset;
+            Vector3 pos = m_host.GetWorldPosition();
+            pos.X += (float)offset.x;
+            pos.Y += (float)offset.y;
 
-            //Get the slope normal.  This gives us the equation of the plane tangent to the slope.
-            LSL_Vector vsn = llGroundNormal(offset);
-
-            // Clamp to valid position
-            if (pos.X < 0)
-                pos.X = 0;
-            else if (pos.X >= World.Heightmap.Width)
-                pos.X = World.Heightmap.Width - 1;
-            if (pos.Y < 0)
-                pos.Y = 0;
-            else if (pos.Y >= World.Heightmap.Height)
-                pos.Y = World.Heightmap.Height - 1;
-
-            //Get the height for the integer coordinates from the Heightmap
-            float baseheight = (float)World.Heightmap[(int)pos.X, (int)pos.Y];
-
-            //Calculate the difference between the actual coordinates and the integer coordinates
-            float xdiff = pos.X - (float)((int)pos.X);
-            float ydiff = pos.Y - (float)((int)pos.Y);
-
-            //Use the equation of the tangent plane to adjust the height to account for slope
-
-            return (((vsn.x * xdiff) + (vsn.y * ydiff)) / (-1 * vsn.z)) + baseheight;
+            return World.GetGroundHeight(pos.X, pos.Y);
         }
 
         public LSL_Float llCloud(LSL_Vector offset)
@@ -6642,6 +6622,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void llSetSoundRadius(double radius)
         {
             m_host.SoundRadius = radius;
+        }
+
+        public void llLinkSetSoundRadius(int linknumber, double radius)
+        {
+            foreach (SceneObjectPart sop in GetLinkParts(linknumber))
+                sop.SoundRadius = radius;
         }
 
         public LSL_String llKey2Name(LSL_Key id)
@@ -16796,19 +16782,26 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             // This does nothing for LSO scripts in SL
         }
 
+        public void llSetSoundQueueing(int queue)
+        {
+            if (m_SoundModule is not null)
+                m_SoundModule.SetSoundQueueing(m_host.UUID, queue == ScriptBaseClass.TRUE.value);
+        }
+
+        public void llLinkSetSoundQueueing(int linknumber, int queue)
+        {
+            if (m_SoundModule is not null)
+            {
+                foreach (SceneObjectPart sop in GetLinkParts(linknumber))
+                    m_SoundModule.SetSoundQueueing(sop.UUID, queue == ScriptBaseClass.TRUE.value);
+            }
+        }
+
         #region Not Implemented
         //
         // Listing the unimplemented lsl functions here, please move
         // them from this region as they are completed
         //
-
-        public void llSetSoundQueueing(int queue)
-        {
-
-            if (m_SoundModule != null)
-                m_SoundModule.SetSoundQueueing(m_host.UUID, queue == ScriptBaseClass.TRUE.value);
-        }
-
         public void llCollisionSprite(LSL_String impact_sprite)
         {
             // Viewer 2.0 broke this and it's likely LL has no intention
