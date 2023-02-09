@@ -802,41 +802,41 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             switch (linkType)
             {
-            case ScriptBaseClass.LINK_SET:
-                return new List<SceneObjectPart>(part.ParentGroup.Parts);
+                case ScriptBaseClass.LINK_SET:
+                    return new List<SceneObjectPart>(part.ParentGroup.Parts);
 
-            case ScriptBaseClass.LINK_ROOT:
-                ret.Add(part.ParentGroup.RootPart);
-                return ret;
-
-            case ScriptBaseClass.LINK_ALL_OTHERS:
-                ret = new List<SceneObjectPart>(part.ParentGroup.Parts);
-
-                if (ret.Contains(part))
-                    ret.Remove(part);
-
-                return ret;
-
-            case ScriptBaseClass.LINK_ALL_CHILDREN:
-                ret = new List<SceneObjectPart>(part.ParentGroup.Parts);
-
-                if (ret.Contains(part.ParentGroup.RootPart))
-                    ret.Remove(part.ParentGroup.RootPart);
-                return ret;
-
-            case ScriptBaseClass.LINK_THIS:
-                ret.Add(part);
-                return ret;
-
-            default:
-                if (linkType < 0)
+                case ScriptBaseClass.LINK_ROOT:
+                    ret.Add(part.ParentGroup.RootPart);
                     return ret;
 
-                SceneObjectPart target = part.ParentGroup.GetLinkNumPart(linkType);
-                if (target == null)
+                case ScriptBaseClass.LINK_ALL_OTHERS:
+                    ret = new List<SceneObjectPart>(part.ParentGroup.Parts);
+
+                    if (ret.Contains(part))
+                        ret.Remove(part);
+
                     return ret;
-                ret.Add(target);
-                return ret;
+
+                case ScriptBaseClass.LINK_ALL_CHILDREN:
+                    ret = new List<SceneObjectPart>(part.ParentGroup.Parts);
+
+                    if (ret.Contains(part.ParentGroup.RootPart))
+                        ret.Remove(part.ParentGroup.RootPart);
+                    return ret;
+
+                case ScriptBaseClass.LINK_THIS:
+                    ret.Add(part);
+                    return ret;
+
+                default:
+                    if (linkType < 0)
+                        return ret;
+
+                    SceneObjectPart target = part.ParentGroup.GetLinkNumPart(linkType);
+                    if (target == null)
+                        return ret;
+                    ret.Add(target);
+                    return ret;
             }
         }
 
@@ -3160,6 +3160,34 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             m_SoundModule.SendSound(m_host.UUID, soundID, volume, false, 0, false, false);
         }
 
+        public void llLinkPlaySound(LSL_Integer linknumber, string sound, double volume)
+        {
+            if (m_SoundModule == null)
+                return;
+            if (m_host.ParentGroup == null || m_host.ParentGroup.IsDeleted)
+                return;
+
+            SceneObjectPart sop;
+            if (linknumber == ScriptBaseClass.LINK_THIS)
+                sop = m_host;               
+            else if (linknumber < 0)
+                return;
+            else if (linknumber < 2)
+                sop = m_host.ParentGroup.RootPart;
+            else 
+                sop = m_host.ParentGroup.GetLinkNumPart(linknumber);
+
+            if(sop == null)
+                return;
+
+            UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(m_host, sound, AssetType.Sound);
+            if (soundID.IsZero())
+                return;
+
+            // send the sound, once, to all clients in range           
+            m_SoundModule.SendSound(sop.UUID, soundID, volume, false, 0, false, false);
+        }
+
         public void llLoopSound(string sound, double volume)
         {
 
@@ -3232,6 +3260,15 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             if (m_SoundModule != null)
                 m_SoundModule.StopSound(m_host.UUID);
+        }
+
+        public void llLinkStopSound(LSL_Integer linknumber)
+        {
+            if (m_SoundModule != null)
+            {
+                foreach(SceneObjectPart sop in GetLinkParts(linknumber))
+                    m_SoundModule.StopSound(sop.UUID);
+            }
         }
 
         public void llPreloadSound(string sound)
@@ -6710,9 +6747,25 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             ScriptSleep(m_sleepMsOnAdjustSoundVolume);
         }
 
+        public void llLinkAdjustSoundVolume(LSL_Integer linknumber, LSL_Float volume)
+        {
+            List<SceneObjectPart> parts = GetLinkParts(linknumber);
+            foreach (SceneObjectPart part in parts)
+            {
+                part.AdjustSoundGain(volume);
+            }
+            ScriptSleep(m_sleepMsOnAdjustSoundVolume);
+        }
+
         public void llSetSoundRadius(double radius)
         {
             m_host.SoundRadius = radius;
+        }
+
+        public void llLinkSetSoundRadius(int linknumber, double radius)
+        {
+            foreach (SceneObjectPart sop in GetLinkParts(linknumber))
+                sop.SoundRadius = radius;
         }
 
         public LSL_String llKey2Name(LSL_Key id)
@@ -16955,19 +17008,26 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             // This does nothing for LSO scripts in SL
         }
 
+        public void llSetSoundQueueing(int queue)
+        {
+            if (m_SoundModule != null)
+                m_SoundModule.SetSoundQueueing(m_host.UUID, queue == ScriptBaseClass.TRUE.value);
+        }
+
+        public void llLinkSetSoundQueueing(int linknumber, int queue)
+        {
+            if (m_SoundModule != null)
+            {
+                foreach (SceneObjectPart sop in GetLinkParts(linknumber))
+                    m_SoundModule.SetSoundQueueing(sop.UUID, queue == ScriptBaseClass.TRUE.value);
+            }
+        }
+
         #region Not Implemented
         //
         // Listing the unimplemented lsl functions here, please move
         // them from this region as they are completed
         //
-
-        public void llSetSoundQueueing(int queue)
-        {
-
-            if (m_SoundModule != null)
-                m_SoundModule.SetSoundQueueing(m_host.UUID, queue == ScriptBaseClass.TRUE.value);
-        }
-
         public void llCollisionSprite(LSL_String impact_sprite)
         {
             // Viewer 2.0 broke this and it's likely LL has no intention
