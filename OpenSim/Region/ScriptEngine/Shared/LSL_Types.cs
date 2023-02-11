@@ -390,6 +390,8 @@ namespace OpenSim.Region.ScriptEngine.Shared
                     v1.z * scale + v2.z * invscale
                 );
             }
+
+            public static readonly Vector3 Zero = new Vector3(0, 0, 0);
             #endregion
         }
 
@@ -662,6 +664,8 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 c.s = a.s * b.s - a.x * b.x - a.y * b.y - a.z * b.z;
                 return c;
             }
+
+            public static readonly Quaternion Identity = new (0, 0, 0, 1);
         }
 
         [Serializable]
@@ -1891,6 +1895,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
             }
 
             #endregion
+            public static readonly key NullKey = new("00000000-0000-0000-0000-000000000000");
         }
 
         [Serializable]
@@ -2055,7 +2060,9 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
 
             #endregion
-            public static readonly LSLString Empty = new (string.Empty);
+            public static readonly LSLString Empty = new(string.Empty);
+            public static readonly LSLString NullKey = new("00000000-0000-0000-0000-000000000000");
+
         }
 
         [Serializable]
