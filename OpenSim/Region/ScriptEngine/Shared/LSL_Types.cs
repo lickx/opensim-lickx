@@ -2544,6 +2544,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
         public struct LSLInteger
         {
             public int value;
+            private static readonly Regex castRegex = new(@"(^[ ]*0[xX][0-9A-Fa-f][0-9A-Fa-f]*)|(^[ ]*(-?|\+?)[0-9][0-9]*)");
 
             #region Constructors
             public LSLInteger(int i)
@@ -2561,94 +2562,35 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 value = (int)d;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public LSLInteger(string s) : this(MemoryExtensions.AsSpan(s)) { }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public LSLInteger(LSLString s) : this(MemoryExtensions.AsSpan(s.m_string)) { }
-            public LSLInteger(ReadOnlySpan<char> s)
+            public LSLInteger(string s)
             {
-                value = 0;
-                if (s.Length == 0)
-                    return;
+                Match m = castRegex.Match(s);
+                string v = m.Groups[0].Value;
+                // Leading plus sign is allowed, but ignored
+                v = v.Replace("+", "");
 
-                int indx = 0;
-                char c;
-                bool neg = false;
-                int rc;
-                try
-                {
-                    do
-                    {
-                        c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                        if (c != ' ')
-                            break;
-                    }
-                    while (++indx < s.Length);
-
-                    if (c == '0')
-                    {
-                        if (++indx >= s.Length)
-                            return;
-                        c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                        if (c == 'x' || c == 'X')
-                        {
-                            uint uvalue = 0;
-                            while (++indx < s.Length)
-                            {
-                                c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                                rc = Utils.HexNibbleWithChk(c);
-                                if (rc < 0)
-                                    break;
-                                checked
-                                {
-                                    uvalue *= 16;
-                                    uvalue += (uint)rc;
-                                }
-                            }
-                            value = (int)uvalue;
-                            return;
-                        }
-                    }
-                    else if (c == '+')
-                    {
-                        if (++indx >= s.Length)
-                            return;
-                        c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                    }
-                    else if (c == '-')
-                    {
-                        if (++indx >= s.Length)
-                            return;
-
-                        neg = true;
-                        c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                    }
-
-                    while (c >= '0' && c <= '9')
-                    {
-                        rc = c - '0';
-                        checked
-                        {
-                            value *= 10;
-                            value += rc;
-                        }
-                        if(++indx >= s.Length)
-                            break;
-                        c = Unsafe.Add(ref MemoryMarshal.GetReference(s), indx);
-                    }
-
-                    if(neg)
-                        value = -value;
-                    return;
-                }
-                catch (OverflowException)
-                {
-                    value = -1;
-                }
-                catch
+                if (v.Length == 0)
                 {
                     value = 0;
+                }
+                else
+                {
+                    try
+                    {
+                        v = v.TrimStart();
+                        if (v.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                            value = int.Parse(v.Substring(2), NumberStyles.HexNumber);
+                        else
+                            value = int.Parse(v, NumberStyles.Integer);
+                    }
+                    catch (OverflowException)
+                    {
+                        value = -1;
+                    }
+                    catch
+                    {
+                        value = 0;
+                    }
                 }
             }
             #endregion
