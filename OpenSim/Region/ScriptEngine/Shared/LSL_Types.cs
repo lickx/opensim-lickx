@@ -2157,6 +2157,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
         public struct LSLInteger
         {
             public int value;
+            private static readonly Regex castRegex = new(@"(^[ ]*0[xX][0-9A-Fa-f][0-9A-Fa-f]*)|(^[ ]*(-?|\+?)[0-9][0-9]*)");
 
             #region Constructors
             public LSLInteger(int i)
@@ -2174,14 +2175,14 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 value = (int)d;
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public LSLInteger(string s) : this(MemoryExtensions.AsSpan(s)) { }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public LSLInteger(LSLString s) : this(MemoryExtensions.AsSpan(s.m_string)) { }
-            public LSLInteger(ReadOnlySpan<char> s)
+            public LSLInteger(string s)
             {
-                if (s.Length == 0)
+                Match m = castRegex.Match(s);
+                string v = m.Groups[0].Value;
+                // Leading plus sign is allowed, but ignored
+                v = v.Replace("+", "");
+
+                if (v.Length == 0)
                 {
                     value = 0;
                 }
@@ -2189,11 +2190,11 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 {
                     try
                     {
-                        s = s.TrimStart();
-                        if (s.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-                            value = int.Parse(s[2..], NumberStyles.HexNumber);
+                        v = v.TrimStart();
+                        if (v.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                            value = int.Parse(v.Substring(2), NumberStyles.HexNumber);
                         else
-                            value = int.Parse(s,NumberStyles.Integer);
+                            value = int.Parse(v, NumberStyles.Integer);
                     }
                     catch (OverflowException)
                     {
