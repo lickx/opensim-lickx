@@ -58,7 +58,7 @@ namespace OpenMetaverse
         /// <summary>UDP socket, used in either client or server mode</summary>
         private Socket m_udpSocket;
 
-        public static Object m_udpBuffersPoolLock = new Object();
+        public static Object m_udpBuffersPoolLock = new();
         public static UDPPacketBuffer[] m_udpBuffersPool = new UDPPacketBuffer[1000];
         public static int m_udpBuffersPoolPtr = -1;
 
@@ -322,64 +322,63 @@ namespace OpenMetaverse
 
         private void AsyncBeginReceive()
         {
-            if (!IsRunningInbound)
-                return;
-
-            UDPPacketBuffer buf = GetNewUDPBuffer(new IPEndPoint(IPAddress.Any, 0)); // we need a fresh one here, for now at least
-            try
+            while (IsRunningInbound)
             {
-                // kick off an async read
-                m_udpSocket.BeginReceiveFrom(
-                    buf.Data,
-                    0,
-                    buf.Data.Length,
-                    SocketFlags.None,
-                    ref buf.RemoteEndPoint,
-                    AsyncEndReceive,
-                    buf);
-            }
-            catch (SocketException e)
-            {
-                if (e.SocketErrorCode == SocketError.ConnectionReset)
+                UDPPacketBuffer buf = GetNewUDPBuffer(new IPEndPoint(IPAddress.Any, 0)); // we need a fresh one here, for now at least
+                try
                 {
-                    m_log.Warn("[UDPBASE]: SIO_UDP_CONNRESET was ignored, attempting to salvage the UDP listener on port " + m_udpPort);
-                    bool salvaged = false;
-                    while (!salvaged)
-                    {
-                        try
-                        {
-                            m_udpSocket.BeginReceiveFrom(
-                                buf.Data,
-                                0,
-                                buf.Data.Length,
-                                SocketFlags.None,
-                                ref buf.RemoteEndPoint,
-                                AsyncEndReceive,
-                                buf);
-                            salvaged = true;
-                        }
-                        catch (SocketException) { }
-                        catch (ObjectDisposedException) { return; }
-                    }
+                    // kick off an async read
+                    IAsyncResult iar = m_udpSocket.BeginReceiveFrom(
+                        buf.Data,
+                        0,
+                        buf.Data.Length,
+                        SocketFlags.None,
+                        ref buf.RemoteEndPoint,
+                        AsyncEndReceive,
+                        buf);
 
-                    m_log.Warn("[UDPBASE]: Salvaged the UDP listener on port " + m_udpPort);
+                    if (!iar.CompletedSynchronously)
+                        return;
                 }
-            }
-            catch (Exception e)
-            {
-                m_log.Error(
-                    string.Format("[UDPBASE]: Error processing UDP begin receive {0}.  Exception  ", UdpReceives), e);
+                catch (SocketException e)
+                {
+                    if (e.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        m_log.Warn("[UDPBASE]: SIO_UDP_CONNRESET was ignored, attempting to salvage the UDP listener on port " + m_udpPort);
+                        {
+                            try
+                            {
+                                IAsyncResult iar = m_udpSocket.BeginReceiveFrom(
+                                    buf.Data,
+                                    0,
+                                    buf.Data.Length,
+                                    SocketFlags.None,
+                                    ref buf.RemoteEndPoint,
+                                    AsyncEndReceive,
+                                    buf);
+
+                                if (!iar.CompletedSynchronously)
+                                    return;
+                            }
+                            catch (SocketException) { }
+                            catch (ObjectDisposedException) { return; }
+                        }
+                        m_log.Warn("[UDPBASE]: Salvaged the UDP listener on port " + m_udpPort);
+                    }
+                }
+                catch (Exception e)
+                {
+                    m_log.Error(
+                        string.Format("[UDPBASE]: Error processing UDP begin receive {0}.  Exception  ", UdpReceives), e);
+                }
             }
         }
 
         private void AsyncEndReceive(IAsyncResult iar)
         {
-            // Asynchronous receive operations will complete here through the call
-            // to AsyncBeginReceive
             if (IsRunningInbound)
             {
-                UdpReceives++;
- 
+                bool sync = iar.CompletedSynchronously;
                 try
                 {
                     // get the buffer that was created in AsyncBeginReceive
@@ -391,6 +390,9 @@ namespace OpenMetaverse
                     // get the length of data actually read from the socket, store it with the
                     // buffer
                     buffer.DataLength = m_udpSocket.EndReceiveFrom(iar, ref buffer.RemoteEndPoint);
+
+
+                    UdpReceives++;
 
                     // call the abstract method PacketReceived(), passing the buffer that
                     // has just been filled from the socket read.
@@ -428,51 +430,12 @@ namespace OpenMetaverse
                 }
                 finally
                 {
-                    AsyncBeginReceive();
+                    if (IsRunningInbound && !sync)
+                        AsyncBeginReceive();
                 }
             }
         }
 
-/* not in use
-        public void AsyncBeginSend(UDPPacketBuffer buf)
-        {
-//            if (IsRunningOutbound)
-//            {
-
-                // This is strictly for debugging purposes to simulate dropped
-                // packets when testing throttles & retransmission code
-                // if (DropOutgoingPacket())
-                //     return;
-
-                try
-                {
-                    m_udpSocket.BeginSendTo(
-                        buf.Data,
-                        0,
-                        buf.DataLength,
-                        SocketFlags.None,
-                        buf.RemoteEndPoint,
-                        AsyncEndSend,
-                        buf);
-                }
-                catch (SocketException) { }
-                catch (ObjectDisposedException) { }
- //           }
-        }
-
-        void AsyncEndSend(IAsyncResult result)
-        {
-            try
-            {
-//                UDPPacketBuffer buf = (UDPPacketBuffer)result.AsyncState;
-                m_udpSocket.EndSendTo(result);
-
-                UdpSends++;
-            }
-            catch (SocketException) { }
-            catch (ObjectDisposedException) { }
-        }
-*/
         public void SyncSend(UDPPacketBuffer buf)
         {
             if(buf.RemoteEndPoint == null)

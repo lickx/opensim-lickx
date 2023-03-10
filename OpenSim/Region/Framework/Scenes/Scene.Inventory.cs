@@ -331,8 +331,6 @@ namespace OpenSim.Region.Framework.Scenes
                         avatar.ControllingClient.SendAgentAlertMessage("Insufficient permissions to edit setting", false);
                         return UUID.Zero;
                     }
-
-                    avatar.ControllingClient.SendAlertMessage("Material updated");
                     break;
                 }
             }

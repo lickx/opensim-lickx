@@ -186,7 +186,9 @@ namespace OpenSim.Region.CoreModules.Framework.InventoryAccess
             if (folder is null || folder.Owner.NotEqual(remoteClient.AgentId))
                 return;
 
-            if (transactionID.IsNotZero() && assetType != (byte)AssetType.Settings)
+            if (transactionID.IsNotZero() &&
+                    assetType != (byte)AssetType.Settings &&
+                    assetType != (byte)AssetType.Material)
             {
                 IAgentAssetTransactions agentTransactions = m_Scene.AgentTransactionsModule;
                 if (agentTransactions is not null)
@@ -394,8 +396,6 @@ namespace OpenSim.Region.CoreModules.Framework.InventoryAccess
                         remoteClient.SendAgentAlertMessage("Insufficient permissions to edit setting", false);
                         return UUID.Zero;
                     }
-
-                    remoteClient.SendAlertMessage("Material updated");
                     break;
                 }
             }

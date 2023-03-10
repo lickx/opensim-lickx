@@ -34,7 +34,6 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Text;
 using System.Web;
 
@@ -45,11 +44,9 @@ using log4net;
 
 using OpenSim.Framework;
 using OpenSim.Framework.Capabilities;
-using OpenSim.Region.Framework;
 using OpenSim.Region.Framework.Interfaces;
 using OpenSim.Region.Framework.Scenes;
 using OpenSim.Region.Framework.Scenes.Serialization;
-using OpenSim.Framework.Servers;
 using OpenSim.Framework.Servers.HttpServer;
 using OpenSim.Services.Interfaces;
 
