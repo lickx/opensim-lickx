@@ -2237,9 +2237,16 @@ namespace OpenSim.Region.Framework.Scenes
 
             dupe.RezzerID = RezzerID;
 
-            byte[] extraP = new byte[Shape.ExtraParams.Length];
-            Array.Copy(Shape.ExtraParams, extraP, extraP.Length);
+            byte[] oldextrap = Shape.ExtraParams;
+            byte[] extraP = new byte[oldextrap.Length];
+            Array.Copy(oldextrap, extraP, extraP.Length);
             dupe.Shape.ExtraParams = extraP;
+            if(Shape.RenderMaterials is not null && Shape.RenderMaterials.overrides is not null && 
+                Shape.RenderMaterials.overrides.Length > 0)
+            {              
+                dupe.Shape.RenderMaterials.overrides = new Primitive.RenderMaterials.RenderMaterialOverrideEntry[Shape.RenderMaterials.overrides.Length];
+                Shape.RenderMaterials.overrides.CopyTo(dupe.Shape.RenderMaterials.overrides,0);
+            }
 
             dupe.m_sittingAvatars = new HashSet<ScenePresence>();
             dupe.SitTargetAvatar = UUID.Zero;
@@ -5742,7 +5749,7 @@ namespace OpenSim.Region.Framework.Scenes
                 if (AnimationsNames.Count == 0)
                     return new byte[] { 0 };
 
-                using (MemoryStream ms = new MemoryStream())
+                using (MemoryStream ms = new())
                 {
                     byte[] tmp = Utils.UInt16ToBytes((ushort)Animations.Count);
                     ms.Write(tmp, 0, 2);
@@ -5793,7 +5800,7 @@ namespace OpenSim.Region.Framework.Scenes
                 int pos = 2;
                 while(--count >= 0)
                 {
-                    UUID id = new UUID(data, pos);
+                    UUID id = new(data, pos);
                     if(id.IsZero())
                         break;
                     pos += 16;
