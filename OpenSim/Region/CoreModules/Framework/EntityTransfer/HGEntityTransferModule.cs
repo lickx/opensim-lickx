@@ -914,17 +914,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
                                 foreach(SceneObjectGroup so in attachments)
                                 {
-                                    if (sp.IsDeleted)
-                                    {
-                                        m_log.WarnFormat(
-                                            "[HG ENTITY TRANSFER]: Aborting resuming attached scripts for HG user {0}", sp.Name);
-
-                                        defsp = null;
-                                        uuidGatherer = null;
-                                        toadd = null;
-                                        return;
-                                    }
-
                                     if (!m_scene.AddSceneObject(so))
                                     {
                                         m_log.DebugFormat(
