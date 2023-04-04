@@ -713,9 +713,12 @@ namespace OpenSim.Groups
             {
                 //m_log.DebugFormat("[GROUPS MODULE]: Setting new group and checking scripts in attachment {0} for {1}", so.Name, so.OwnerID);
                 so.SetGroup(groupID, remoteClient);
-                so.RootPart.ParentGroup.CreateScriptInstances(
-                    0, false, sp.Scene.DefaultScriptEngine, sp.GetStateSource());
-                so.ResumeScripts();
+                if (so.ContainsScripts())
+                {
+                    so.RootPart.ParentGroup.CreateScriptInstances(
+                        0, false, sp.Scene.DefaultScriptEngine, sp.GetStateSource());
+                    so.ResumeScripts();
+                }
             }
 
             // Changing active group changes title, active powers, all kinds of things

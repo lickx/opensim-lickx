@@ -867,40 +867,32 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
                                 {
                                     m_log.DebugFormat(
-                                        "[ENTITY TRANSFER MODULE]: Denied Attachments for banned avatar {0}", sp.Name);
+                                        "[HG ENTITY TRANSFER]: Denied Attachments for banned avatar {0}", sp.Name);
                                     return;
                                 }
 
                                 IClientAPI remoteClient = sp.ControllingClient;
                                 UUID groupID = remoteClient.ActiveGroupId;
 
-                                m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachments for HG user {0}", sp.Name);
+                                m_log.DebugFormat("[HG ENTITY TRANSFER]: Adding attachments and resume attached scripts for HG user {0}", sp.Name);
 
                                 foreach(SceneObjectGroup so in attachments)
                                 {
-                                    if (sp.IsDeleted)
-                                    {
-                                        m_log.WarnFormat(
-                                            "[HG ENTITY TRANSFER]: Aborting resuming attached scripts for HG user {0}", sp.Name);
-
-                                        defsp = null;
-                                        uuidGatherer = null;
-                                        toadd = null;
-                                        return;
-                                    }
-
                                     if (!m_scene.AddSceneObject(so))
                                     {
                                         m_log.DebugFormat(
-                                            "[ENTITY TRANSFER MODULE]: Problem adding attachment {0} {1} into {2} ",
+                                            "[HG ENTITY TRANSFER]: Problem adding attachment {0} {1} into {2} ",
                                             so.Name, so.UUID, m_sceneName);
                                         continue;
                                     }
                                     so.SetGroup(groupID, remoteClient);
-                                    so.RootPart.ParentGroup.CreateScriptInstances(
-                                        0, false, Scene.DefaultScriptEngine, GetStateSource(so));
-                                    so.aggregateScriptEvents();
-                                    so.ResumeScripts();
+                                    if (so.ContainsScripts())
+                                    {
+                                        so.RootPart.ParentGroup.CreateScriptInstances(
+                                            0, false, Scene.DefaultScriptEngine, GetStateSource(so));
+                                        so.aggregateScriptEvents();
+                                        so.ResumeScripts();
+                                    }
                                 }
 
                                 defsp = null;
