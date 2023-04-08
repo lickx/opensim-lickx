@@ -711,9 +711,9 @@ namespace OpenSim.Groups
 
             foreach(SceneObjectGroup so in attachments)
             {
-                //m_log.DebugFormat("[GROUPS MODULE]: Setting new group and checking scripts in attachment {0} for {1}", so.Name, so.OwnerID);
+                //m_log.DebugFormat("[GROUPS MODULE]: Setting new group and checking scripts to run in attachment {0} for {1}", so.Name, so.OwnerID);
                 so.SetGroup(groupID, remoteClient);
-                if (so.ContainsScripts())
+                if (so.ContainsScripts() && so.RunningScriptCount() == 0)
                 {
                     so.RootPart.ParentGroup.CreateScriptInstances(
                         0, false, sp.Scene.DefaultScriptEngine, sp.GetStateSource());
