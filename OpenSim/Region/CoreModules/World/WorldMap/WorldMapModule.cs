@@ -916,9 +916,6 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
         }
 
 
-        private const double SPAMBLOCKTIMEms = 30000;
-        private Dictionary<UUID,double> spamBlocked = new Dictionary<UUID,double>();
-
         /// <summary>
         /// Requests map blocks in area of minX, maxX, minY, MaxY in world cordinates
         /// </summary>
@@ -928,50 +925,10 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
         /// <param name="maxY"></param>
         public void RequestMapBlocks(IClientAPI remoteClient, int minX, int minY, int maxX, int maxY, uint flag)
         {
-            // anti spam because of FireStorm 4.7.7 absurd request repeat rates
-            // possible others
-
-            double now = Util.GetTimeStampMS();
             UUID agentID = remoteClient.AgentId;
 
             lock (m_mapBlockRequestEvent)
             {
-                if(spamBlocked.ContainsKey(agentID))
-                {
-                    if(spamBlocked[agentID] < now &&
-                            (!m_mapBlockRequests.ContainsKey(agentID) ||
-                            m_mapBlockRequests[agentID].Count == 0 ))
-                    {
-                        spamBlocked.Remove(agentID);
-                        m_log.DebugFormat("[WoldMapModule] RequestMapBlocks release spammer {0}", agentID);
-                    }
-                    else
-                        return;
-                }
-                else
-                {
-                // ugly slow expire spammers
-                    if(spamBlocked.Count > 0)
-                    {
-                        UUID k = UUID.Zero;
-                        bool expireone = false;
-                        foreach(UUID k2 in spamBlocked.Keys)
-                        {
-                            if(spamBlocked[k2] < now &&
-                                (!m_mapBlockRequests.ContainsKey(k2) ||
-                                m_mapBlockRequests[k2].Count == 0 ))
-                            {
-                                m_log.DebugFormat("[WoldMapModule] RequestMapBlocks release spammer {0}", k2);
-                                k = k2;
-                                expireone = true;
-                            }
-                        break; // doing one at a time
-                        }
-                    if(expireone)
-                        spamBlocked.Remove(k);
-                    }
-                }
-
 //                m_log.DebugFormat("[WoldMapModule] RequestMapBlocks {0}={1}={2}={3} {4}", minX, minY, maxX, maxY, flag);
 
                 MapBlockRequestData req = new MapBlockRequestData()
@@ -990,13 +947,7 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
                     agentq = new Queue<MapBlockRequestData>();
                     m_mapBlockRequests[agentID] = agentq;
                 }
-                if(agentq.Count < 150 )
-                    agentq.Enqueue(req);
-                else
-                {
-                    spamBlocked[agentID] = now + SPAMBLOCKTIMEms;
-                    m_log.DebugFormat("[WoldMapModule] RequestMapBlocks blocking spammer {0} for {1} s",agentID, SPAMBLOCKTIMEms/1000.0);
-                }
+                agentq.Enqueue(req);
                 m_mapBlockRequestEvent.Set();
             }
         }
