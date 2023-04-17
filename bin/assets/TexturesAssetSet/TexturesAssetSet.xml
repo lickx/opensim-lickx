@@ -270,14 +270,14 @@
     <Key Name="fileName" Value="water3.jp2" />
   </Section>
   <Section Name="Sea">
-    <Key Name="assetID" Value="482E671B-9244-4B86-A036-68953A898D11" />
+    <Key Name="assetID" Value="482e671b-9244-4b86-a036-68953a898d11" />
     <Key Name="name" Value="Sea" />
     <Key Name="assetType" Value="0" />
     <Key Name="fileName" Value="water3.jp2" />
   </Section>
-  <Section Name="SeaWaterTrasp">
+  <Section Name="SeaWaterTransp">
     <Key Name="assetID" Value="2bfd3884-7e27-69b9-ba3a-3e673f680004" />
-    <Key Name="name" Value="SeaWaterTrasp" />
+    <Key Name="name" Value="SeaWaterTransp" />
     <Key Name="assetType" Value="0" />
     <Key Name="fileName" Value="seaWaterTransp.j2c" />
   </Section>  
@@ -833,7 +833,7 @@
   </Section>
 
   <Section Name="Water">
-    <Key Name="assetID" Value="DB814CAF-26AC-4D75-977B-A68578FE643D"/>
+    <Key Name="assetID" Value="db814caf-26ac-4d75-977b-a68578fe643d"/>
     <Key Name="name" Value="Water"/>
     <Key Name="assetType" Value="0" />
     <Key Name="fileName" Value="water.jp2" />
