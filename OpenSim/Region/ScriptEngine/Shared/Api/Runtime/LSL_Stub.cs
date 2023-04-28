@@ -1215,6 +1215,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_List llList2ListSlice(LSL_List src, int start, int end, int stride, int stride_index)
+        {
+            return m_LSL_Functions.llList2ListSlice(src, start, end, stride, stride_index);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_Rotation llList2Rot(LSL_List src, int index)
         {
             return m_LSL_Functions.llList2Rot(src, index);
@@ -1278,6 +1284,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public LSL_List llListSort(LSL_List src, int stride, int ascending)
         {
             return m_LSL_Functions.llListSort(src, stride, ascending);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_List llListSortStrided(LSL_List src, int stride, int stride_index, int ascending)
+        {
+            return m_LSL_Functions.llListSortStrided(src, stride, stride_index, ascending);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2669,6 +2681,18 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public void llLinkSetSoundRadius(int linknumber, double radius)
         {
             m_LSL_Functions.llLinkSetSoundRadius(linknumber, radius);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Vector llLinear2sRGB(LSL_Vector src)
+        {
+            return m_LSL_Functions.llLinear2sRGB(src);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Vector llsRGB2Linear(LSL_Vector src)
+        {
+            return m_LSL_Functions.llsRGB2Linear(src);
         }
     }
 }

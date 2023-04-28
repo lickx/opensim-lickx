@@ -248,6 +248,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
            LSL_Key llList2Key(LSL_List src, int index);
           LSL_List llList2List(LSL_List src, int start, int end);
           LSL_List llList2ListStrided(LSL_List src, int start, int end, int stride);
+          LSL_List llList2ListSlice(LSL_List src, int start, int end, int stride, int stride_index);
       LSL_Rotation llList2Rot(LSL_List src, int index);
         LSL_String llList2String(LSL_List src, int index);
         LSL_Vector llList2Vector(LSL_List src, int index);
@@ -259,6 +260,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
           LSL_List llListRandomize(LSL_List src, int stride);
           LSL_List llListReplaceList(LSL_List dest, LSL_List src, int start, int end);
           LSL_List llListSort(LSL_List src, int stride, int ascending);
+          LSL_List llListSortStrided(LSL_List src, int stride, int stride_index, int ascending);
          LSL_Float llListStatistics(int operation, LSL_List src);
               void llLoadURL(string avatar_id, string message, string url);
          LSL_Float llLog(double val);
@@ -493,5 +495,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
                void llLinkPlaySound(LSL_Integer linknumber, string sound, double volume);
                void llLinkSetSoundQueueing(int linknumber, int queue);
                void llLinkSetSoundRadius(int linknumber, double radius);
+
+         LSL_Vector llLinear2sRGB(LSL_Vector src);
+         LSL_Vector llsRGB2Linear(LSL_Vector src);
     }
 }

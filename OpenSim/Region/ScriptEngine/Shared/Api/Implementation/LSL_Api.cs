@@ -5411,6 +5411,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             return src.Sort(stride, ascending == 1);
         }
 
+        public LSL_List llListSortStrided(LSL_List src, int stride, int stride_index, int ascending)
+        {
+            return src.Sort(stride, stride_index, ascending == 1);
+        }
+
         public LSL_Integer llGetListLength(LSL_List src)
         {
             return src.Length;
@@ -5586,8 +5591,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public LSL_Integer llGetListEntryType(LSL_List src, int index)
         {
             if (index < 0)
+            {
                 index = src.Length + index;
-            if (index >= src.Length || index < 0)
+                if (index < 0)
+                    return 0;
+            }
+            else if (index >= src.Length)
                 return 0;
 
             object o = src.Data[index];
@@ -5596,16 +5605,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (o is LSL_Float || o is Single || o is Double)
                 return 2;
             if (o is LSL_String || o is String)
-            {
-                if (UUID.TryParse(o.ToString(), out UUID _))
-                {
-                    return 4;
-                }
-                else
-                {
-                    return 3;
-                }
-            }
+                return UUID.TryParse(o.ToString(), out UUID _) ? 4 : 3;
             if (o is LSL_Key)
                 return 4;
             if (o is LSL_Vector)
@@ -5757,97 +5757,133 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             return result;
         }
 
-        /// <summary>
-        /// Elements in the source list starting with 0 and then
-        /// every i+stride. If the stride is negative then the scan
-        /// is backwards producing an inverted result.
-        /// Only those elements that are also in the specified
-        /// range are included in the result.
-        /// </summary>
+
 
         public LSL_List llList2ListStrided(LSL_List src, int start, int end, int stride)
         {
-            LSL_List result = new();
-            int[] si = new int[2];
-            int[] ei = new int[2];
-            bool twopass = false;
-
-
-            //  First step is always to deal with negative indices
-
             if (start < 0)
-                start = src.Length+start;
-            if (end   < 0)
-                end   = src.Length+end;
-
-            //  Out of bounds indices are OK, just trim them
-            //  accordingly
-
-            if (start > src.Length)
-                start = src.Length;
-
-            if (end > src.Length)
-                end = src.Length;
-
-            if (stride == 0)
-                stride = 1;
-
-            //  There may be one or two ranges to be considered
-
-            if (start != end)
             {
+                start += src.Length;
+                if (start < 0)
+                    start = 0;
+            }
+            if (end < 0)
+            {
+                end += src.Length;
+                if (end < 0)
+                    end = 0;
+            }
 
-                if (start <= end)
-                {
-                   si[0] = start;
-                   ei[0] = end;
-                }
-                else
-                {
-                   si[1] = start;
-                   ei[1] = src.Length;
-                   si[0] = 0;
-                   ei[0] = end;
-                   twopass = true;
-                }
-
-                //  The scan always starts from the beginning of the
-                //  source list, but members are only selected if they
-                //  fall within the specified sub-range. The specified
-                //  range values are inclusive.
-                //  A negative stride reverses the direction of the
-                //  scan producing an inverted list as a result.
-
-                if (stride > 0)
-                {
-                    for (int i = 0; i < src.Length; i += stride)
-                    {
-                        if (i<=ei[0] && i>=si[0])
-                            result.Add(src.Data[i]);
-                        if (twopass && i>=si[1] && i<=ei[1])
-                            result.Add(src.Data[i]);
-                    }
-                }
-                else if (stride < 0)
-                {
-                    for (int i = src.Length - 1; i >= 0; i += stride)
-                    {
-                        if (i <= ei[0] && i >= si[0])
-                            result.Add(src.Data[i]);
-                        if (twopass && i >= si[1] && i <= ei[1])
-                            result.Add(src.Data[i]);
-                    }
-                }
+            if (start > end)
+            {
+                start = 0;
+                end = src.Length - 1;
             }
             else
             {
-                if (start%stride == 0)
-                {
-                    result.Add(src.Data[start]);
-                }
+                if (start >= src.Length)
+                    return new LSL_List();
+                if (end >= src.Length)
+                    end = src.Length - 1;
             }
 
-            return result;
+            if (stride < 1)
+                stride = 1;
+
+            int size;
+            if (stride > 1)
+            {
+                if (start > 0)
+                {
+                    int sst = start / stride;
+                    sst *= stride;
+                    if (sst != start)
+                        start = sst + stride;
+
+                    if (start > end)
+                        return new LSL_List();
+                }
+                size = end - start + 1;
+                int sz = size / stride;
+                if (sz * stride < size)
+                    sz++;
+                size = sz;
+            }
+            else
+                size = end - start + 1;
+
+            object[] res = new object[size];
+            int j = 0;
+            for (int i = start; i <= end; i += stride, j++)
+                res[j] = src.Data[i];
+
+            return new LSL_List(res);
+        }
+
+        public LSL_List llList2ListSlice(LSL_List src, int start, int end, int stride, int stride_index)
+        {
+            if (start < 0)
+            {
+                start += src.Length;
+                if (start < 0)
+                    start = 0;
+            }
+            if (end < 0)
+            {
+                end += src.Length;
+                if (end < 0)
+                    end = 0;
+            }
+            if (start > end)
+            {
+                start = 0;
+                end = src.Length - 1;
+            }
+            else
+            {
+                if (start >= src.Length)
+                    return new LSL_List();
+                if (end >= src.Length)
+                    end = src.Length - 1;
+            }
+            if (stride < 1)
+                stride = 1;
+            if (stride_index < 0)
+            {
+                stride_index += stride;
+                if (stride_index < 0)
+                    return new LSL_List();
+            }
+            else if (stride_index >= stride)
+                return new LSL_List();
+            int size;
+            if (stride > 1)
+            {
+                if (start > 0)
+                {
+                    int sst = start / stride;
+                    sst *= stride;
+                    if (sst != start)
+                        start = sst + stride;
+                    if (start > end)
+                        return new LSL_List();
+                }
+                start += stride_index;
+                size = end - start + 1;
+                int sz = size / stride;
+                if (sz * stride < size)
+                    sz++;
+                size = sz;
+            }
+            else
+                size = end - start + 1;
+            object[] res = new object[size];
+            int j = 0;
+            for (int i = start; i <= end; i += stride, j++)
+                res[j] = src.Data[i];
+
+            //m_log.Debug($" test {size} {j}");
+            return new LSL_List(res);
         }
 
         public LSL_Integer llGetRegionAgentCount()
@@ -18248,6 +18284,17 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return src;
             }
         }
+
+        public LSL_Vector llLinear2sRGB(LSL_Vector src)
+        {
+            return new LSL_Vector(Util.LinearTosRGB((float)src.x), Util.LinearTosRGB((float)src.y), Util.LinearTosRGB((float)src.z));
+        }
+
+        public LSL_Vector llsRGB2Linear(LSL_Vector src)
+        {
+            return new LSL_Vector(Util.sRGBtoLinear((float)src.x), Util.sRGBtoLinear((float)src.y), Util.sRGBtoLinear((float)src.z));
+        }
+
     }
 
     public class NotecardCache
