@@ -1413,6 +1413,54 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             return drawList;
         }
 
+        public string osSetPenColor(string drawList, LSL_Types.Vector3 color)
+        {
+            CheckThreatLevel();
+
+            byte argbR = Utils.FloatZeroOneToByte((float)color.x);
+            byte argbG = Utils.FloatZeroOneToByte((float)color.y);
+            byte argbB = Utils.FloatZeroOneToByte((float)color.z);
+
+            StringBuilder sb = new(19);
+            sb.Append("PenColor FF");
+            sb.Append(Utils.charHighNibbleToHexChar(argbR));
+            sb.Append(Utils.charLowNibbleToHexChar(argbR));
+            sb.Append(Utils.charHighNibbleToHexChar(argbG));
+            sb.Append(Utils.charLowNibbleToHexChar(argbG));
+            sb.Append(Utils.charHighNibbleToHexChar(argbB));
+            sb.Append(Utils.charLowNibbleToHexChar(argbB));
+            sb.Append("; ");
+
+            drawList += sb.ToString();
+            return drawList;
+        }
+
+        public string osSetPenColor(string drawList, LSL_Types.Vector3 color, LSL_Float alpha)
+        {
+            CheckThreatLevel();
+
+            byte argbA = Utils.FloatZeroOneToByte((float)alpha);
+            byte argbR = Utils.FloatZeroOneToByte((float)color.x);
+            byte argbG = Utils.FloatZeroOneToByte((float)color.y);
+            byte argbB = Utils.FloatZeroOneToByte((float)color.z);
+
+            StringBuilder sb = new(19);
+            sb.Append("PenColor ");
+            sb.Append(Utils.charHighNibbleToHexChar(argbA));
+            sb.Append(Utils.charLowNibbleToHexChar(argbA));
+            sb.Append(Utils.charHighNibbleToHexChar(argbR));
+            sb.Append(Utils.charLowNibbleToHexChar(argbR));
+            sb.Append(Utils.charHighNibbleToHexChar(argbG));
+            sb.Append(Utils.charLowNibbleToHexChar(argbG));
+            sb.Append(Utils.charHighNibbleToHexChar(argbB));
+            sb.Append(Utils.charLowNibbleToHexChar(argbB));
+            sb.Append(';');
+            sb.Append(' ');
+
+            drawList += sb.ToString();
+            return drawList;
+        }
+
         // Deprecated
         public string osSetPenColour(string drawList, string colour)
         {
