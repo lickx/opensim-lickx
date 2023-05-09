@@ -7752,42 +7752,32 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(!UUID.TryParse(avatar, out UUID key) || key.IsZero())
                 return;
 
-            ILandObject land = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
-            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, land, GroupPowers.LandManagePasses, false))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManagePasses, false))
             {
-                LandAccessEntry entry;
-
                 int expires = (hours != 0) ? Util.UnixTimeSinceEpoch() + (int)(3600.0 * hours) : 0;
-                int idx = land.LandData.ParcelAccessList.FindIndex(
-                        delegate(LandAccessEntry e)
-                        {
-                            if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
-                                return true;
-                            return false;
-                        });
-
-                if (idx != -1)
+                LandData land = parcel.LandData;
+                foreach(LandAccessEntry e in land.ParcelAccessList)
                 {
-                    entry = land.LandData.ParcelAccessList[idx];
-                    if (entry.Expires == 0)
+                    if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
+                    {
+                        if (e.Expires != 0 && expires > e.Expires)
+                        {
+                            e.Expires = expires;
+                            World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
+                        }
                         return;
-                    if (expires != 0 && expires < entry.Expires)
-                        return;
-
-                    entry.Expires = expires;
-                    World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
-                    return;
+                    }
                 }
 
-                entry = new LandAccessEntry
+                LandAccessEntry entry = new()
                 {
                     AgentID = key,
                     Flags = AccessList.Access,
                     Expires = expires
                 };
-
-                land.LandData.ParcelAccessList.Add(entry);
-                World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
+                land.ParcelAccessList.Add(entry);
+                World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
             }
             ScriptSleep(m_sleepMsOnAddToLandPassList);
         }
@@ -13320,43 +13310,35 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(avatar, out UUID key) || key.IsZero())
                 return;
 
-            ILandObject land = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
-            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, land, GroupPowers.LandManageBanned, false))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManageBanned, false))
             {
-                LandAccessEntry entry;
                 int expires = (hours != 0) ? Util.UnixTimeSinceEpoch() + (int)(3600.0 * hours) : 0;
-
-                int idx = land.LandData.ParcelAccessList.FindIndex(
-                        delegate(LandAccessEntry e)
-                        {
-                            if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
-                                return true;
-                            return false;
-                        });
-
-                if (idx != -1)
+                LandData land = parcel.LandData;
+                foreach (LandAccessEntry e in land.ParcelAccessList)
                 {
-                    entry = land.LandData.ParcelAccessList[idx];
-                    if (entry.Expires == 0)
+                    if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
+                    {
+                        if (e.Expires != 0 && e.Expires < expires)
+                        {
+                            e.Expires = expires;
+                            World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
+                        }
                         return;
-                    if (expires != 0 && expires < entry.Expires)
-                        return;
-
-                    entry.Expires = expires;
-                    World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
-                    return;
+                    }
                 }
 
-                entry = new LandAccessEntry
+                LandAccessEntry entry = new()
                 {
                     AgentID = key,
                     Flags = AccessList.Ban,
                     Expires = expires
                 };
 
-                land.LandData.ParcelAccessList.Add(entry);
+                land.ParcelAccessList.Add(entry);
+                land.Flags |= (uint)ParcelFlags.UseBanList;
 
-                World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
+                World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
             }
             ScriptSleep(m_sleepMsOnAddToLandBanList);
         }
@@ -13366,21 +13348,19 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(avatar, out UUID key) || key.IsZero())
                 return;
 
-            ILandObject land = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
-            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, land, GroupPowers.LandManagePasses, false))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManagePasses, false))
             {
-                int idx = land.LandData.ParcelAccessList.FindIndex(
-                        delegate(LandAccessEntry e)
-                        {
-                            if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
-                                return true;
-                            return false;
-                        });
-
-                if (idx != -1)
+                LandData land = parcel.LandData;
+                for(int i = 0; i < land.ParcelAccessList.Count; ++i)
                 {
-                    land.LandData.ParcelAccessList.RemoveAt(idx);
-                    World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
+                    LandAccessEntry e = land.ParcelAccessList[i];
+                    if (e.Flags == AccessList.Access && e.AgentID.Equals(key))
+                    {
+                        land.ParcelAccessList.RemoveAt(i);
+                        World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
+                        break;
+                    }
                 }
             }
             ScriptSleep(m_sleepMsOnRemoveFromLandPassList);
@@ -13391,21 +13371,19 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (!UUID.TryParse(avatar, out UUID key) || key.IsZero())
                 return;
 
-            ILandObject land = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
-            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, land, GroupPowers.LandManageBanned, false))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManageBanned, false))
             {
-                int idx = land.LandData.ParcelAccessList.FindIndex(
-                        delegate(LandAccessEntry e)
-                        {
-                            if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
-                                return true;
-                            return false;
-                        });
-
-                if (idx != -1)
+                LandData land = parcel.LandData;
+                for (int i = 0; i < land.ParcelAccessList.Count; ++i)
                 {
-                    land.LandData.ParcelAccessList.RemoveAt(idx);
-                    World.EventManager.TriggerLandObjectUpdated((uint)land.LandData.LocalID, land);
+                    LandAccessEntry e = land.ParcelAccessList[i];
+                    if (e.Flags == AccessList.Ban && e.AgentID.Equals(key))
+                    {
+                        land.ParcelAccessList.RemoveAt(i);
+                        World.EventManager.TriggerLandObjectUpdated((uint)land.LocalID, parcel);
+                        break;
+                    }
                 }
             }
             ScriptSleep(m_sleepMsOnRemoveFromLandBanList);
@@ -13817,6 +13795,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             return Convert.ToBase64String(data1);
         }
 
+        static Regex llHTTPRequestRegex = new(@"^(https?:\/\/)(\w+):(\w+)@(.*)$", RegexOptions.Compiled);
+
         public LSL_Key llHTTPRequest(string url, LSL_List parameters, string body)
         {
             IHttpRequestModule httpScriptMod = m_ScriptEngine.World.RequestModuleInterface<IHttpRequestModule>();
@@ -13826,40 +13806,48 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(!httpScriptMod.CheckThrottle(m_host.LocalId, m_host.OwnerID))
                 return ScriptBaseClass.NULL_KEY;
 
-            try
-            {
-                Uri m_checkuri = new(url);
-                if (m_checkuri.Scheme != Uri.UriSchemeHttp && m_checkuri.Scheme != Uri.UriSchemeHttps)
-                {
-                    Error("llHTTPRequest", "Invalid url schema");
-                    return string.Empty;
-                }
-            }
-            catch
+            if(!Uri.TryCreate(url, UriKind.Absolute, out Uri m_checkuri))
             {
                 Error("llHTTPRequest", "Invalid url");
                 return string.Empty;
             }
 
+            if (m_checkuri.Scheme != Uri.UriSchemeHttp && m_checkuri.Scheme != Uri.UriSchemeHttps)
+            {
+                Error("llHTTPRequest", "Invalid url schema");
+                return string.Empty;
+            }
+
+            if (!httpScriptMod.CheckAllowed(m_checkuri))
+            {
+                Error("llHttpRequest", string.Format("Request to {0} disallowed by filter", url));
+                return string.Empty;
+            }
+
+            Dictionary<string, string> httpHeaders = new();
             List<string> param = new();
-            bool  ok;
             int nCustomHeaders = 0;
+            int flag;
 
             for (int i = 0; i < parameters.Data.Length; i += 2)
             {
-                ok = Int32.TryParse(parameters.Data[i].ToString(), out int flag);
-                if (!ok || flag < 0 ||
-                    flag > (int)HttpRequestConstants.HTTP_PRAGMA_NO_CACHE)
+                object di = parameters.Data[i];
+                if(di is LSL_Integer li )
+                    flag = li.value;
+                else if (di is int ldi)
+                    flag = ldi;
+                else flag = -1;
+
+                if(flag < 0 || flag > (int)HttpRequestConstants.HTTP_PRAGMA_NO_CACHE)
                 {
                     Error("llHTTPRequest", "Parameter " + i.ToString() + " is an invalid flag");
                     ScriptSleep(200);
                     return string.Empty;
                 }
 
-                param.Add(parameters.Data[i].ToString());       //Add parameter flag
-
                 if (flag != (int)HttpRequestConstants.HTTP_CUSTOM_HEADER)
                 {
+                    param.Add(flag.ToString());       //Add parameter flag
                     param.Add(parameters.Data[i+1].ToString()); //Add parameter value
                 }
                 else
@@ -13912,17 +13900,15 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             noskip = false;
                         }
 
-                        string paramValue = parameters.Data[i + 1].ToString();
-                        if(paramName.Length + paramValue.Length > 253)
-                        {
-                            Error("llHTTPRequest", "name and value length exceds 253 characters for custom header at parameter " + i.ToString());
-                            return string.Empty;
-                        }
-
                         if (noskip)
                         {
-                            param.Add(paramName);
-                            param.Add(paramValue);
+                            string paramValue = parameters.Data[i + 1].ToString();
+                            if (paramName.Length + paramValue.Length > 253)
+                            {
+                                Error("llHTTPRequest", "name and value length exceds 253 characters for custom header at parameter " + i.ToString());
+                                return string.Empty;
+                            }
+                            httpHeaders[paramName] = paramValue;
                             nCustomHeaders++;
                         }
 
@@ -13951,8 +13937,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 ownerName = scenePresence.Name;
 
             RegionInfo regionInfo = World.RegionInfo;
-
-            Dictionary<string, string> httpHeaders =new();
 
             if (!string.IsNullOrWhiteSpace(m_lsl_shard))
                 httpHeaders["X-SecondLife-Shard"] = m_lsl_shard;
@@ -13999,17 +13983,9 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     url = url[..idx];
             }
 
-            string authregex = @"^(https?:\/\/)(\w+):(\w+)@(.*)$";
-            Regex r = new(authregex);
-            //int[] gnums = r.GetGroupNumbers();
-            Match m = r.Match(url);
+            Match m = llHTTPRequestRegex.Match(url);
             if (m.Success)
             {
-                //for (int i = 1; i < gnums.Length; i++)
-                //{
-                    //System.Text.RegularExpressions.Group g = m.Groups[gnums[i]];
-                    //CaptureCollection cc = g.Captures;
-                //}
                 if (m.Groups.Count == 5)
                 {
                     httpHeaders["Authorization"] = String.Format("Basic {0}", Convert.ToBase64String(System.Text.ASCIIEncoding.ASCII.GetBytes(m.Groups[2].ToString() + ":" + m.Groups[3].ToString())));
@@ -14017,13 +13993,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 }
             }
 
-            UUID reqID = httpScriptMod.StartHttpRequest(m_host.LocalId, m_item.ItemID, url, param, httpHeaders, body,
-                    out HttpInitialRequestStatus status);
-
-            if (status == HttpInitialRequestStatus.DISALLOWED_BY_FILTER)
-                Error("llHttpRequest", string.Format("Request to {0} disallowed by filter", url));
-
-            return reqID.IsZero() ? "" : reqID.ToString();
+            UUID reqID = httpScriptMod.StartHttpRequest(m_host.LocalId, m_item.ItemID, url, param, httpHeaders, body);
+            return reqID.IsZero() ? string.Empty : reqID.ToString();
         }
 
 
@@ -14032,39 +14003,40 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             // Partial implementation: support for parameter flags needed
             //   see http://wiki.secondlife.com/wiki/llHTTPResponse
 
-            m_UrlModule?.HttpResponse(new UUID(id), status,body);
+            m_UrlModule?.HttpResponse(new UUID(id), status, body);
         }
 
         public void llResetLandBanList()
         {
-            LandData land = World.LandChannel.GetLandObject(m_host.AbsolutePosition).LandData;
-            if (land.ParcelAccessList.Count > 0 && land.OwnerID.Equals(m_host.OwnerID))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManageBanned, false))
             {
-                var todelete = new List<LandAccessEntry>();
+                LandData land = parcel.LandData;
+                var tokeep = new List<LandAccessEntry>();
                 foreach (LandAccessEntry entry in land.ParcelAccessList)
                 {
-                    if (entry.Flags == AccessList.Ban)
-                        todelete.Add(entry);
+                    if (entry.Flags != AccessList.Ban)
+                        tokeep.Add(entry);
                 }
-                foreach (LandAccessEntry entry in todelete)
-                    land.ParcelAccessList.Remove(entry);
+                land.ParcelAccessList = tokeep;
+                land.Flags &= ~(uint)ParcelFlags.UseBanList;
             }
             ScriptSleep(m_sleepMsOnResetLandBanList);
         }
 
         public void llResetLandPassList()
         {
-            LandData land = World.LandChannel.GetLandObject(m_host.AbsolutePosition).LandData;
-            if (land.ParcelAccessList.Count > 0 && land.OwnerID.Equals(m_host.OwnerID))
+            ILandObject parcel = World.LandChannel.GetLandObject(m_host.AbsolutePosition);
+            if (World.Permissions.CanEditParcelProperties(m_host.OwnerID, parcel, GroupPowers.LandManagePasses, false))
             {
-                var todelete = new List<LandAccessEntry>();
+                LandData land = parcel.LandData;
+                var tokeep = new List<LandAccessEntry>();
                 foreach (LandAccessEntry entry in land.ParcelAccessList)
                 {
-                    if (entry.Flags == AccessList.Access)
-                        todelete.Add(entry);
+                    if (entry.Flags != AccessList.Access)
+                        tokeep.Add(entry);
                 }
-                foreach (LandAccessEntry entry in todelete)
-                    land.ParcelAccessList.Remove(entry);
+                land.ParcelAccessList = tokeep;
             }
             ScriptSleep(m_sleepMsOnResetLandPassList);
         }
