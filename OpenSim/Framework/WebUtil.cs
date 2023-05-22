@@ -120,11 +120,11 @@ namespace OpenSim.Framework
             {
                 AllowAutoRedirect = false,
                 AutomaticDecompression = DecompressionMethods.None,
-                ConnectTimeout = TimeSpan.FromMilliseconds(10000),
+                ConnectTimeout = TimeSpan.FromSeconds(120),
                 PreAuthenticate = false,
                 UseCookies = false,
                 MaxConnectionsPerServer = MaxConnectionsPerServer,
-                PooledConnectionIdleTimeout = TimeSpan.FromMilliseconds(30000),
+                PooledConnectionIdleTimeout = TimeSpan.FromSeconds(31),
                 PooledConnectionLifetime = TimeSpan.FromMinutes(3)
             };
             //shh.SslOptions.ClientCertificates = null,
@@ -180,6 +180,7 @@ namespace OpenSim.Framework
             var client = new HttpClient(shh)
             {
                 Timeout = TimeSpan.FromMilliseconds(30000),
+                MaxResponseContentBufferSize = 250 * 1024 * 1024,
             };
             client.DefaultRequestHeaders.ExpectContinue = false;
 
@@ -193,11 +194,11 @@ namespace OpenSim.Framework
                 AllowAutoRedirect = true,
                 MaxAutomaticRedirections = 10,
                 AutomaticDecompression = DecompressionMethods.None,
-                ConnectTimeout = TimeSpan.FromMilliseconds(10000),
+                ConnectTimeout = TimeSpan.FromSeconds(120),
                 PreAuthenticate = false,
                 UseCookies = false,
                 MaxConnectionsPerServer = MaxConnectionsPerServer,
-                PooledConnectionIdleTimeout = TimeSpan.FromMilliseconds(30000),
+                PooledConnectionIdleTimeout = TimeSpan.FromSeconds(31),
                 PooledConnectionLifetime = TimeSpan.FromMinutes(3)
             };
             //shh.SslOptions.ClientCertificates = null,
@@ -253,6 +254,7 @@ namespace OpenSim.Framework
             client = new HttpClient(shh)
             {
                 Timeout = TimeSpan.FromMilliseconds(30000),
+                MaxResponseContentBufferSize = 250 * 1024 * 1024,
             };
             client.DefaultRequestHeaders.ExpectContinue = false;
 
