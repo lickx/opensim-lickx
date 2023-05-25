@@ -61,7 +61,7 @@ namespace OpenSim.Services.Connectors.InstantMessage
             try
             {
 
-                XmlRpcResponse GridResp = GridReq.Send(url, 10000);
+                XmlRpcResponse GridResp = GridReq.Send(url, WebUtil.SharedHttpClientWithRedir, 10000);
 
                 Hashtable responseData = (Hashtable)GridResp.Value;
 
@@ -84,7 +84,7 @@ namespace OpenSim.Services.Connectors.InstantMessage
                     return false;
                 }
             }
-            catch (WebException e)
+            catch (Exception e)
             {
                 m_log.ErrorFormat("[GRID INSTANT MESSAGE]: Error sending message to {0} : {1}", url, e.Message);
             }
