@@ -268,7 +268,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         /// </remarks>
         private void InitLSL()
         {
-            m_LSL_Api ??= (LSL_Api)m_ScriptEngine.GetApi(m_item.ItemID, "LSL");
+            if (m_LSL_Api == null)
+            {
+                m_LSL_Api = (LSL_Api)m_ScriptEngine.GetApi(m_item.ItemID, "LSL");
+                if (m_LSL_Api == null)
+                    throw new Exception("OSSL failed to load LSL API");
+            }
         }
 
         //
@@ -2145,9 +2150,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
         public void osDie(LSL_Key objectUUID)
         {
-//            CheckThreatLevel(ThreatLevel.VeryHigh, "osDie");
-            // if this is restricted to objects rezzed by this host level can be reduced
-
             CheckThreatLevel(ThreatLevel.Low, "osDie");
 
             if (!UUID.TryParse(objectUUID, out UUID objUUID))
@@ -2156,36 +2158,24 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
             }
 
-            InitLSL();
-            // harakiri check
             if(objUUID.IsZero())
-            {
-                if (!m_host.ParentGroup.IsAttachment)
-                    m_LSL_Api.llDie();
                 return;
-            }
 
             SceneObjectGroup sceneOG = World.GetSceneObjectGroup(objUUID);
 
-            if (sceneOG == null || sceneOG.IsDeleted)
+            if (sceneOG is null || sceneOG.IsDeleted || sceneOG.IsAttachment)
                 return;
 
-            if(sceneOG.IsAttachment)
+            if (sceneOG.OwnerID.NotEqual(m_host.OwnerID))
                 return;
-
-            if (sceneOG.OwnerID != m_host.OwnerID)
-                return;
-
-            // harakiri check
-            if(sceneOG.UUID.Equals(m_host.ParentGroup.UUID))
-            {
-                m_LSL_Api.llDie();
-                return;
-            }
 
             // restrict to objects rezzed by host
             if(sceneOG.RezzerID.Equals(m_host.ParentGroup.UUID))
-                World.DeleteSceneObject(sceneOG, false);
+            {
+                // harakiri check should be true alwaya
+                if (sceneOG.UUID.NotEqual(m_host.ParentGroup.UUID))
+                    World.DeleteSceneObject(sceneOG, false);
+            }
         }
 
         /// <summary>
@@ -2811,7 +2801,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel(ThreatLevel.VeryLow, "osForceCreateLink");
 
             InitLSL();
-            m_LSL_Api?.CreateLink(target, parent);
+            m_LSL_Api.CreateLink(target, parent);
         }
 
         public void osForceBreakLink(int linknum)
@@ -2819,7 +2809,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel(ThreatLevel.VeryLow, "osForceBreakLink");
 
             InitLSL();
-            m_LSL_Api?.BreakLink(linknum);
+            m_LSL_Api.BreakLink(linknum);
         }
 
         public void osForceBreakAllLinks()
@@ -2827,7 +2817,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel(ThreatLevel.VeryLow, "osForceBreakAllLinks");
 
             InitLSL();
-            m_LSL_Api?.BreakAllLinks();
+            m_LSL_Api.BreakAllLinks();
         }
 
         public LSL_Integer osIsNpc(LSL_Key npc)
@@ -3258,7 +3248,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     return;
 
                 InitLSL();
-                m_LSL_Api?.ThrottleSay(channel, 2000);
+                m_LSL_Api.ThrottleSay(channel, 2000);
                 module.Say(npcId, World, message, channel);
             }
         }
@@ -3291,7 +3281,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             string npcNAME = NPCpresence.Name;
 
             InitLSL();
-            m_LSL_Api?.ThrottleSay(channel, 2000);
+            m_LSL_Api.ThrottleSay(channel, 2000);
             wComm.DeliverMessageTo(TargetID, channel, npcPOS, npcNAME, npcId, msg);
         }
 
@@ -3308,7 +3298,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     return;
 
                 InitLSL();
-                m_LSL_Api?.ThrottleSay(channel, 2000);
+                m_LSL_Api.ThrottleSay(channel, 2000);
                 module.Shout(npcId, World, message, channel);
             }
         }
@@ -3902,7 +3892,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel();
 
             InitLSL();
-            m_LSL_Api?.SetPrimitiveParamsEx(prim, rules, "osSetPrimitiveParams");
+            m_LSL_Api.SetPrimitiveParamsEx(prim, rules, "osSetPrimitiveParams");
         }
 
         /// <summary>
@@ -4162,7 +4152,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel(ThreatLevel.High, "osForceAttachToAvatar");
 
             InitLSL();
-            m_LSL_Api?.AttachToAvatar(attachmentPoint);
+            m_LSL_Api.AttachToAvatar(attachmentPoint);
         }
 
         public void osForceAttachToAvatarFromInventory(string itemName, int attachmentPoint)
@@ -4193,19 +4183,19 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             TaskInventoryItem item = m_host.Inventory.GetInventoryItem(itemName);
             if (item is null)
             {
-                m_LSL_Api?.llSay(0, $"Could not find object '{itemName}'");
+                m_LSL_Api.llSay(0, $"Could not find object '{itemName}'");
                 throw new Exception($"The inventory item '{itemName}' could not be found");
             }
 
             if (item.InvType != (int)InventoryType.Object)
             {
-                m_LSL_Api?.llSay(0, $"Unable to attach, item '{itemName}' is not an object.");
+                m_LSL_Api.llSay(0, $"Unable to attach, item '{itemName}' is not an object.");
                 throw new Exception($"The inventory item '{itemName}' is not an object");
             }
 
             if ((item.Flags & (uint)InventoryItemFlags.ObjectHasMultipleItems) != 0)
             {
-                m_LSL_Api?.llSay(0, $"Unable to attach coalesced object, item '{itemName}'");
+                m_LSL_Api.llSay(0, $"Unable to attach coalesced object, item '{itemName}'");
                 throw new Exception($"The inventory item '{itemName}' is a coalesced object");
             }
 
@@ -4220,7 +4210,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 m_log.ErrorFormat(
                     "[OSSL API]: Could not create user inventory item {0} for {1}, attach point {2} in {3}: {4}",
                     itemName, m_host.Name, attachmentPoint, World.Name, message);
-                m_LSL_Api?.llSay(0, message);
+                m_LSL_Api.llSay(0, message);
                 return;
             }
 
@@ -4232,7 +4222,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             CheckThreatLevel(ThreatLevel.High, "osForceDetachFromAvatar");
 
             InitLSL();
-            m_LSL_Api?.DetachFromAvatar();
+            m_LSL_Api.DetachFromAvatar();
         }
 
         private static bool listObjToInt(object p, out int i)
@@ -5008,7 +4998,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             // send the sound, once, to all clients in range
-            m_SoundModule.SendSound(sop.UUID, soundID, volume, false, 0, false, false);
+            m_SoundModule.SendSound(sop, soundID, volume, false, 0, false, false);
         }
 
         public void osLoopSound(LSL_Integer linknum, LSL_String sound, LSL_Float volume)
@@ -5024,7 +5014,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (soundID.IsZero())
                 return;
 
-            m_SoundModule.LoopSound(sop.UUID, soundID, volume, false,false);
+            m_SoundModule.LoopSound(sop, soundID, volume, false, false);
         }
 
         public void osLoopSoundMaster(LSL_Integer linknum, LSL_String sound, LSL_Float volume)
@@ -5040,7 +5030,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (soundID.IsZero())
                 return;
 
-            m_SoundModule.LoopSound(sop.UUID, soundID, volume, true, false);
+            m_SoundModule.LoopSound(sop, soundID, volume, true, false);
         }
 
         public void osLoopSoundSlave(LSL_Integer linknum, LSL_String sound, LSL_Float volume)
@@ -5053,10 +5043,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(sop, m_host, sound, AssetType.Sound);
-            if (soundID.IsZero())
-                return;
-
-            m_SoundModule.LoopSound(sop.UUID, soundID, volume, false, true);
+            if (soundID.IsNotZero())
+                m_SoundModule.LoopSound(sop, soundID, volume, false, true);
         }
 
         public void osPlaySoundSlave(LSL_Integer linknum, LSL_String sound, LSL_Float volume)
@@ -5069,11 +5057,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(sop, m_host, sound, AssetType.Sound);
-            if (soundID.IsZero())
-                return;
-
-            // send the sound, once, to all clients in range
-            m_SoundModule.SendSound(sop.UUID, soundID, volume, false, 0, true, false);
+            if (soundID.IsNotZero())
+                m_SoundModule.SendSound(sop, soundID, volume, false, 0, true, false);
         }
 
         public void osTriggerSound(LSL_Integer linknum, LSL_String sound, LSL_Float volume)
@@ -5086,11 +5071,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(sop, m_host, sound, AssetType.Sound);
-            if (soundID.IsZero())
-                return;
-
-            // send the sound, once, to all clients in rangeTrigger or play an attached sound in this part's inventory.
-            m_SoundModule.SendSound(sop.UUID, soundID, volume, true, 0, false, false);
+            if (soundID.IsNotZero())
+                m_SoundModule.SendSound(sop, soundID, volume, true, 0, false, false);
         }
 
        public void osTriggerSoundLimited(LSL_Integer linknum, LSL_String sound, LSL_Float volume,
@@ -5104,10 +5086,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(sop, m_host, sound, AssetType.Sound);
-            if (soundID.IsZero())
-                return;
-
-            m_SoundModule.TriggerSoundLimited(sop.UUID, soundID, volume,
+            if (soundID.IsNotZero())
+                m_SoundModule.TriggerSoundLimited(sop.UUID, soundID, volume,
                         bottom_south_west, top_north_east);
         }
 
@@ -5117,14 +5097,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             InitLSL();
-            if(m_LSL_Api is null)
-                return;
-
             List<SceneObjectPart> sops = m_LSL_Api.GetLinkParts(linknum);
             if(sops is null || sops.Count == 0)
                 return;
             for(int i = 0; i < sops.Count; ++i)
-                m_SoundModule.StopSound(sops[i].UUID);
+                m_SoundModule.StopSound(sops[i]);
         }
 
         public void osPreloadSound(LSL_Integer linknum, LSL_String sound)
@@ -5140,7 +5117,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (soundID.IsZero())
                 return;
 
-            m_SoundModule.PreloadSound(sop.UUID, soundID);
+            m_SoundModule.PreloadSound(sop, soundID);
             ScriptSleep(1000);
         }
 
@@ -5632,9 +5609,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void osSetLinkSitActiveRange(LSL_Integer linkNumber, LSL_Float v)
         {
             InitLSL();
-            if(m_LSL_Api is null)
-                return;
-
             float fv = (float)v.value;
             if (fv > 128f)
                 fv = 128f;
@@ -5941,20 +5915,17 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         public void osParticleSystem(LSL_List rules)
         {
             InitLSL();
-            m_LSL_Api?.SetParticleSystem(m_host, rules, "osParticleSystem", true);
+            m_LSL_Api.SetParticleSystem(m_host, rules, "osParticleSystem", true);
         }
 
         public void osLinkParticleSystem(LSL_Integer linknumber, LSL_List rules)
         {
             InitLSL();
-            if (m_LSL_Api is not null)
-            {
-                List<SceneObjectPart> parts = m_LSL_Api.GetLinkParts(linknumber);
 
-                foreach (SceneObjectPart part in parts)
-                {
-                    m_LSL_Api.SetParticleSystem(part, rules, "osLinkParticleSystem", true);
-                }
+            List<SceneObjectPart> parts = m_LSL_Api.GetLinkParts(linknumber);
+            foreach (SceneObjectPart part in parts)
+            {
+                m_LSL_Api.SetParticleSystem(part, rules, "osLinkParticleSystem", true);
             }
         }
 

@@ -2904,11 +2904,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             UUID soundID = ScriptUtils.GetAssetIdFromKeyOrItemName(m_host, sound, AssetType.Sound);
-            if(soundID.IsZero())
-                return;
-
-            // send the sound, once, to all clients in range
-            m_SoundModule.SendSound(m_host.UUID, soundID, volume, false, 0, false, false);
+            if(soundID.IsNotZero())
+                m_SoundModule.SendSound(m_host, soundID, volume, false, 0, false, false);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2936,23 +2933,23 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             {
                 case 0: // play
                     foreach (SceneObjectPart sop in parts)
-                        m_SoundModule.SendSound(sop.UUID, soundID, volume, false, 0, false, false);
+                        m_SoundModule.SendSound(sop, soundID, volume, false, 0, false, false);
                     break;
                 case 1: // loop
                     foreach (SceneObjectPart sop in parts)
-                        m_SoundModule.LoopSound(sop.UUID, soundID, volume, false, false);
+                        m_SoundModule.LoopSound(sop, soundID, volume, false, false);
                     break;
                 case 2: //trigger
                 foreach (SceneObjectPart sop in parts)
-                    m_SoundModule.SendSound(sop.UUID, soundID, volume, true, 0, false, false);
+                    m_SoundModule.SendSound(sop, soundID, volume, true, 0, false, false);
                     break;
                 case 4: // play slave
                     foreach (SceneObjectPart sop in parts)
-                        m_SoundModule.SendSound(sop.UUID, soundID, volume, false, 0, true, false);
+                        m_SoundModule.SendSound(sop, soundID, volume, false, 0, true, false);
                     break;
                 case 5: // loop slave
                     foreach (SceneObjectPart sop in parts)
-                        m_SoundModule.LoopSound(sop.UUID, soundID, volume, false, true);
+                        m_SoundModule.LoopSound(sop, soundID, volume, false, true);
                     break;
             }
         }
@@ -2967,7 +2964,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(soundID.IsZero())
                 return;
 
-            m_SoundModule.LoopSound(m_host.UUID, soundID, volume, false,false);
+            m_SoundModule.LoopSound(m_host, soundID, volume, false, false);
         }
 
         public void llLoopSoundMaster(string sound, double volume)
@@ -2979,7 +2976,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(soundID.IsZero())
                 return;
 
-            m_SoundModule.LoopSound(m_host.UUID, soundID, volume, true, false);
+            m_SoundModule.LoopSound(m_host, soundID, volume, true, false);
         }
 
         public void llLoopSoundSlave(string sound, double volume)
@@ -2991,7 +2988,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(soundID.IsZero())
                 return;
 
-            m_SoundModule.LoopSound(m_host.UUID, soundID, volume, false, true);
+            m_SoundModule.LoopSound(m_host, soundID, volume, false, true);
         }
 
         public void llPlaySoundSlave(string sound, double volume)
@@ -3004,7 +3001,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             // send the sound, once, to all clients in range
-            m_SoundModule.SendSound(m_host.UUID, soundID, volume, false, 0, true, false);
+            m_SoundModule.SendSound(m_host, soundID, volume, false, 0, true, false);
         }
 
         public void llTriggerSound(string sound, double volume)
@@ -3017,12 +3014,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 return;
 
             // send the sound, once, to all clients in rangeTrigger or play an attached sound in this part's inventory.
-            m_SoundModule.SendSound(m_host.UUID, soundID, volume, true, 0, false, false);
+            m_SoundModule.SendSound(m_host, soundID, volume, true, 0, false, false);
         }
 
         public void llStopSound()
         {
-            m_SoundModule?.StopSound(m_host.UUID);
+            m_SoundModule?.StopSound(m_host);
         }
 
         public void llLinkStopSound(LSL_Integer linknumber)
@@ -3030,7 +3027,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if (m_SoundModule is not null)
             {
                 foreach(SceneObjectPart sop in GetLinkParts(linknumber))
-                    m_SoundModule.StopSound(sop.UUID);
+                    m_SoundModule.StopSound(sop);
             }
         }
 
@@ -3043,7 +3040,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             if(soundID.IsZero())
                 return;
 
-            m_SoundModule.PreloadSound(m_host.UUID, soundID);
+            m_SoundModule.PreloadSound(m_host, soundID);
             ScriptSleep(m_sleepMsOnPreloadSound);
         }
 
