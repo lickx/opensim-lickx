@@ -350,12 +350,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Plugins
                     return sensedEntities;
 
                 fromRegionPos = avatar.AbsolutePosition;
-                q = doarc ? Quaternion.Identity : avatar.Rotation;
+                q = avatar.Rotation;
             }
             else
             {
                 fromRegionPos = sensorPart.GetWorldPosition();
-                q = doarc ? Quaternion.Identity : sensorPart.GetWorldRotation();  // non-attached prim Sensor *always* uses World rotation!
+                q = sensorPart.GetWorldRotation();  // non-attached prim Sensor *always* uses World rotation!
             }
 
             Vector3 forward_dir;
