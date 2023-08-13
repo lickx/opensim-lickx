@@ -299,7 +299,7 @@ namespace OpenSim
                                             + "  --mergeReplaceObjects if scene as a object with same id, replace it\n"
                                             + "       without this option, skip loading that object\n"
                                             + "--skip-assets will load the OAR but ignore the assets it contains.\n"
-                                            + "--default-user will use this user for any objects with an owner whose UUID is not found in the grid.\n"
+                                            + "--default-user will use this user for any objects and parcels with an owner whose UUID is not found in the grid.\n"
                                             + "--no-objects suppresses the addition of any objects (good for loading only the terrain).\n"
                                             + "--rotation specified rotation to be applied to the oar. Specified in degrees.\n"
                                             + "--bounding-origin will only place objects that after displacement and rotation fall within the bounding cube who's position starts at <x,y,z>. Defaults to <0,0,0>.\n"
