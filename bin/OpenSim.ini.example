@@ -1147,6 +1147,9 @@
     ;; set this to false to not display parcel ban lines
     ;ShowParcelBansLines = true
 
+    ;; Allow HG visitors to buy parcels?
+    ;AllowParcelBuyHG = true
+
 [UserProfiles]
   ;# {ProfileServiceURL} {} {Set url to UserProfilesService} {}
   ;; Set the value of the url to your UserProfilesService
