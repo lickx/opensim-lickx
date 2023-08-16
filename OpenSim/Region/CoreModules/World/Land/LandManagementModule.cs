@@ -99,6 +99,7 @@ namespace OpenSim.Region.CoreModules.World.Land
         private UUID DefaultGodParcelGroup;
         private string DefaultGodParcelName;
         private UUID DefaultGodParcelOwner;
+        private bool m_allowParcelBuyHG = true;
 
         // caches ExtendedLandData
         static private readonly ExpiringCacheOS<UUID,ExtendedLandData> m_parcelInfoCache = new(10000);
@@ -151,6 +152,7 @@ namespace OpenSim.Region.CoreModules.World.Land
                 m_BanLineSafeHeight = landManagementConfig.GetFloat("BanLineSafeHeight", m_BanLineSafeHeight);
                 if(!m_allowedForcefulBans)
                     m_showBansLines = false;
+                m_allowParcelBuyHG = landManagementConfig.GetBoolean("AllowParcelBuyHG", m_allowParcelBuyHG);
             }
         }
 
@@ -1774,6 +1776,16 @@ namespace OpenSim.Region.CoreModules.World.Land
                 }
 
                 UUID AuthorizedID = land.LandData.AuthBuyerID;
+                if (m_allowParcelBuyHG == false && m_userManager.IsLocalGridUser(AuthorizedID) == false)
+                {
+                    ScenePresence sp;
+                    if (m_scene.TryGetScenePresence(AuthorizedID, out sp))
+                    {
+                        sp.ControllingClient.SendAlertMessage("Parcel buying reserved for local residents");
+                    }
+                    return;
+                }
+
                 int saleprice = land.LandData.SalePrice;
                 UUID pOwnerID = land.LandData.OwnerID;
 
