@@ -1721,12 +1721,15 @@ namespace OpenSim.Region.CoreModules.World.Land
             {
                 if (m_scene.Permissions.CanAbandonParcel(remote_client.AgentId, land))
                 {
+                    UUID LastOwnerID = land.LandData.OwnerID;
+                    string date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                     land.LandData.OwnerID = m_scene.RegionInfo.EstateSettings.EstateOwner;
                     land.LandData.GroupID = UUID.Zero;
                     land.LandData.IsGroupOwned = false;
                     land.LandData.Flags &= ~(uint) (ParcelFlags.ForSale | ParcelFlags.ForSaleObjects | ParcelFlags.SellParcelObjects | ParcelFlags.ShowDirectory | ParcelFlags.CreateObjects);
                     land.LandData.Name = "Abandoned Land";
                     land.LandData.OtherCleanTime = 5;
+                    land.LandData.Description = "Land abandoned by "+m_userManager.GetUserName(LastOwnerID)+" on "+date;
 
                     UpdateLandObject(land.LandData.LocalID, land.LandData);
                     m_scene.ForEachClient(SendParcelOverlay);
