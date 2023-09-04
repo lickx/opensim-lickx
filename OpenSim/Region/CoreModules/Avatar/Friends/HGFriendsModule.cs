@@ -199,21 +199,30 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
 
             if (base.SendFriendsOnlineIfNeeded(client))
             {
-                AgentCircuitData aCircuit = ((Scene)client.Scene).AuthenticateHandler.GetAgentCircuitData(client.AgentId);
-                if (aCircuit is not null && (aCircuit.teleportFlags & (uint)Constants.TeleportFlags.ViaHGLogin) != 0)
-                {
-                    UserAccount account = m_Scenes[0].UserAccountService.GetUserAccount(client.Scene.RegionInfo.ScopeID, client.AgentId);
-                    if (account is null) // foreign
+                Util.FireAndForget(
+                    delegate
                     {
-                        FriendInfo[] friends = GetFriendsFromCache(client.AgentId);
-                        foreach (FriendInfo f in friends)
+                        try
                         {
-                            int rights = f.TheirFlags;
-                            if(rights != -1 )
-                                client.SendChangeUserRights(new UUID(f.Friend), client.AgentId, rights);
-                        }
-                    }
-                }
+                            AgentCircuitData aCircuit = ((Scene)client.Scene).AuthenticateHandler.GetAgentCircuitData(client.AgentId);
+                            if (aCircuit is not null && (aCircuit.teleportFlags & (uint)Constants.TeleportFlags.ViaHGLogin) != 0)
+                            {
+                                UserAccount account = m_Scenes[0].UserAccountService.GetUserAccount(client.Scene.RegionInfo.ScopeID, client.AgentId);
+                                if (account is null) // foreign
+                                {
+                                    FriendInfo[] friends = GetFriendsFromCache(client.AgentId);
+                                    foreach (FriendInfo f in friends)
+                                    {
+                                        int rights = f.TheirFlags;
+                                        if(rights != -1 )
+                                            client.SendChangeUserRights(new UUID(f.Friend), client.AgentId, rights);
+                                    }
+                                }
+                            }
+                         }
+                         catch { }
+                     }, null, "HGFriendsModule.SendFriendsOnlineIfNeeded"
+                );
             }
 
             //m_log.DebugFormat("[HGFRIENDS MODULE]: Exiting SendFriendsOnlineIfNeeded for {0}", client.Name);
@@ -225,6 +234,7 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
             //m_log.DebugFormat("[HGFRIENDS MODULE]: Entering GetOnlineFriends for {0}", userID);
 
             List<string> fList = new();
+            List<string> HGList = new();
             foreach (string s in friendList)
             {
                 if (s.Length < 36)
@@ -232,10 +242,76 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                         "[HGFRIENDS MODULE]: Ignoring friend {0} ({1} chars) for {2} since identifier too short",
                         s, s.Length, userID);
                 else
+                {
+                    // is this a local friend?
+                    UUID friendID;
+                    if (!UUID.TryParse(s, out friendID))
+                    {
+                        // No this is not a local friend.
+                        // it's a foreign friend
+                        HGList.Add(s);
+                    }
                     fList.Add(s.Substring(0, 36));
+                }
             }
 
             // FIXME: also query the presence status of friends in other grids (like in HGStatusNotifier.Notify())
+            if (HGList.Count > 0)
+            {
+                Util.FireAndForget(
+                    delegate
+                    {
+                        List<UUID> HGoffline = new();
+                        List<UUID> HGonline = new();
+
+                        foreach (string s in HGList)
+                        {
+                            UUID friendID;
+                            string url = string.Empty;
+                            string tmp = string.Empty;
+                            try
+                            {
+                                //if (Util.ParseUniversalUserIdentifier(s, out friendID, out url, out tmp, out tmp, out tmp))
+                                if (Util.ParseUniversalUserIdentifier(s, out friendID, out url))
+                                {
+                                    url = UserManagementModule.GetUserServerURL(friendID, "FriendsServerURI");
+                                    if (url != string.Empty)
+                                    {
+                                        HGFriendsServicesConnector fConn = new HGFriendsServicesConnector(url);
+                                        if (fConn is not null)
+                                        {
+                                            List<string> id = new() { friendID.ToString() };
+                                            if (fConn.StatusNotification(id, userID, true).Count > 0)
+                                            {
+                                                HGonline.Add(friendID);
+                                            }
+                                            else
+                                            {
+                                                HGoffline.Add(friendID);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+
+                        try
+                        {
+                            IClientAPI client = LocateClientObject(userID);
+                            if (client is not null)
+                            {
+                                if (HGonline.Count > 0)
+                                    client.SendAgentOnline(HGonline.ToArray());
+
+                                if (HGoffline.Count > 0)
+                                    client.SendAgentOffline(HGoffline.ToArray());
+                            }
+                        }
+                        catch { }
+
+                    }, null, "" );
+            }
 
             PresenceInfo[] presence = PresenceService.GetAgents(fList.ToArray());
             if (presence.Length == 0)
