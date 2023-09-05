@@ -261,7 +261,7 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                 Util.FireAndForget(
                     delegate
                     {
-                        List<UUID> HGoffline = new();
+                        //List<UUID> HGoffline = new();
                         List<UUID> HGonline = new();
 
                         foreach (string s in HGList)
@@ -285,10 +285,10 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                                             {
                                                 HGonline.Add(friendID);
                                             }
-                                            else
-                                            {
-                                                HGoffline.Add(friendID);
-                                            }
+                                            //else
+                                            //{
+                                            //    HGoffline.Add(friendID);
+                                            //}
                                         }
                                     }
                                 }
@@ -304,8 +304,8 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                                 if (HGonline.Count > 0)
                                     client.SendAgentOnline(HGonline.ToArray());
 
-                                if (HGoffline.Count > 0)
-                                    client.SendAgentOffline(HGoffline.ToArray());
+                                //if (HGoffline.Count > 0)
+                                //    client.SendAgentOffline(HGoffline.ToArray());
                             }
                         }
                         catch { }
