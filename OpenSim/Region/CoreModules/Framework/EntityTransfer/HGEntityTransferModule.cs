@@ -258,6 +258,14 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
         protected override bool CreateAgent(ScenePresence sp, GridRegion reg, GridRegion finalDestination, AgentCircuitData agentCircuit, uint teleportFlags, EntityTransferContext ctx, out string reason, out bool logout)
         {
             m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: CreateAgent {0} {1}", reg.ServerURI, finalDestination.ServerURI);
+
+            if (sp.GotAttachmentsData == false)
+            {
+                logout = false;
+                reason = "Cannot leave region yet, attachments are still loading";
+                return false;
+            }
+
             reason = string.Empty;
             logout = false;
             int flags = Scene.GridService.GetRegionFlags(m_sceneRegionInfo.ScopeID, reg.RegionID);
@@ -898,13 +906,13 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 defsp = null;
                                 uuidGatherer = null;
                                 toadd = null;
+                                sp.GotAttachmentsData = true;
                             },
                             OwnerID.ToString());
                     }
                 }
             }
 
-            sp.GotAttachmentsData = true;
             return true;
         }
 
