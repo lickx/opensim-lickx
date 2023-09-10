@@ -935,10 +935,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 uuidGatherer = null;
                                 toadd = null;
                                 sp.GotAttachmentsData = true;
-                                string gridName = m_scene.SceneGridInfo == null ? string.Empty : " @ "+m_scene.SceneGridInfo.GridName;
-                                string regionName = m_scene.RegionInfo == null ? string.Empty : " to "+m_scene.RegionInfo.RegionName;
-                                string welcomeMsg = "\nWelcome"+regionName+gridName+"!";
-                                sp.ControllingClient.SendAgentAlertMessage("Hypergrid teleport complete."+welcomeMsg, false);
                             },
                             OwnerID.ToString());
                     }
