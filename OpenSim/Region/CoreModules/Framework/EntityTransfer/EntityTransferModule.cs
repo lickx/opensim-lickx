@@ -1319,6 +1319,13 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
         protected virtual bool CreateAgent(ScenePresence sp, GridRegion reg, GridRegion finalDestination, AgentCircuitData agentCircuit, uint teleportFlags, EntityTransferContext ctx, out string reason, out bool logout)
         {
+            if (sp.GotAttachmentsData == false)
+            {
+                logout = false;
+                reason = "Cannot leave region yet, attachments are still loading";
+                return false;
+            }
+
             GridRegion source = new(m_sceneRegionInfo)
             {
                 RawServerURI = m_thisGridInfo.GateKeeperURL
