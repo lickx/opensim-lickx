@@ -70,5 +70,43 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                 }
             }
         }
+
+        public void Notify(UUID userID, List<UUID>friendIds, bool online)
+        {
+            if(m_FriendsModule is null)
+                return;
+
+            if (friendIds.Count == 0)
+                return; // no one to notify. caller don't do this
+
+            List<String> friendIdsStr = friendIds.Select(id => id.ToString()).ToList();
+
+            m_log.DebugFormat("[HG STATUS NOTIFIER]: Notifying {0} friends", friendIds.Count);
+            foreach (UUID friendID in friendIds)
+            {
+                string friendsServerURI = m_FriendsModule.UserManagementModule.GetUserServerURL(friendID, "FriendsServerURI");
+                if (!string.IsNullOrEmpty(friendsServerURI))
+                {
+                    HGFriendsServicesConnector fConn = new(friendsServerURI);
+
+                    List<UUID> friendsOnline = fConn.StatusNotification(friendIdsStr, userID, online);
+
+                    if (friendsOnline.Count > 0)
+                    {
+                        IClientAPI client = m_FriendsModule.LocateClientObject(userID);
+                        if(client is not null)
+                        {
+                            m_FriendsModule.CacheFriendsOnline(userID, friendsOnline, online);
+                            if(online)
+                                client?.SendAgentOnline(friendsOnline.ToArray());
+                            else
+                                client?.SendAgentOffline(friendsOnline.ToArray());
+                        }
+                    }
+                }
+            }
+        }
+
+
     }
 }
