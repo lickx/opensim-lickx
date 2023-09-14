@@ -391,32 +391,23 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
 
         private void OnClientClosed(UUID agentID, Scene scene)
         {
-            Util.FireAndForget(
-                delegate
-                {
-                    try
-                    {
-                        ScenePresence sp = scene.GetScenePresence(agentID);
-                        if (sp != null && !sp.IsChildAgent)
-                        {
-                            // do this for root agents closing out
-                            StatusChange(agentID, false);
-                        }
+            ScenePresence sp = scene.GetScenePresence(agentID);
+            if (sp != null && !sp.IsChildAgent)
+            {
+                // do this for root agents closing out
+                StatusChange(agentID, false);
+            }
 
-                        lock (m_Friends)
-                        {
-                            m_OnlineFriendsCache.Remove(agentID);
-                            if (m_Friends.TryGetValue(agentID, out UserFriendData friendsData))
-                            {
-                                friendsData.Refcount--;
-                                if (friendsData.Refcount <= 0)
-                                    m_Friends.Remove(agentID);
-                            }
-                        }
-                    }
-                    catch { }
-                }, null, "FriendsModule.OnClientClosed"
-            );
+            lock (m_Friends)
+            {
+                m_OnlineFriendsCache.Remove(agentID);
+                if (m_Friends.TryGetValue(agentID, out UserFriendData friendsData))
+                {
+                    friendsData.Refcount--;
+                    if (friendsData.Refcount <= 0)
+                        m_Friends.Remove(agentID);
+                }
+            }
         }
 
         private void OnClientLogin(IClientAPI client)
