@@ -256,6 +256,8 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
             //m_log.DebugFormat("[HGFRIENDS MODULE]: Entering StatusNotify for {0}", userID);
 
             // First, let's divide the friends on a per-domain basis
+            List<FriendInfo> locallst = new List<FriendInfo>(friendList.Count);
+
             Dictionary<string, List<FriendInfo>> friendsPerDomain = new Dictionary<string, List<FriendInfo>>();
             foreach (FriendInfo friend in friendList)
             {
@@ -287,7 +289,8 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
             if (friendsPerDomain.ContainsKey("local"))
                 base.StatusNotify(friendsPerDomain["local"], userID, online);
 
-            m_StatusNotifier.Notify(userID, friendsPerDomain, online);
+            if(friendsPerDomain.Count > 0)
+                m_StatusNotifier.Notify(userID, friendsPerDomain, online);
 
 //            m_log.DebugFormat("[HGFRIENDS MODULE]: Exiting StatusNotify for {0}", userID);
         }

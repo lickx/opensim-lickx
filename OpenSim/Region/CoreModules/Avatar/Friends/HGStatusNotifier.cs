@@ -30,36 +30,46 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
         {
             foreach (KeyValuePair<string, List<FriendInfo>> kvp in friendsPerDomain)
             {
-                if (kvp.Key != "local")
+                if (kvp.Value.Count == 0)
+                    continue; // no one to notify. caller don't do this
+
+                // ASSUMPTION: we assume that all users for one home domain
+                // have exactly the same set of service URLs.
+                // If this is ever not true, we need to change this.
+                FriendInfo id0Info = kvp.Value[0];
+                string id0 = id0Info.Friend; // the hgname of the first friend
+                if (Util.ParseUniversalUserIdentifier(id0, out UUID firstID))
                 {
-                    // For the others, call the user agent service
-                    List<string> ids = new List<string>();
+                    string friendsServerURI = m_FriendsModule.UserManagementModule.GetUserServerURL(firstID, "FriendsServerURI");
+                    if (friendsServerURI == string.Empty)
+                        continue;
+
+                    HGFriendsServicesConnector fConn = new HGFriendsServicesConnector(friendsServerURI);
+
+                    List<string> ids = new List<string>(kvp.Value.Count);
                     foreach (FriendInfo f in kvp.Value)
-                        ids.Add(f.Friend);
-
-                    if (ids.Count == 0)
-                        continue; // no one to notify. caller don't do this
-
-                    //m_log.DebugFormat("[HG STATUS NOTIFIER]: Notifying {0} friends in {1}", ids.Count, kvp.Key);
-                    // ASSUMPTION: we assume that all users for one home domain
-                    // have exactly the same set of service URLs.
-                    // If this is ever not true, we need to change this.
-                    if (Util.ParseUniversalUserIdentifier(ids[0], out UUID friendID))
                     {
-                        string friendsServerURI = m_FriendsModule.UserManagementModule.GetUserServerURL(friendID, "FriendsServerURI");
-                        if (friendsServerURI != string.Empty)
-                        {
-                            HGFriendsServicesConnector fConn = new HGFriendsServicesConnector(friendsServerURI);
+                        if (Util.ParseUniversalUserIdentifier(f.Friend, out UUID friendID))
+                            ids.Add(friendID.ToString());
+                    }
+                    if (ids.Count == 0)
+                        continue;
 
-                            List<UUID> friendsOnline = fConn.StatusNotification(ids, userID, online);
+                    // Note: first argument in StatusNotification needs to be
+                    // a List<string> of UUIDs, not a List<string> of hgnames!
+                    List<UUID> friendsOnline = fConn.StatusNotification(ids, userID, online);
+                    if (friendsOnline.Count == 0)
+                        continue;
 
-                            if (online && friendsOnline.Count > 0)
-                            {
-                                IClientAPI client = m_FriendsModule.LocateClientObject(userID);
-                                if (client != null)
-                                    client.SendAgentOnline(friendsOnline.ToArray());
-                            }
-                        }
+                    IClientAPI client = m_FriendsModule.LocateClientObject(userID);
+                    if(client != null)
+                    {
+                        m_log.DebugFormat("[HG STATUS NOTIFIER]: Notifying {0} friends in {1}", friendsOnline.Count, kvp.Key);
+                        m_FriendsModule.CacheFriendsOnline(userID, friendsOnline, online);
+                        if(online)
+                            client.SendAgentOnline(friendsOnline.ToArray());
+                        else
+                            client.SendAgentOffline(friendsOnline.ToArray());
                     }
                 }
             }
