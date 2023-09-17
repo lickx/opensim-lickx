@@ -2183,8 +2183,7 @@ namespace OpenSim.Region.Framework.Scenes
                     if (!WaitForUpdateAgent(client))
                         // The sending region never sent the UpdateAgent data, we have to refuse
                         return;
-                } else
-                    GotAttachmentsData = true;
+                }
 
                 //m_log.DebugFormat("[CompleteMovement] WaitForUpdateAgent: {0}ms", Util.EnvironmentTickCountSubtract(ts));
 
