@@ -126,49 +126,27 @@ namespace OpenSim.Services.UserAccountService
             MainConsole.Instance.Output("Users online: {0}", onlineRecentlyCount);
         }
 
-        private static ExpiringCacheOS<string, GridUserData> cache = new ExpiringCacheOS<string, GridUserData>(100000);
         private GridUserData GetGridUserData(string userID)
         {
-            if (userID.Length > 36)
-                userID = userID.Substring(0, 36);
-
-            if (cache.TryGetValue(userID, out GridUserData d))
-               return d;
-
-            GridUserData[] ds = m_Database.GetAll(userID);
-            if (ds == null || ds.Length == 0)
+            GridUserData d = null;
+            if (userID.Length > 36) // it's a UUI
             {
-                cache.Add(userID, null, 300000);
-                return null;
+                d = m_Database.Get(userID);
             }
-
-            d = ds[0];
-            if (ds.Length > 1)
+            else // it's a UUID
             {
-                // try find most recent record
-                try
+                GridUserData[] ds = m_Database.GetAll(userID);
+                if (ds == null)
+                    return null;
+
+                if (ds.Length > 0)
                 {
-                    int tsta = int.Parse(d.Data["Login"]);
-                    int tstb = int.Parse(d.Data["Logout"]);
-                    int cur = tstb > tsta? tstb : tsta;
-
-                    for (int i = 1; i < ds.Length; ++i)
-                    {
-                        GridUserData dd = ds[i];
-                        tsta = int.Parse(dd.Data["Login"]);
-                        tstb = int.Parse(dd.Data["Logout"]);
-                        if(tsta > tstb)
-                            tstb = tsta;
-                        if (tstb > cur) 
-                        {
-                            cur = tstb;
+                    d = ds[0];
+                    foreach (GridUserData dd in ds)
+                        if (dd.UserID.Length > d.UserID.Length) // find the longest
                             d = dd;
-                        }
-                    }
                 }
-                catch { }
             }
-            cache.Add(userID, d, 300000);
             return d;
         }
 
@@ -249,8 +227,6 @@ namespace OpenSim.Services.UserAccountService
             d.Data["Login"] = Util.UnixTimeSinceEpoch().ToString();
 
             m_Database.Store(d);
-            if (userID.Length >= 36)
-                cache.Add(userID.Substring(0, 36), d, 300000);
 
             return ToInfo(d);
         }
@@ -273,13 +249,7 @@ namespace OpenSim.Services.UserAccountService
             d.Data["LastPosition"] = lastPosition.ToString();
             d.Data["LastLookAt"] = lastLookAt.ToString();
 
-            if(m_Database.Store(d))
-            {
-                if (userID.Length >= 36)
-                    cache.Add(userID.Substring(0, 36), d, 300000);
-                return true;
-            }
-            return false;
+            return m_Database.Store(d);
         }
 
         public bool SetHome(string userID, UUID homeID, Vector3 homePosition, Vector3 homeLookAt)
@@ -296,13 +266,7 @@ namespace OpenSim.Services.UserAccountService
             d.Data["HomePosition"] = homePosition.ToString();
             d.Data["HomeLookAt"] = homeLookAt.ToString();
 
-            if(m_Database.Store(d))
-            {
-                if (userID.Length >= 36)
-                    cache.Add(userID.Substring(0, 36), d, 300000);
-                return true;
-            }
-            return false;
+            return m_Database.Store(d);
         }
 
         public bool SetLastPosition(string userID, UUID sessionID, UUID regionID, Vector3 lastPosition, Vector3 lastLookAt)
@@ -321,13 +285,7 @@ namespace OpenSim.Services.UserAccountService
             d.Data["LastPosition"] = lastPosition.ToString();
             d.Data["LastLookAt"] = lastLookAt.ToString();
 
-            if(m_Database.Store(d))
-            {
-                if (userID.Length >= 36)
-                    cache.Add(userID.Substring(0, 36), d, 300000);
-                return true;
-            }
-            return false;
+            return m_Database.Store(d);
         }
     }
 }
