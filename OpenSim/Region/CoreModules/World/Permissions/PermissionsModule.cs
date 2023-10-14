@@ -2025,7 +2025,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             if(sog.OwnerID.NotEqual(sp.UUID) && (perms & (uint)PermissionMask.Transfer) == 0)
                  return false;
 
-            if (sp.UUID.NotEqual(sog.OwnerID) && IsFriendWithPerms(sp.UUID, sog.OwnerID) == false)
+            if (sog.OwnerID.NotEqual(sp.UUID) && !IsFriendWithPerms(sp.UUID, sog.OwnerID) && !sp.IsGod)
             {
                 if (m_takeCopyRestricted)
                 {
