@@ -270,7 +270,7 @@
     ; edit the line ulimit -s 262144, and change this last value
 
     ;# {DefaultScriptEngine} {} {Default script engine} {YEngine} YEngine
-    ;; Default script engine to use (Yengine if all commented)
+    ;; Default script engine to use (We only have YEngine; XEngine is EOL)
     ; DefaultScriptEngine = "YEngine"
 
     ;# {HttpProxy} {} {Proxy URL for llHTTPRequest and dynamic texture loading} {} http://proxy.com:8080
