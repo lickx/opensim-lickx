@@ -750,7 +750,7 @@ namespace OpenSim.Data.PGSQL
                 folder.ID = DBGuid.FromDB(reader["folderID"]);
                 folder.Name = (string)reader["folderName"];
                 folder.Type = (short)reader["type"];
-                folder.Version = Convert.ToUInt16(reader["version"]);
+                folder.Version = (int)reader["version"];
 
                 return folder;
             }

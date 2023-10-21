@@ -417,7 +417,7 @@ namespace OpenSim.Services.InventoryService
                     return false;
                 }
 
-                check.Version = (ushort)xFolder.version;
+                check.Version = xFolder.version;
                 xFolder = ConvertFromOpenSim(check);
 
 //                m_log.DebugFormat(
@@ -746,7 +746,7 @@ namespace OpenSim.Services.InventoryService
             //// Viewer can't understand anything that's not in it's LLFolderType enum
             //if (newFolder.Type == InventoryItemBase.SUITCASE_FOLDER_TYPE)
             //    newFolder.Type = InventoryItemBase.SUITCASE_FOLDER_FAKE_TYPE;
-            newFolder.Version = (ushort)folder.version;
+            newFolder.Version = folder.version;
             newFolder.Name = folder.folderName;
             newFolder.Owner = folder.agentID;
             newFolder.ID = folder.folderID;
@@ -760,7 +760,7 @@ namespace OpenSim.Services.InventoryService
 
             newFolder.parentFolderID = folder.ParentID;
             newFolder.type = (int)folder.Type;
-            newFolder.version = (int)folder.Version;
+            newFolder.version = folder.Version;
             newFolder.folderName = folder.Name;
             newFolder.agentID = folder.Owner;
             newFolder.folderID = folder.ID;

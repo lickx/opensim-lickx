@@ -386,7 +386,7 @@ namespace OpenSim.Data.MySQL
                 folder.ID = DBGuid.FromDB(reader["folderID"]);
                 folder.Name = (string) reader["folderName"];
                 folder.Type = (short) reader["type"];
-                folder.Version = (ushort) ((int) reader["version"]);
+                folder.Version = (int) reader["version"];
                 return folder;
             }
             catch (Exception e)

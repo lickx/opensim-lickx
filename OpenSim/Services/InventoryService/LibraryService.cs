@@ -152,7 +152,7 @@ namespace OpenSim.Services.InventoryService
             string basePath = Path.GetDirectoryName(path);
             if (config.Contains("RootVersion"))
             {
-                m_LibraryRootFolder.Version = (ushort)config.GetInt("RootVersion", m_LibraryRootFolder.Version);
+                m_LibraryRootFolder.Version = config.GetInt("RootVersion", m_LibraryRootFolder.Version);
                 return;
             }
 
