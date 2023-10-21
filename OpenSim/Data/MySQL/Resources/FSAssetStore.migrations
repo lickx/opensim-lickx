@@ -16,12 +16,3 @@ CREATE TABLE `fsassets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 COMMIT;
-
-# -----------------
-:VERSION 2
-BEGIN
-
-ALTER TABLE `fsassets` MODIFY COLUMN `description` VARCHAR(128);
-
-COMMIT;
-
