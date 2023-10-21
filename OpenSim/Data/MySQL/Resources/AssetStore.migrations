@@ -19,12 +19,3 @@ CREATE TABLE IF NOT EXISTS `assets` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 COMMIT;
-
-# -----------------
-:VERSION 11
-BEGIN
-
-ALTER TABLE `assets` MODIFY COLUMN `description` VARCHAR(128);
-
-COMMIT;
-
