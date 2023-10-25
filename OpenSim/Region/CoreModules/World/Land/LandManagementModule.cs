@@ -51,6 +51,8 @@ using OSDMap = OpenMetaverse.StructuredData.OSDMap;
 using OSDArray = OpenMetaverse.StructuredData.OSDArray;
 
 using Extension = Mono.Addins.ExtensionAttribute;
+using System.Text.RegularExpressions;
+
 namespace OpenSim.Region.CoreModules.World.Land
 {
     // used for caching
@@ -1696,7 +1698,15 @@ namespace OpenSim.Region.CoreModules.World.Land
 
             if (m_scene.Permissions.CanAbandonParcel(remote_client.AgentId, land))
             {
-                UUID LastOwnerID = land.LandData.OwnerID;
+                string LastOwnerName;
+                if (land.LandData.IsGroupOwned)
+                {
+                    GroupRecord groupRecord = m_groupManager.GetGroupRecord(land.LandData.OwnerID);
+                    LastOwnerName = "group " + groupRecord.GroupName;
+                }
+                else
+                    LastOwnerName = m_userManager.GetUserName(land.LandData.OwnerID);
+
                 string date = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
                 land.LandData.OwnerID = m_scene.RegionInfo.EstateSettings.EstateOwner;
                 land.LandData.GroupID = UUID.Zero;
@@ -1704,7 +1714,7 @@ namespace OpenSim.Region.CoreModules.World.Land
                 land.LandData.Flags &= ~(uint) (ParcelFlags.ForSale | ParcelFlags.ForSaleObjects | ParcelFlags.SellParcelObjects | ParcelFlags.ShowDirectory | ParcelFlags.CreateObjects);
                 land.LandData.Name = "Abandoned Land";
                 land.LandData.OtherCleanTime = 5;
-                land.LandData.Description = "Land abandoned by "+m_userManager.GetUserName(LastOwnerID)+" on "+date;
+                land.LandData.Description = "Land abandoned by " + LastOwnerName + " on " + date;
 
                 UpdateLandObject(land.LandData.LocalID, land.LandData);
                 m_scene.ForEachClient(SendParcelOverlay);
