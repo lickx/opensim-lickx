@@ -907,6 +907,8 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 uuidGatherer = null;
                                 toadd = null;
                                 sp.GotAttachmentsData = true;
+                                string gridWelcome = m_scene.SceneGridInfo == null ? string.Empty : "\nWelcome to "+m_scene.SceneGridInfo.GridName+"!";
+                                sp.ControllingClient.SendAgentAlertMessage("Hypergrid teleport complete."+gridWelcome, false);
                             },
                             OwnerID.ToString());
                     }
