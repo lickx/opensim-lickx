@@ -823,6 +823,10 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 IDictionary<UUID, sbyte> ids = new Dictionary<UUID, sbyte>();
                                 HGUuidGatherer uuidGatherer = new HGUuidGatherer(m_scene.AssetService, url, ids);
 
+                                IClientAPI remoteClient = sp.ControllingClient;
+                                if (remoteClient is not null)
+                                    remoteClient.SendAlertMessage("Please wait while your attachments are loading");
+
                                 foreach (SceneObjectGroup defso in deftatt)
                                 {
                                     if(defso.OwnerID.NotEqual(defsp.UUID))
@@ -879,7 +883,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     return;
                                 }
 
-                                IClientAPI remoteClient = sp.ControllingClient;
                                 UUID groupID = remoteClient.ActiveGroupId;
 
                                 m_log.DebugFormat("[HG ENTITY TRANSFER]: Adding attachments and resume attached scripts for HG user {0}", sp.Name);
@@ -907,8 +910,10 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                 uuidGatherer = null;
                                 toadd = null;
                                 sp.GotAttachmentsData = true;
-                                string gridWelcome = m_scene.SceneGridInfo == null ? string.Empty : "\nWelcome to "+m_scene.SceneGridInfo.GridName+"!";
-                                sp.ControllingClient.SendAgentAlertMessage("Hypergrid teleport complete."+gridWelcome, false);
+                                string gridName = m_scene.SceneGridInfo == null ? string.Empty : " @ "+m_scene.SceneGridInfo.GridName;
+                                string regionName = m_scene.RegionInfo == null ? string.Empty : " to "+m_scene.RegionInfo.RegionName;
+                                string welcomeMsg = "\nWelcome"+regionName+gridName+"!";
+                                sp.ControllingClient.SendAgentAlertMessage("Hypergrid teleport complete."+welcomeMsg, false);
                             },
                             OwnerID.ToString());
                     }
