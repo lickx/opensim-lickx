@@ -99,7 +99,7 @@ namespace OpenSim.Services.PresenceService
         public bool LogoutRegionAgents(UUID regionID)
         {
             PresenceData[] prevSessions = GetRegionAgents(regionID);
-            
+
             if ((prevSessions is null) || (prevSessions.Length == 0))
                 return true;
 
