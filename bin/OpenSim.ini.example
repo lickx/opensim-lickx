@@ -271,6 +271,7 @@
 
     ;# {DefaultScriptEngine} {} {Default script engine} {YEngine} YEngine
     ;; Default script engine to use (We only have YEngine; XEngine is EOL)
+    ;; see section [YEngine] below
     ; DefaultScriptEngine = "YEngine"
 
     ;# {HttpProxy} {} {Proxy URL for llHTTPRequest and dynamic texture loading} {} http://proxy.com:8080
