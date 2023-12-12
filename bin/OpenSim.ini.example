@@ -541,7 +541,8 @@
     ; enabled = false
 
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to objects to regions not on instance?} {true false} true
-    ;; Enable sending email to regions not on current opensimulator instance. Currently does not work
+    ;; Enable sending email to regions not on current opensimulator instance.
+    ;; Requires an IMAP server such as courier-imap or dovecot
     ; enableEmailToExternalObjects = true
 
 
@@ -563,6 +564,10 @@
     ; enableEmailToSMTP = true
 
     ;# {internal_object_host} {[Startup]emailmodule:DefaultEmailModule enabled:true} {Host name to treat as internal (object to object) email?} {} lsl.opensim.local
+    ; Messages with this domain are considered grid-local
+    ; Internal messages don't use SMTP.
+    ; - If the destination exists on THIS sim, delivers directly
+    ; - If the destination exists on ANOTHER sim, delivers through IMAP
     ; internal_object_host = lsl.opensim.local
 
     ;# {host_domain_header_from} {[Startup]emailmodule:DefaultEmailModule enabled:true} {From address to use in the sent email header?} {} 127.0.0.1
@@ -601,6 +606,33 @@
     ; SMTP_VerifyCertChain = true
     ;# {SMTP_VerifyCertNames} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP Verify cert chain option} {} true
     ; SMTP_VerifyCertNames = true
+
+    ; Imap configuration for enableEmailToExternalObjects = true:
+
+    ;# {IMAP_SERVER_TLS} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP use TLS?} {} false
+    ; IMAP_SERVER_TLS = false
+
+    ;# {IMAP_SERVER_HOSTNAME} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP server name?} {} 127.0.0.1
+    ; IMAP_SERVER_HOSTNAME = 127.0.0.1
+
+    ;# {IMAP_SERVER_PORT} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP server port?} {} 143
+    ; If using IMAP with TLS, it is port 993
+    ; IMAP_SERVER_PORT = 143
+
+    ;# {IMAP_SERVER_LOGIN} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP server user name?} {}
+    ; The user needs to have a Maildir folder in its homedirectory, with perms 700
+    ; This can be made with: maildirmake.courier ~/Maildir
+    ; IMAP_SERVER_LOGIN = foo
+
+    ;# {IMAP_SERVER_PASSWORD} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP server password} {}
+    ; IMAP_SERVER_PASSWORD = bar
+
+    ; using TLS and a smtp server with a self signed certificate you will need to set next two options false
+    ;# {IMAP_VerifyCertChain} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP Verify cert chain option} {} true
+    ; IMAP_VerifyCertChain = true
+    ;# {IMAP_VerifyCertNames} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP Verify cert chain option} {} true
+    ; IMAP_VerifyCertNames = true
+
 
 [Network]
     ;# {ConsoleUser} {} {User name for console account} {}
