@@ -2569,8 +2569,7 @@ namespace OpenSim.Region.Framework.Scenes
 
 
             sceneObject.InvalidateDeepEffectivePerms();
-            sceneObject.ScheduleGroupForFullAnimUpdate();
-
+            sceneObject.ScheduleGroupForUpdate(PrimUpdateFlags.FullUpdatewithAnimMatOvr);
             return sceneObject;
         }
 
