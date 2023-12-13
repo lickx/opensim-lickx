@@ -580,10 +580,10 @@
     ;# {IMAP_SERVER_PASSWORD} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP server password} {}
     ; IMAP_SERVER_PASSWORD = bar
 
-    ; using TLS and a smtp server with a self signed certificate you will need to set next two options false
+    ; using TLS and an IMAP server with a self signed certificate you will need to set next two options false
     ;# {IMAP_VerifyCertChain} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP Verify cert chain option} {} true
     ; IMAP_VerifyCertChain = true
-    ;# {IMAP_VerifyCertNames} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP Verify cert chain option} {} true
+    ;# {IMAP_VerifyCertNames} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP Verify cert chain option} {} true
     ; IMAP_VerifyCertNames = true
 
 
