@@ -732,9 +732,15 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 
                         client.Inbox.Open(FolderAccess.ReadWrite);
 
-                        var query = SearchQuery.ToContains(objectID.ToString());
-                        if (sender != "") query.And(SearchQuery.FromContains(sender));
-                        if (subject != "") query.And(SearchQuery.SubjectContains(subject));
+                        SearchQuery query = SearchQuery.ToContains(objectID.ToString());
+                        if (sender != "")
+                        {
+                            query = query.And(SearchQuery.FromContains(sender));
+                        }
+                        if (subject != "")
+                        {
+                            query = query.And(SearchQuery.SubjectContains(subject));
+                        }
                         var uids = client.Inbox.Search(query);
 
                         foreach (var uid in uids)
