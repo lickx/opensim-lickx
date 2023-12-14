@@ -732,7 +732,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
 
                         client.Inbox.Open(FolderAccess.ReadWrite);
 
-                        SearchQuery query = SearchQuery.ToContains(objectID.ToString());
+                        SearchQuery query = SearchQuery.ToContains(objectID.ToString()).And(SearchQuery.NotDeleted);
                         if (sender != "")
                         {
                             query = query.And(SearchQuery.FromContains(sender));
