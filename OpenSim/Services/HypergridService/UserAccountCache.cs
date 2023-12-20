@@ -42,7 +42,7 @@ namespace OpenSim.Services.HypergridService
         public void Cache(UUID userID, UserAccount account)
         {
             // Cache even null accounts
-            if (account == null)
+            if (account is null)
             {
                 m_UUIDCache.AddOrUpdate(userID, account, CACHE_NULL_EXPIRATION_SECONDS);
                 return;
