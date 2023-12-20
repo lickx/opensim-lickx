@@ -2029,10 +2029,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             if (sog.OwnerID.NotEqual(sp.UUID) && !IsFriendWithPerms(sp.UUID, sog.OwnerID) && !sp.IsGod)
             {
                 if (m_takeCopyRestricted)
-                {
-                    //sp.ControllingClient.SendAgentAlertMessage("'Take copy' is disabled in this sim", false);
                     return false;
-                }
             }
             return true;
         }
