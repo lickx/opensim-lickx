@@ -1038,5 +1038,10 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public const int SOUND_LOOP = 1;
         public const int SOUND_TRIGGER = 2;
         public const int SOUND_SYNC = 4;
+
+        // returned by llRequestAgentData
+        public const int PAYMENT_INFO_ON_FILE = 1;
+        public const int PAYMENT_INFO_USED = 2;
+
     }
 }
