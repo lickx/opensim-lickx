@@ -4688,29 +4688,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         {
             if (UUID.TryParse(id, out UUID uuid) && uuid.IsNotZero())
             {
-                //pre process fast local avatars
-                switch(data)
-                {
-                    case ScriptBaseClass.DATA_ONLINE:
-                        World.TryGetScenePresence(uuid, out ScenePresence sp);
-                        if (sp != null)
-                        {
-                            string ftid = m_AsyncCommands.DataserverPlugin.RequestWithImediatePost(m_host.LocalId,
-                                                    m_item.ItemID, "1");
-                            ScriptSleep(m_sleepMsOnRequestAgentData);
-                            return ftid;
-                        }
-                        break;
-                    case ScriptBaseClass.DATA_NAME: // DATA_NAME (First Last)
-                    case ScriptBaseClass.DATA_BORN: // DATA_BORN (YYYY-MM-DD)
-                    case ScriptBaseClass.DATA_RATING: // DATA_RATING (0,0,0,0,0,0)
-                    case 7: // DATA_USERLEVEL (integer).  This is not available in LL and so has no constant.
-                    case ScriptBaseClass.DATA_PAYINFO: // DATA_PAYINFO (0|1|2|3)
-                        break;
-                    default:
-                        return string.Empty; // Raise no event
-                }
-
                 void act(string eventID)
                 {
                     UserAccount account = null;
@@ -4754,20 +4731,36 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                         if (account is null)
                             reply = "0";
                         else
-                            reply = data switch
+                            switch (data)
                             {
                                 // DATA_NAME (First Last)
-                                ScriptBaseClass.DATA_NAME => account.FirstName + " " + account.LastName,
+                                case ScriptBaseClass.DATA_NAME:
+                                    reply = account.FirstName + " " + account.LastName;
+                                    break;
                                 // DATA_BORN (YYYY-MM-DD)
-                                ScriptBaseClass.DATA_BORN => Util.ToDateTime(account.Created).ToString("yyyy-MM-dd"),
+                                case ScriptBaseClass.DATA_BORN:
+                                    reply = Util.ToDateTime(account.Created).ToString("yyyy-MM-dd");
+                                    break;
                                 // DATA_RATING (0,0,0,0,0,0)
-                                ScriptBaseClass.DATA_RATING => "0,0,0,0,0,0",
+                                case ScriptBaseClass.DATA_RATING:
+                                    reply = "0,0,0,0,0,0";
+                                    break;
                                 // DATA_USERLEVEL (integer).  This is not available in LL and so has no constant.
-                                7 => account.UserLevel.ToString(),
+                                case 7:
+                                    reply = account.UserLevel.ToString();
+                                    break;
                                 // DATA_PAYINFO (0|1|2|3)
-                                ScriptBaseClass.DATA_PAYINFO => "0",
-                                _ => "0",// Raise no event
-                            };
+                                case ScriptBaseClass.DATA_PAYINFO:
+                                    int userflags = account.UserFlags;
+                                    int mask = 0;
+                                    if ((userflags & (int)ProfileFlags.Identified) == (int)ProfileFlags.Identified) mask |= 1; // PIOF
+                                    if ((userflags & (int)ProfileFlags.Transacted) == (int)ProfileFlags.Transacted) mask |= 2; // PIOF and used
+                                    reply = mask.ToString();
+                                    break;
+                                default:
+                                    reply = "0"; // Raise no event
+                                    break;
+                            }
                     }
                     m_AsyncCommands.DataserverPlugin.DataserverReply(eventID, reply);
                 }
