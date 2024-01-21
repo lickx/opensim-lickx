@@ -275,6 +275,7 @@ namespace OpenSim.Region.Framework.Scenes
 
         private static string m_AllowedViewers = string.Empty;
         private static string m_BannedViewers = string.Empty;
+        private static string m_ViewerDeniedMsg = "Access denied, your viewer is banned";
 
         // TODO: need to figure out how allow client agents but deny
         // root agents when ACL denies access to root agent
@@ -1030,6 +1031,8 @@ namespace OpenSim.Region.Framework.Scenes
                         config, "AllowedClients", possibleAccessControlConfigSections, string.Empty);
                 m_BannedViewers = Util.GetConfigVarFromSections<string>(
                         config, "DeniedClients", possibleAccessControlConfigSections, string.Empty);
+                m_ViewerDeniedMsg = Util.GetConfigVarFromSections<string>(
+                        config, "ViewerDeniedMsg", possibleAccessControlConfigSections, "Access denied, your viewer is banned");
 
                 FrameTime                 = startupConfig.GetFloat( "FrameTime", FrameTime);
                 FrameTimeWarnPercent      = startupConfig.GetInt( "FrameTimeWarnPercent", FrameTimeWarnPercent);
@@ -3970,7 +3973,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_log.DebugFormat(
                     "[SCENE]: Access denied for {0} {1} using {2}",
                     acd.firstname, acd.lastname, curViewer);
-                reason = "Access denied, your viewer is banned";
+                reason = m_ViewerDeniedMsg;
                 return false;
             }
 
