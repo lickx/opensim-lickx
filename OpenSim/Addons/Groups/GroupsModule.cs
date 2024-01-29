@@ -923,12 +923,6 @@ namespace OpenSim.Groups
                     remoteClient.SendCreateGroupReply(UUID.Zero, false, String.Format("Insufficient permissions to create a group. Requires level {0}", m_levelGroupCreate));
                     return UUID.Zero;
                 }
-
-                if (m_UserManagement.IsLocalGridUser(remoteClient.AgentId) == false)
-                {
-                    remoteClient.SendCreateGroupReply(UUID.Zero, false, String.Format("Creating groups reserved for local residents"));
-                    return UUID.Zero;
-                }
             }
 
             // check funds
