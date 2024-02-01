@@ -35,7 +35,6 @@ using System.Net;
 using System.Threading;
 using System.Reflection;
 using System.Text;
-using System.Web;
 
 using OpenMetaverse;
 using OpenMetaverse.StructuredData;
@@ -82,8 +81,7 @@ namespace OpenSim.Region.ClientStack.Linden
 
     public partial class BunchOfCaps
     {
-        private static readonly ILog m_log =
-            LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 
         private Scene m_Scene;
         private UUID m_AgentID;
@@ -149,30 +147,30 @@ namespace OpenSim.Region.ClientStack.Linden
             m_PrimScaleMin = m_ModelCost.PrimScaleMin;
 
             IConfigSource config = m_Scene.Config;
-            if (config != null)
+            if (config is not null)
             {
                 IConfig sconfig = config.Configs["Startup"];
-                if (sconfig != null)
+                if (sconfig is not null)
                 {
                     m_levelUpload = sconfig.GetInt("LevelUpload", 0);
                 }
                 if (m_levelUpload == 0)
                 {
                     IConfig pconfig = config.Configs["Permissions"];
-                    if (pconfig != null)
+                    if (pconfig is not null)
                     {
                         m_levelUpload = pconfig.GetInt("LevelUpload", 0);
                     }
                 }
 
                 IConfig appearanceConfig = config.Configs["Appearance"];
-                if (appearanceConfig != null)
+                if (appearanceConfig is not null)
                 {
                     m_persistBakedTextures = appearanceConfig.GetBoolean("PersistBakedTextures", m_persistBakedTextures);
                 }
                 // economy for model upload
                 IConfig EconomyConfig = config.Configs["Economy"];
-                if (EconomyConfig != null)
+                if (EconomyConfig is not null)
                 {
                     m_ModelCost.Econfig(EconomyConfig);
 
@@ -190,23 +188,19 @@ namespace OpenSim.Region.ClientStack.Linden
                 }
 
                 IConfig CapsConfig = config.Configs["ClientStack.LindenCaps"];
-                if (CapsConfig != null)
+                if (CapsConfig is not null)
                 {
                     string homeLocationUrl = CapsConfig.GetString("Cap_HomeLocation", "localhost");
-                    if(homeLocationUrl.Length == 0)
-                        m_AllowCapHomeLocation = false;
+                    m_AllowCapHomeLocation = !string.IsNullOrEmpty(homeLocationUrl);
 
                     string GroupMemberDataUrl = CapsConfig.GetString("Cap_GroupMemberData", "localhost");
-                    if(GroupMemberDataUrl.Length == 0)
-                        m_AllowCapGroupMemberData = false;
+                    m_AllowCapGroupMemberData = !string.IsNullOrEmpty(GroupMemberDataUrl);
 
                     string LandResourcesUrl = CapsConfig.GetString("Cap_LandResources", "localhost");
-                    if (LandResourcesUrl.Length == 0)
-                        m_AllowCapLandResources = false;
+                     m_AllowCapLandResources = !string.IsNullOrEmpty(LandResourcesUrl);
 
                     string AttachmentResourcesUrl = CapsConfig.GetString("Cap_AttachmentResources", "localhost");
-                    if (AttachmentResourcesUrl.Length == 0)
-                        m_AllowCapAttachmentResources = false;
+                    m_AllowCapAttachmentResources = !string.IsNullOrEmpty(AttachmentResourcesUrl);
                 }
             }
 
@@ -215,11 +209,11 @@ namespace OpenSim.Region.ClientStack.Linden
             m_UserManager = m_Scene.RequestModuleInterface<IUserManagement>();
             m_userAccountService = m_Scene.RequestModuleInterface<IUserAccountService>();
             m_moneyModule = m_Scene.RequestModuleInterface<IMoneyModule>();
-            if (m_UserManager == null)
+            if (m_UserManager is null)
                 m_log.Error("[CAPS]: GetDisplayNames disabled because user management component not found");
 
             UserAccount account = m_userAccountService.GetUserAccount(m_Scene.RegionInfo.ScopeID, m_AgentID);
-            if (account == null) // Hypergrid?
+            if (account is null) // Hypergrid?
                 m_scopeID = m_Scene.RegionInfo.ScopeID;
             else
                 m_scopeID = account.ScopeID;
@@ -295,7 +289,7 @@ namespace OpenSim.Region.ClientStack.Linden
             }
             catch (Exception e)
             {
-                m_log.Error("[CAPS]: " + e.ToString());
+                m_log.Error("[CAPS]: Error " + e.Message);
             }
         }
 
@@ -308,7 +302,7 @@ namespace OpenSim.Region.ClientStack.Linden
                         "POST", GetNewCapPath(), NewAgentInventoryRequest, "NewFileAgentInventory", null));
 
                 SimpleOSDMapHandler oreq;
-                if (ItemUpdatedCall != null)
+                if (ItemUpdatedCall is not null)
                 {
                     // first sets the http handler, others only register the cap, using it
                     oreq = new SimpleOSDMapHandler("POST", GetNewCapPath(), UpdateNotecardItemAsset);
@@ -336,7 +330,7 @@ namespace OpenSim.Region.ClientStack.Linden
                     m_HostCapsObj.RegisterSimpleHandler("UpdateGestureTaskInventory", oreq, false);
                 }
 
-                if (TaskScriptUpdatedCall != null)
+                if (TaskScriptUpdatedCall is not null)
                 {
                     oreq = new SimpleOSDMapHandler("POST", GetNewCapPath(), UpdateScriptTaskInventory);
                     m_HostCapsObj.RegisterSimpleHandler("UpdateScriptTask", oreq, true);
@@ -362,7 +356,7 @@ namespace OpenSim.Region.ClientStack.Linden
         {
             try
             {
-                if (m_UserManager != null)
+                if (m_UserManager is not null)
                 {
                     m_HostCapsObj.RegisterSimpleHandler("GetDisplayNames",
                         new SimpleStreamHandler(GetNewCapPath(), GetDisplayNames));
@@ -370,7 +364,7 @@ namespace OpenSim.Region.ClientStack.Linden
             }
             catch (Exception e)
             {
-                m_log.Error("[CAPS]: " + e.ToString());
+                m_log.Error("[CAPS]: Error " + e.Message);
             }
         }
         /// <summary>
@@ -385,8 +379,8 @@ namespace OpenSim.Region.ClientStack.Linden
         public void SeedCapRequest(IOSHttpRequest httpRequest, IOSHttpResponse httpResponse)
         {
             UUID agentID = m_HostCapsObj.AgentID;
-            m_log.DebugFormat(
-                "[CAPS]: Received SEED caps request in {0} for agent {1}", m_regionName, agentID);
+            m_log.Debug(
+                $"[CAPS]: Received SEED caps request in {m_regionName} for agent {agentID}");
 
             if(httpRequest.HttpMethod != "POST" || httpRequest.ContentType != "application/llsd+xml")
             {
@@ -421,7 +415,7 @@ namespace OpenSim.Region.ClientStack.Linden
                 return;
             }
 
-            List<string> validCaps = new List<string>();
+            HashSet<string> validCaps = new();
 
             foreach (OSD c in capsRequested)
             {
@@ -432,13 +426,14 @@ namespace OpenSim.Region.ClientStack.Linden
                     m_HostCapsObj.Flags |= Caps.CapsFlags.WLEnv;
                 else if (cstr.Equals("ExtEnvironment"))
                     m_HostCapsObj.Flags |= Caps.CapsFlags.AdvEnv;
+                else if(cstr.Equals("ModifyMaterialParams")) // will not work if a viewer has no edit features
+                    m_HostCapsObj.Flags |= Caps.CapsFlags.PBR;
                 validCaps.Add(cstr);
             }
 
-            string result = LLSDHelpers.SerialiseLLSDReply(m_HostCapsObj.GetCapsDetails(true, validCaps));
+            string result = LLSDHelpers.SerialiseLLSDReply(m_HostCapsObj.GetCapsDetails2(true, validCaps));
             httpResponse.RawBuffer = Util.UTF8NBGetbytes(result);
             httpResponse.StatusCode = (int)HttpStatusCode.OK;
-            //m_log.DebugFormat("[CAPS] CapsRequest {0}", result);
 
             m_HostCapsObj.Flags |= Caps.CapsFlags.SentSeeds;
         }
@@ -505,7 +500,7 @@ namespace OpenSim.Region.ClientStack.Linden
                 m_Scene.TryGetScenePresence(m_HostCapsObj.AgentID, out avatar);
 
                 // check user level
-                if (avatar != null)
+                if (avatar is not null)
                 {
                     if (avatar.GodController.UserLevel < m_levelUpload)
                     {
@@ -524,12 +519,12 @@ namespace OpenSim.Region.ClientStack.Linden
                 }
 
                 // check test upload and funds
-                if (client != null)
+                if (client is not null)
                 {
                     IMoneyModule mm = m_Scene.RequestModuleInterface<IMoneyModule>();
 
                     int baseCost = 0;
-                    if (mm != null)
+                    if (mm is not null)
                         baseCost = mm.UploadCharge;
 
                     string warning = String.Empty;
