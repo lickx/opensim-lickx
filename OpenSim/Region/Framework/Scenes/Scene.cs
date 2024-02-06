@@ -1046,7 +1046,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_BannedViewers = Util.GetConfigVarFromSections<string>(
                         config, "DeniedClients", possibleAccessControlConfigSections, string.Empty);
                 m_ViewerDeniedMsg = Util.GetConfigVarFromSections<string>(
-                        config, "ViewerDeniedMsg", possibleAccessControlConfigSections, "Access denied, your viewer is banned");
+                        config, "ViewerDeniedMsg", possibleAccessControlConfigSections, m_ViewerDeniedMsg);
 
                 FrameTime                 = startupConfig.GetFloat( "FrameTime", FrameTime);
                 FrameTimeWarnPercent      = startupConfig.GetInt( "FrameTimeWarnPercent", FrameTimeWarnPercent);
