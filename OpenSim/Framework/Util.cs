@@ -2643,12 +2643,13 @@ namespace OpenSim.Framework
         /// Arguments to substitute into the string via the {} mechanism.
         /// </param>
         /// <returns></returns>
+        /*
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] StringToBytes256(string str, params object[] args)
         {
             return Utils.StringToBytes(string.Format(str, args), 255);
         }
-
+        */
         /// <summary>
         /// Convert a string to a byte format suitable for transport in an LLUDP packet.  The output is truncated to 256 bytes if necessary.
         /// </summary>
@@ -2658,7 +2659,7 @@ namespace OpenSim.Framework
         /// </param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] StringToBytes256(string str)
+        public static byte[] StringToBytes256(ReadOnlySpan<char> str)
         {
             return Utils.StringToBytes(str, 255);
         }
@@ -2674,11 +2675,13 @@ namespace OpenSim.Framework
         /// Arguments to substitute into the string via the {} mechanism.
         /// </param>
         /// <returns></returns>
+        /*
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] StringToBytes1024(string str, params object[] args)
         {
-            return Utils.StringToBytes(string.Format(str, args), 1024);
+            return Utils.StringToBytes(string.Format(str, args).AsSpan(), 1024);
         }
+        */
 
         /// <summary>
         /// Convert a string to a byte format suitable for transport in an LLUDP packet.  The output is truncated to 1024 bytes if necessary.
@@ -2689,7 +2692,7 @@ namespace OpenSim.Framework
         /// </param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] StringToBytes1024(string str)
+        public static byte[] StringToBytes1024(ReadOnlySpan<char> str)
         {
             return Utils.StringToBytes(str, 1024);
         }
@@ -2705,11 +2708,13 @@ namespace OpenSim.Framework
         /// Arguments to substitute into the string via the {} mechanism.
         /// </param>
         /// <returns></returns>
+        /*
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte[] StringToBytes(string str, int MaxLength, params object[] args)
         {
-            return StringToBytes1024(string.Format(str, args), MaxLength);
+            return Utils.StringToBytes(string.Format(str, args).AsSpan(), MaxLength);
         }
+        */
 
         /// <summary>
         /// Convert a string to a byte format suitable for transport in an LLUDP packet.  The output is truncated to MaxLength bytes if necessary.
@@ -2720,26 +2725,26 @@ namespace OpenSim.Framework
         /// </param>
         /// <returns></returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] StringToBytes(string str, int MaxLength)
+        public static byte[] StringToBytes(ReadOnlySpan<char> str, int MaxLength)
         {
             return Utils.StringToBytes(str, MaxLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte[] StringToBytesNoTerm(string str, int MaxLength)
+        public static byte[] StringToBytesNoTerm(ReadOnlySpan<char> str, int MaxLength)
         {
             return Utils.StringToBytesNoTerm(str, MaxLength);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static int osUTF8Getbytes(string srcstr, byte[] dstarray, int maxdstlen, bool NullTerm = true)
+        public static int osUTF8Getbytes(ReadOnlySpan<char> srcstr, byte[] dstarray, int maxdstlen, bool NullTerm = true)
         {
             return osUTF8Getbytes(srcstr, dstarray, 0, maxdstlen, NullTerm);
         }
 
-        public static unsafe int osUTF8Getbytes(string srcstr, byte* dstarray, int maxdstlen, bool NullTerm = true)
+        public static unsafe int osUTF8Getbytes(ReadOnlySpan<char> srcstr, byte* dstarray, int maxdstlen, bool NullTerm = true)
         {
-            if (string.IsNullOrEmpty(srcstr))
+            if (srcstr.Length == 0)
                 return 0;
 
             fixed (char* srcbase = srcstr)
@@ -2748,9 +2753,9 @@ namespace OpenSim.Framework
             }
         }
 
-        public static unsafe int osUTF8Getbytes(string srcstr, byte[] dstarray, int pos, int maxdstlen, bool NullTerm = true)
+        public static unsafe int osUTF8Getbytes(ReadOnlySpan<char> srcstr, byte[] dstarray, int pos, int maxdstlen, bool NullTerm = true)
         {
-            if (string.IsNullOrEmpty(srcstr))
+            if (srcstr.Length == 0)
                 return 0;
 
             if (pos + maxdstlen > dstarray.Length)
