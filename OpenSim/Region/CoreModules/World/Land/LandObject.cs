@@ -860,12 +860,10 @@ namespace OpenSim.Region.CoreModules.World.Land
         {
             if ((LandData.Flags & (uint)ParcelFlags.UseAccessList) == 0)
             {
-                bool adults = m_estateSettings.DoDenyMinors
-                              || m_estateSettings.DenyMinors
-                              || ((LandData.Flags & (uint)ParcelFlags.DenyAgeUnverified) != 0);
-                bool anonymous = m_estateSettings.DoDenyAnonymous
-                              || m_estateSettings.DenyAnonymous
-                              || ((LandData.Flags & (uint)ParcelFlags.DenyAnonymous) != 0);
+                bool adults = m_estateSettings.DoDenyMinors ||
+                              (m_estateSettings.DenyMinors || ((LandData.Flags & (uint)ParcelFlags.DenyAgeUnverified) != 0));
+                bool anonymous = m_estateSettings.DoDenyAnonymous ||
+                              (m_estateSettings.DenyAnonymous || ((LandData.Flags & (uint)ParcelFlags.DenyAnonymous) != 0));
                 if(adults || anonymous)
                 {
                     int userflags;
