@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -47,7 +48,6 @@ using Timer = System.Timers.Timer;
 using TPFlags = OpenSim.Framework.Constants.TeleportFlags;
 using GridRegion = OpenSim.Services.Interfaces.GridRegion;
 using PermissionMask = OpenSim.Framework.PermissionMask;
-using System.Runtime.CompilerServices;
 
 namespace OpenSim.Region.Framework.Scenes
 {
@@ -465,7 +465,11 @@ namespace OpenSim.Region.Framework.Scenes
         /// <summary>
         /// If true then updates are running.  This may be true for a short period after a scene is de-activated.
         /// </summary>
-        public bool IsRunning { get { return m_isRunning; } }
+        public bool IsRunning
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return m_isRunning; }
+        }
         private volatile bool m_isRunning;
 
         private bool m_firstHeartbeat = true;
@@ -1178,6 +1182,7 @@ namespace OpenSim.Region.Framework.Scenes
         /// TODO: Possibly stop other classes being able to manipulate this directly.
         public SceneGraph SceneGraph
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return m_sceneGraph; }
         }
 
@@ -5170,17 +5175,31 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="agentID"></param>
         /// <returns>null if the presence was not found</returns>
+        
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ScenePresence GetScenePresence(UUID agentID)
         {
             return m_sceneGraph.GetScenePresence(agentID);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public override bool TryGetScenePresence(UUID agentID, out ScenePresence presence)
+        {
+            return m_sceneGraph.TryGetScenePresence(agentID, out presence);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool TryGetSceneRootPresence(UUID agentID, out ScenePresence presence)
+        {
+            return m_sceneGraph.TryGetSceneRootPresence(agentID, out presence);
+        }
         /// <summary>
         /// Request the scene presence by name.
         /// </summary>
         /// <param name="firstName"></param>
         /// <param name="lastName"></param>
         /// <returns>null if the presence was not found</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ScenePresence GetScenePresence(string firstName, string lastName)
         {
             return m_sceneGraph.GetScenePresence(firstName, lastName);
@@ -5191,6 +5210,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="localID"></param>
         /// <returns>null if the presence was not found</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ScenePresence GetScenePresence(uint localID)
         {
             return m_sceneGraph.GetScenePresence(localID);
@@ -5209,6 +5229,7 @@ Label_GroupsDone:
         /// The shared list of the scene presences.
         /// </returns>
         /// WARNING DO NOT MODIFY RETURNED VALUE
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public List<ScenePresence> GetScenePresences()
         {
             //return new List<ScenePresence>(m_sceneGraph.GetScenePresences());
@@ -5220,6 +5241,7 @@ Label_GroupsDone:
         /// Avatars may be an NPC or a 'real' client.
         /// </summary>
         /// <param name="action"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEachRootScenePresence(Action<ScenePresence> action)
         {
             m_sceneGraph.ForEachRootScenePresence(action);
@@ -5229,6 +5251,7 @@ Label_GroupsDone:
         /// Performs action on all scene presences (root and child)
         /// </summary>
         /// <param name="action"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEachScenePresence(Action<ScenePresence> action)
         {
             m_sceneGraph.ForEachScenePresence(action);
@@ -5240,6 +5263,7 @@ Label_GroupsDone:
         /// <returns>
         /// The scene object groups.  If the scene is empty then an empty list is returned.
         /// </returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public List<SceneObjectGroup> GetSceneObjectGroups()
         {
             return m_sceneGraph.GetSceneObjectGroups();
@@ -5250,6 +5274,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="fullID"></param>
         /// <returns>null if no group with that id exists</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectGroup GetSceneObjectGroup(UUID fullID)
         {
             return m_sceneGraph.GetSceneObjectGroup(fullID);
@@ -5261,6 +5286,7 @@ Label_GroupsDone:
         /// <remarks>This will only return a group if the local ID matches a root part</remarks>
         /// <param name="localID"></param>
         /// <returns>null if no group with that id exists</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectGroup GetSceneObjectGroup(uint localID)
         {
             return m_sceneGraph.GetSceneObjectGroup(localID);
@@ -5272,6 +5298,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="name"></param>
         /// <returns>null if no group with that name exists</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectGroup GetSceneObjectGroup(string name)
         {
             return m_sceneGraph.GetSceneObjectGroup(name);
@@ -5283,6 +5310,7 @@ Label_GroupsDone:
         /// <param name="fullID"></param>
         /// <param name="sog"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetSceneObjectGroup(UUID fullID, out SceneObjectGroup sog)
         {
             sog = GetSceneObjectGroup(fullID);
@@ -5295,6 +5323,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectPart GetSceneObjectPart(string name)
         {
             return m_sceneGraph.GetSceneObjectPart(name);
@@ -5305,6 +5334,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="localID"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectPart GetSceneObjectPart(uint localID)
         {
             return m_sceneGraph.GetSceneObjectPart(localID);
@@ -5315,6 +5345,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="fullID"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectPart GetSceneObjectPart(UUID fullID)
         {
             return m_sceneGraph.GetSceneObjectPart(fullID);
@@ -5326,6 +5357,7 @@ Label_GroupsDone:
         /// <param name="fullID"></param>
         /// <param name="sop"></param>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetSceneObjectPart(UUID fullID, out SceneObjectPart sop)
         {
             return m_sceneGraph.TryGetSceneObjectPart(fullID, out sop);
@@ -5336,6 +5368,7 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="localID"></param>
         /// <returns>null if no scene object group containing that prim is found</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectGroup GetGroupByPrim(uint localID)
         {
             return m_sceneGraph.GetGroupByPrim(localID);
@@ -5346,16 +5379,13 @@ Label_GroupsDone:
         /// </summary>
         /// <param name="fullID"></param>
         /// <returns>null if no scene object group containing that prim is found</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public SceneObjectGroup GetGroupByPrim(UUID fullID)
         {
             return m_sceneGraph.GetGroupByPrim(fullID);
         }
 
-        public override bool TryGetScenePresence(UUID agentID, out ScenePresence sp)
-        {
-            return m_sceneGraph.TryGetScenePresence(agentID, out sp);
-        }
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetAvatarByName(string avatarName, out ScenePresence avatar)
         {
             return m_sceneGraph.TryGetAvatarByName(avatarName, out avatar);
@@ -5365,6 +5395,7 @@ Label_GroupsDone:
         /// Perform an action on all clients with an avatar in this scene (root only)
         /// </summary>
         /// <param name="action"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEachRootClient(Action<IClientAPI> action)
         {
             ForEachRootScenePresence(delegate(ScenePresence presence)
@@ -5377,26 +5408,31 @@ Label_GroupsDone:
         /// Perform an action on all clients connected to the region (root and child)
         /// </summary>
         /// <param name="action"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEachClient(Action<IClientAPI> action)
         {
             m_clientManager.ForEach(action);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int GetNumberOfClients()
         {
             return m_clientManager.Count;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetClient(UUID avatarID, out IClientAPI client)
         {
             return m_clientManager.TryGetValue(avatarID, out client);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetClient(System.Net.IPEndPoint remoteEndPoint, out IClientAPI client)
         {
             return m_clientManager.TryGetValue(remoteEndPoint, out client);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void ForEachSOG(Action<SceneObjectGroup> action)
         {
             m_sceneGraph.ForEachSOG(action);
@@ -5407,6 +5443,7 @@ Label_GroupsDone:
         /// will not affect the original list of objects in the scene.
         /// </summary>
         /// <returns></returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public EntityBase[] GetEntities()
         {
             return m_sceneGraph.GetEntities();
@@ -5415,15 +5452,15 @@ Label_GroupsDone:
         #endregion
 
 
-// Commented pending deletion since this method no longer appears to do anything at all
-//        public bool NeedSceneCacheClear(UUID agentID)
-//        {
-//            IInventoryTransferModule inv = RequestModuleInterface<IInventoryTransferModule>();
-//            if (inv is null)
-//                return true;
-//
-//            return inv.NeedSceneCacheClear(agentID, this);
-//        }
+        // Commented pending deletion since this method no longer appears to do anything at all
+        //        public bool NeedSceneCacheClear(UUID agentID)
+        //        {
+        //            IInventoryTransferModule inv = RequestModuleInterface<IInventoryTransferModule>();
+        //            if (inv is null)
+        //                return true;
+        //
+        //            return inv.NeedSceneCacheClear(agentID, this);
+        //        }
 
         public void CleanTempObjects()
         {
@@ -5447,6 +5484,7 @@ Label_GroupsDone:
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void DeleteFromStorage(UUID uuid)
         {
             SimulationDataService.RemoveObject(uuid, RegionInfo.RegionID);
@@ -5540,12 +5578,14 @@ Environment.Exit(1);
 
         // Get terrain height at the specified <x,y> location.
         // Presumes the underlying implementation is a heightmap which is a 1m grid.
-     
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float GetGroundHeight(float x, float y)
         {
            return Heightmap.GetHeight(x, y);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CheckHeartbeat()
         {
             if (m_firstHeartbeat)
@@ -5555,6 +5595,7 @@ Environment.Exit(1);
                 Start();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override ISceneObject DeserializeObject(string representation)
         {
             return SceneObjectSerializer.FromXml2Format(representation);
@@ -5562,9 +5603,11 @@ Environment.Exit(1);
 
         public override bool AllowScriptCrossings
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return m_allowScriptCrossings; }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Vector3 GetNearestAllowedPosition(ScenePresence avatar)
         {
             return GetNearestAllowedPosition(avatar, null);
@@ -5612,12 +5655,14 @@ Environment.Exit(1);
             return nearestRegionEdgePoint;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector3 GetParcelCenterAtGround(ILandObject parcel)
         {
             Vector2 center = parcel.CenterPoint;
             return GetPositionAtGround(center.X, center.Y);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ILandObject GetNearestAllowedParcel(UUID avatarId, float x, float y)
         {
             return GetNearestAllowedParcel(avatarId, x, y, null);
@@ -5657,6 +5702,7 @@ Environment.Exit(1);
             return nearestParcel;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static Vector2 GetParcelSafeCorner(ILandObject parcel)
         {
             Vector2 place = parcel.StartPoint;
@@ -5710,6 +5756,7 @@ Environment.Exit(1);
             return ground;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private Vector3 GetPositionAtGround(float x, float y)
         {
             return new Vector3(x, y, GetGroundHeight(x, y));
