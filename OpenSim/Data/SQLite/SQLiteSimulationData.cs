@@ -540,20 +540,11 @@ namespace OpenSim.Data.SQLite
         /// <param name="regionUUID">the region UUID</param>
         public void StoreObject(SceneObjectGroup obj, UUID regionUUID)
         {
-            uint flags = obj.RootPart.GetEffectiveObjectFlags();
-
-            // Eligibility check
-            //
-            if ((flags & (uint)PrimFlags.Temporary) != 0)
-                return;
-            if ((flags & (uint)PrimFlags.TemporaryOnRez) != 0)
-                return;
-
             lock (ds)
             {
                 foreach (SceneObjectPart prim in obj.Parts)
                 {
-//                    m_log.Info("[REGION DB]: Adding obj: " + obj.UUID + " to region: " + regionUUID);
+                    //m_log.Info("[REGION DB]: Adding obj: " + obj.UUID + " to region: " + regionUUID);
                     addPrim(prim, obj.UUID, regionUUID);
                 }
                 primDa.Update(ds, "prims");

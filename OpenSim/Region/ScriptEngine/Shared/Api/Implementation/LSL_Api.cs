@@ -97,6 +97,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
        }
 
         protected IScriptEngine m_ScriptEngine;
+        public Scene World;
+
         protected SceneObjectPart m_host;
 
         protected UUID RegionScopeID = UUID.Zero;
@@ -392,6 +394,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             m_lastSayShoutCheck = DateTime.UtcNow;
 
             m_ScriptEngine = scriptEngine;
+            World = m_ScriptEngine.World;
             m_host = host;
             m_item = item;
             m_debuggerSafe = m_ScriptEngine.Config.GetBoolean("DebuggerSafe", false);
@@ -564,16 +567,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 Thread.Sleep(delay);
             else
                 m_ScriptEngine.SleepScript(m_item.ItemID, delay);
-        }
-
-        /// <summary>
-        /// Check for co-operative termination.
-        /// </summary>
-        /// <param name='delay'>If called with 0, then just the check is performed with no wait.</param>
-
-        public Scene World
-        {
-            get { return m_ScriptEngine.World; }
         }
 
         [DebuggerNonUserCode]
@@ -4577,7 +4570,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             }
 
             // check if destination is an object
-            if (World.GetSceneObjectPart(destId) is not null)
+            if (World.TryGetSceneObjectPart(destId, out _))
             {
                 // destination is an object
                 World.MoveTaskInventoryItem(destId, m_host, item.ItemID);
