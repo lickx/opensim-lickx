@@ -532,19 +532,13 @@
     ;; Password for the default estate owner
     ; DefaultEstateOwnerPassword = password
 
-[SMTP]
+[Email]
     ;; The SMTP server enabled the email module to send email to external
     ;; destinations.
 
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable module?} {true false} false
     ;; Enable the email module
     ; enabled = false
-
-    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to objects to regions not on instance?} {true false} true
-    ;; Enable sending email to regions not on current opensimulator instance.
-    ;; Requires an IMAP server such as courier-imap or dovecot
-    ; enableEmailToExternalObjects = true
-
 
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {maximum number of emails from a object owner per hour} {} 500
     ; MailsFromOwnerPerHour = 500
@@ -559,10 +553,6 @@
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {maximum number of emails to a SMTP address per hour} {} 10
     ; MailsToSMTPAddressPerHour = 10
 
-    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} true
-    ;; Enable sending email to the world.
-    ; enableEmailToSMTP = true
-
     ;# {internal_object_host} {[Startup]emailmodule:DefaultEmailModule enabled:true} {Host name to treat as internal (object to object) email?} {} lsl.opensim.local
     ; Messages with this domain are considered grid-local
     ; Internal messages don't use SMTP.
@@ -574,6 +564,12 @@
     ; if the smtp service allows, the from address will be <objectUUID@host_domain_header_from>
     ; if not set SMTP_SERVER_FROM below
     ; host_domain_header_from = "127.0.0.1"
+
+    ; SMTP configuration: (off-grid mail)
+
+    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} true
+    ;; Enable sending email to the world.
+    ; enableEmailToSMTP = true
 
     ;# {SMTP_SERVER_FROM} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP server from name?} {}
     ; some smtp servers require a known From email address or will give Error 500 - Envelope from address is not authorised
@@ -607,7 +603,12 @@
     ;# {SMTP_VerifyCertNames} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP Verify cert chain option} {} true
     ; SMTP_VerifyCertNames = true
 
-    ; Imap configuration for enableEmailToExternalObjects = true:
+    ; Imap configuration: (grid-local mail)
+
+    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to objects to regions not on instance?} {true false} true
+    ;; Enable sending email to regions not on current opensimulator instance.
+    ;; Requires a dedicated IMAP account, locally or remote
+    ; enableEmailToExternalObjects = true
 
     ;# {IMAP_SERVER_TLS} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP use TLS?} {} false
     ; IMAP_SERVER_TLS = false

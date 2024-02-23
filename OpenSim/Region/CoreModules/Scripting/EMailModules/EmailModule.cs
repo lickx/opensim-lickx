@@ -133,10 +133,10 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
             if(startupConfig.GetString("emailmodule", "DefaultEmailModule") != "DefaultEmailModule")
                 return;
 
-            //Load SMTP SERVER config
+            //Load Email config
             try
             {
-                IConfig SMTPConfig = config.Configs["SMTP"];
+                IConfig SMTPConfig = config.Configs["Email"];
                 if (SMTPConfig  == null)
                     return;
 
