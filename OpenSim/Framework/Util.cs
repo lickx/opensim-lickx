@@ -1367,6 +1367,119 @@ namespace OpenSim.Framework
             return uuid;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string AESEncrypt(ReadOnlySpan<char> secret, ReadOnlySpan<char> plainText)
+        {
+            return AESEncryptString(secret, plainText, string.Empty);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string AESEncryptTo(ReadOnlySpan<char> secret, ReadOnlySpan<char> plainText, ReadOnlySpan<char> ivString)
+        {
+            return AESEncryptString(secret, plainText, ivString);
+        }
+        /// <summary>
+        /// AES Encrypt a string using a password and a random or custom Initialization 
+        /// Vector
+        /// </summary>
+        /// <param name="secret">The secret encryption password or key.</param>
+        /// <param name="plainText">The string or text to encrypt.</param>
+        /// <param name="ivString">(optional) A string used to generate the Initialization Vector eg; an avatarID, a SecureSessionID, an object or script 
+        /// ID...</param>
+        /// <returns>A string composed by the Initialization Vector bytes and the 
+        /// encrypted text bytes converted to lower case HexString and separated by " : " </returns>
+        private static string AESEncryptString(ReadOnlySpan<char> secret, ReadOnlySpan<char> plainText, ReadOnlySpan<char> ivString)
+        {
+            if(secret.Length == 0 || plainText.Length == 0)
+                return string.Empty;
+
+            byte[] iv = ivString.Length == 0 ?
+                    MD5.Create().ComputeHash(UUID.Random().GetBytes()) :
+                    MD5.Create().ComputeHash(Utils.StringToBytesNoTerm(ivString)); 
+            byte[] aesKey = SHA256.Create().ComputeHash(Utils.StringToBytesNoTerm(secret));
+            byte[] encryptedText;
+ 
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = aesKey;
+                aes.IV = iv;
+                aes.Mode = CipherMode.CBC;
+                aes.Padding = PaddingMode.PKCS7;
+
+                ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
+                using MemoryStream memoryStream = new();
+                using CryptoStream cryptoStream = new(memoryStream, encryptor, CryptoStreamMode.Write);
+                using StreamWriter streamWriter = new(cryptoStream);
+
+                streamWriter.Write(plainText);
+                encryptedText = memoryStream.ToArray();
+            }
+
+            return $"{Convert.ToHexString(iv)}:{Convert.ToHexString(encryptedText).ToLower()}";
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<char> AESDecrypt(ReadOnlySpan<char> secret, ReadOnlySpan<char> encryptedText)
+        {
+            return AESDecryptString(secret, encryptedText, new ReadOnlySpan<char>());
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<char> AESDecryptFrom(ReadOnlySpan<char> secret, ReadOnlySpan<char> encryptedText, ReadOnlySpan<char> ivString)
+        {
+            return AESDecryptString(secret, encryptedText, ivString);
+        }
+
+        /// <summary>
+        /// AES Decrypt the string encrypted by AESEncryptString with the same password 
+        /// and ivString used in the encryption.
+        /// </summary>
+        /// <param name="secret">The secret decryption password or key.</param>
+        /// <param name="encryptedText">The encrypted string or text.</param>
+        /// <param name="ivString">The string used to generate the Initialization Vector 
+        /// if used in the encription. eg; an avatarID, a SecureSessionID, an object or 
+        /// script ID...</param>
+        /// <returns>The decrypted string.</returns>
+        private static ReadOnlySpan<char> AESDecryptString(ReadOnlySpan<char> secret, ReadOnlySpan<char> encryptedText, ReadOnlySpan<char> ivString)
+        {
+            if(secret.Length == 0 || encryptedText.Length == 0)
+                return string.Empty;
+
+            int sep = encryptedText.IndexOf(':');
+            if(sep < 0)
+                return string.Empty;
+
+            byte[] iv;
+            byte[] buffer;
+            try
+            {
+                iv = ivString.Length == 0 ?
+                    Convert.FromHexString(encryptedText[..sep]):
+                    MD5.Create().ComputeHash(Utils.StringToBytesNoTerm(ivString));
+                buffer = Convert.FromHexString(encryptedText[(sep + 1)..]);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+
+            byte[] aesKey = SHA256.Create().ComputeHash(Utils.StringToBytesNoTerm(secret));
+
+            using Aes aes = Aes.Create();
+            aes.Key = aesKey;
+            aes.IV = iv;
+            aes.Mode = CipherMode.CBC;
+            aes.Padding = PaddingMode.PKCS7;
+
+            ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
+            using MemoryStream memoryStream = new(buffer);
+            using CryptoStream cryptoStream = new(memoryStream, decryptor, CryptoStreamMode.Read);
+            using StreamReader streamReader = new(cryptoStream);
+            
+            //string ret = streamReader.ReadToEnd();
+            return streamReader.ReadToEnd();
+        }
+
         public static int fast_distance2d(int x, int y)
         {
             x = Math.Abs(x);
