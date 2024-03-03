@@ -1605,6 +1605,18 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public vector osGetSitTargetPos()
+        {
+            return m_OSSL_Functions.osGetSitTargetPos();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public rotation osGetSitTargetRot()
+        {
+            return m_OSSL_Functions.osGetSitTargetRot();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public vector osGetStandTarget()
         {
             return m_OSSL_Functions.osGetStandTarget();
