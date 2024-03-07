@@ -259,13 +259,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
         {
             m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: CreateAgent {0} {1}", reg.ServerURI, finalDestination.ServerURI);
 
-            if (sp.GotAttachmentsData == false)
-            {
-                logout = false;
-                reason = "Cannot leave region yet, attachments are still loading";
-                return false;
-            }
-
             reason = string.Empty;
             logout = false;
             int flags = Scene.GridService.GetRegionFlags(m_sceneRegionInfo.ScopeID, reg.RegionID);
