@@ -134,7 +134,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
     }
 
     [Serializable]
-    public class OSSL_Api : MarshalByRefObject, IOSSL_Api, IScriptApi
+    public class OSSL_Api : IOSSL_Api, IScriptApi
     {
         public const string GridInfoServiceConfigSectionName = "GridInfoService";
 
@@ -5541,7 +5541,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
             return (item == null) ? LSL_String.Empty : item.Description;
         }
 
-        public LSL_Key osGetLinkInventoryItemAssetKey(LSL_Integer linkNumber, LSL_String name, LSL_Integer type)
+        public LSL_Key osGetLinkInventoryKey(LSL_Integer linkNumber, LSL_String name, LSL_Integer type)
         {
             SceneObjectPart part = GetSingleLinkPart(linkNumber);
             if(part == null)
