@@ -642,8 +642,9 @@ namespace OpenSim.Region.CoreModules.World.Land
 
                 if (m_scenePermissions.CanEditParcelProperties(remote_client.AgentId, this, GroupPowers.LandManageAllowed, false))
                 {
-                    allowedDelta |= (uint)(ParcelFlags.UseAccessGroup |
-                            ParcelFlags.UseAccessList);
+                    // Tamai:Disable group-only access
+                    allowedDelta |= //(uint)(ParcelFlags.UseAccessGroup |
+                            (uint)ParcelFlags.UseAccessList;
                 }
 
                 if (m_scenePermissions.CanEditParcelProperties(remote_client.AgentId, this, GroupPowers.LandManageBanned, false))
@@ -767,6 +768,8 @@ namespace OpenSim.Region.CoreModules.World.Land
             return true;
         }
 
+        // Tamai:Disable group-only access
+        /*
         public bool HasGroupAccess(UUID avatar)
         {
             if (LandData.GroupID.IsNotZero() && (LandData.Flags & (uint)ParcelFlags.UseAccessGroup) != 0)
@@ -807,6 +810,7 @@ namespace OpenSim.Region.CoreModules.World.Land
             }
             return false;
         }
+        */
 
         public bool IsBannedFromLand(UUID avatar)
         {
@@ -884,8 +888,9 @@ namespace OpenSim.Region.CoreModules.World.Land
                 return false;
             }
 
-            if (HasGroupAccess(avatar))
-                return false;
+            //Tamai: disable group-only access
+            //if (HasGroupAccess(avatar))
+            //    return false;
 
             if(IsInLandAccessList(avatar))
                 return false;
@@ -894,8 +899,11 @@ namespace OpenSim.Region.CoreModules.World.Land
             if (!m_scene.TryGetScenePresence(avatar, out ScenePresence sp))
                 return true;
 
-            if(sp is null || !sp.IsNPC)
+            if(sp is null)
                 return true;
+
+            if(!sp.IsNPC)
+                return false;
 
             INPC npccli = (INPC)sp.ControllingClient;
             if(npccli is null)
