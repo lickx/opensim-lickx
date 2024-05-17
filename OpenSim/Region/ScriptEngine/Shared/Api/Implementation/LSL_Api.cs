@@ -12067,7 +12067,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         //  these functions, so the string to integer
         //  conversion returns '0' if an invalid
         //  character is encountered during conversion.
-        //  Only full bytes are considered, partial are counted as 0
         //  </para>
         //  <para>
         //  References
@@ -12201,7 +12200,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         //  be returned.
         //  If fewer than 6 characters are supplied, then
         //  the answer will reflect a partial
-        //  accumulation.
+        //  accumulation of full bytes
         //  <para>
         //  The 6-bit segments are
         //  extracted left-to-right in big-endian mode,
