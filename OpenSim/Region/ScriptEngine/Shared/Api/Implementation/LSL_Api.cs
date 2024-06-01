@@ -5977,6 +5977,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                 case "grid":
                     return World.SceneGridInfo == null ? string.Empty : World.SceneGridInfo.GridName;
 
+                case "objectmail_hostname":
+                    if (m_emailModule is not null)
+                        return m_internalObjectHost;
+                    return "";
+
                 default:
                     return "";
             }
