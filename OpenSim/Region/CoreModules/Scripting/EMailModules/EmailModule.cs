@@ -77,8 +77,8 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
         private string IMAP_SERVER_LOGIN = null;
         private string IMAP_SERVER_PASSWORD = null;
 
-        private bool m_enableEmailToExternalObjects = true;
-        private bool m_enableEmailToSMTP = true;
+        private bool m_enableEmailToExternalObjects = false;
+        private bool m_enableEmailToSMTP = false;
 
         private ParserOptions m_mailParseOptions;
 
@@ -140,7 +140,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                 if (EmailConfig  == null)
                     return;
 
-                if(!EmailConfig.GetBoolean("enabled", false))
+                if(!EmailConfig.GetBoolean("enabled", true))
                     return;
 
                 m_enableEmailToExternalObjects = EmailConfig.GetBoolean("enableEmailToExternalObjects", m_enableEmailToExternalObjects);

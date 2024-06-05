@@ -281,8 +281,11 @@
     ; HttpProxyExceptions = ".mydomain.com;localhost"
 
     ;# {emailmodule} {} {Provide llEmail and llGetNextEmail functionality? (requires SMTP server)} {DefaultEmailModule} none
-    ;; The email module requires some configuration. It needs an SMTP
-    ;; server to send mail through.
+    ;; By default email only works within the boundaries of a sim
+    ;; For intersim mail, all sims involved need to use the same IMAP mailbox
+    ;; and enableEmailToExternalObjects = true in [Email]
+    ;; If you want to also allow mail to enter and leave the grid, SMTP will
+    ;; also need to be setup 
     ; emailmodule = DefaultEmailModule
 
     ;# {SpawnPointRouting} {} {Set routing method for Telehub Spawnpoints} {closest random sequence} closest
@@ -533,12 +536,9 @@
     ; DefaultEstateOwnerPassword = password
 
 [Email]
-    ;; The SMTP server enabled the email module to send email to external
-    ;; destinations.
-
-    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable module?} {true false} false
+    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable module?} {true false} true
     ;; Enable the email module
-    ; enabled = false
+    ; enabled = true
 
     ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {maximum number of emails from a object owner per hour} {} 500
     ; MailsFromOwnerPerHour = 500
@@ -566,10 +566,12 @@
     ; host_domain_header_from = "127.0.0.1"
 
     ; SMTP configuration: (off-grid mail)
+    ;; The SMTP server enabled the email module to send email to external
+    ;; destinations.
 
-    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} true
+    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to the world?} {true false} false
     ;; Enable sending email to the world.
-    ; enableEmailToSMTP = true
+    ; enableEmailToSMTP = false
 
     ;# {SMTP_SERVER_FROM} {[Startup]emailmodule:DefaultEmailModule enabled:true} {SMTP server from name?} {}
     ; some smtp servers require a known From email address or will give Error 500 - Envelope from address is not authorised
@@ -605,10 +607,10 @@
 
     ; Imap configuration: (grid-local mail)
 
-    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to objects to regions not on instance?} {true false} true
+    ;# {enabled} {[Startup]emailmodule:DefaultEmailModule} {Enable send to objects to regions not on instance?} {true false} false
     ;; Enable sending email to regions not on current opensimulator instance.
     ;; Requires a dedicated IMAP account, locally or remote
-    ; enableEmailToExternalObjects = true
+    ; enableEmailToExternalObjects = false
 
     ;# {IMAP_SERVER_TLS} {[Startup]emailmodule:DefaultEmailModule enabled:true} {IMAP use TLS?} {} false
     ; IMAP_SERVER_TLS = false
