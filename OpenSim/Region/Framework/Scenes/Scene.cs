@@ -1860,7 +1860,7 @@ namespace OpenSim.Region.Framework.Scenes
                     nowMS = Util.GetTimeStampMS();
                     sleepMS = (float)(nowMS - lastMS);
                     sleepError = sleepMS - frameMS;
-                    Util.Clamp(sleepError, 0.0f, 20f);
+                    sleepError = Math.Clamp(sleepError, 0.0f, 20f);
                     frameMS = (float)(nowMS - framestart);
                     }
                 else
