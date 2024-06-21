@@ -8841,5 +8841,12 @@
    <map><key>ivString</key><map><key>type</key><string>string</string></map></map>
   </array>
  </map>
+ <key>lxGetAgentViewer</key>
+ <map>
+  <key>return</key><string>string</string>
+  <key>arguments</key><array>
+   <map><key>avkey</key><map><key>type</key><string>key</string></map></map>
+  </array>
+ </map>
 </map>
 </map></llsd>
