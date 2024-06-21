@@ -9556,5 +9556,12 @@
   <key>arguments</key><undef/>
   <key>tooltip</key><string>Returns the name of the currently enabled wind plugin.</string>
  </map>
+ <key>lxGetAgentViewer</key>
+ <map>
+  <key>return</key><string>string</string>
+  <key>arguments</key><array>
+   <map><key>avkey</key><map><key>type</key><string>key</string></map></map>
+  </array>
+ </map>
 </map>
 </map></llsd>
