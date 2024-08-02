@@ -432,6 +432,12 @@ namespace OpenSim.Services.HypergridService
                 if (m_ForeignAgentsAllowed && IsException(aCircuit, m_ForeignsAllowedExceptions))
                     allowed = false;
 
+                string iponly = @"http\:\/\/\d+\.\d+\.\d+\.\d+\:\d+";
+                Regex r = new Regex(iponly, RegexOptions.IgnoreCase);
+                Match m = r.Match(aCircuit.ServiceURLs["HomeURI"].ToString());
+                if (m_ForeignAgentsAllowed && m.Success)
+                    allowed = false; // HomeURI is an ip address, not a proper hostname
+
                 if (!m_ForeignAgentsAllowed && IsException(aCircuit, m_ForeignsDisallowedExceptions))
                     allowed = true;
 
