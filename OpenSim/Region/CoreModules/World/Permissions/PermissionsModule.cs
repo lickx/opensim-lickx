@@ -142,6 +142,17 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                 return m_moapModule;
             }
         }
+
+        private IUserManagement m_userManagement;
+        private IUserManagement UserManagement
+        {
+            get
+            {
+                m_userManagement ??= m_scene.RequestModuleInterface<IUserManagement>();
+                return m_userManagement;
+            }
+        }
+
         #endregion
 
         #region INonSharedRegionModule Members
@@ -1945,6 +1956,12 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                     (sogEffectiveOwnerPerms & (uint)PermissionMask.Copy) == 0)
                 return false;
 
+            if((sogEffectiveOwnerPerms & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(sp.UUID))
+                    return false;
+            }
+
             if(sog.OwnerID.Equals(sp.UUID))
                 return true;
 
@@ -1983,7 +2000,13 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
             if((sog.EffectiveOwnerPerms & (uint)PermissionMask.Transfer) == 0)
                 return false;
- 
+
+            if((sog.EffectiveOwnerPerms & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(sp.UUID))
+                    return false;
+            }
+
             if (IsFriendWithPerms(sog.UUID, sog.OwnerID))
                 return true;
 
@@ -2020,6 +2043,12 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             {
                 //sp.ControllingClient.SendAgentAlertMessage("Copying this item has been denied by the permissions system", false);
                 return false;
+            }
+
+            if((perms & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(sp.UUID))
+                    return false;
             }
 
             if(sog.OwnerID.NotEqual(sp.UUID) && (perms & (uint)PermissionMask.Transfer) == 0)
@@ -2298,6 +2327,12 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             if(ti is null)
                 return false;
 
+            if((ti.EveryonePermissions & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(userID))
+                    return false;
+            }
+
             ulong powers = 0;
             if(GroupMemberPowers(sog.GroupID, userID, ref powers))
             {
@@ -2305,7 +2340,7 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                     return true;
 
                 if((ti.EveryonePermissions & (uint)PermissionMask.Copy) != 0)
-                        return true;
+                    return true;
             }
             return false;
         }
@@ -2342,6 +2377,12 @@ namespace OpenSim.Region.CoreModules.World.Permissions
                     return false;
                 
                 if((srcsogEffectiveOwnerPerms & (uint)PermissionMask.Modify) == 0)
+                    return false;
+            }
+
+            if((itperms & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(srcsog.OwnerID))
                     return false;
             }
 
@@ -2462,6 +2503,12 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             uint perms = GetObjectPermissions(userID, sog, true);
             if((perms & (uint)PermissionMask.Modify) == 0)
                 return false;
+
+            if((perms & (uint)PermissionMask.Export) == 0 && m_userManagement is not null)
+            {
+                if(!m_userManagement.IsLocalGridUser(userID))
+                    return false;
+            }
 
             if ((int)InventoryType.LSL == invType)
             {
