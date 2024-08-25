@@ -18,7 +18,7 @@ zip -r -o ${TARGETZIP} bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLice
 if [ -f bin/OpenSimMutelist.Modules.dll ]; then
     TARGETZIP=opensimmutelist-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
     echo "${TARGETZIP}"
-    zip -r -o ${TARGETZIP} bin/OpenSimMutelist.dll
+    zip -r -o ${TARGETZIP} bin/OpenSimMutelist.Modules.dll
 fi
 
 #Make seperate zip for Gloebit addon:
