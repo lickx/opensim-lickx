@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 GIT_REV=`git rev-parse --short=8 HEAD`
 GIT_BRANCH=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
 CUR_DATE=`date --rfc-3339='date'`
