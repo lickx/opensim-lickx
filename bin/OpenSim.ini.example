@@ -372,6 +372,16 @@
     ;;
     ; DeniedClients = ""
 
+    ; It is strongly recommended to block at least these viewers by uncommenting ;DeniedClients below:
+    ; The first 6 viewers are problematic/bugged official Firestorm releases,
+    ; the last 4 viewers are copybots pretending to be (a very outdated) Firestorm
+    ; The + is absolutely needed after the space before the version (it means 'one or more spaces')
+    ;DeniedClients = "Firestorm-Releasex64 +4.7.7.48706|Firestorm-Release +4.7.7.48706|Firestorm-Releasex64 +6.6.8.68380|Firestorm-Release +6.6.8.68380|Firestorm-Releasex64 +6.6.16.70339|Firestorm-Release +6.6.16.70339|Firestorm-Releasex64 +4.6.8.42696|Firestorm-Release +4.6.8.42696|Firestorm-Releasex64 +6.4.13.63251|Firestorm-Release +6.4.13.63251"
+
+    ;# {ViewerDeniedMsg} {} {A message string} {"Access denied, your viewer is banned"}
+    ; The message people see who attempt to teleport with a denied viewer
+    ;ViewerDeniedMsg = "Access denied, your viewer is banned"
+
 
 [Map]
     ;# {GenerateMaptiles} {} {Generate map tiles?} {true false} true
