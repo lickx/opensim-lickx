@@ -278,7 +278,7 @@ namespace OpenSim.Data.PGSQL
                             }
                             catch (NpgsqlException sqlEx)
                             {
-                                _Log.ErrorFormat("[REGION DB]: Store SceneObjectPrim SQL error: {0} at line {1}", sqlEx.Message, sqlEx.Line);
+                                _Log.Error($"[REGION DB]: Store SceneObjectPrim SQL error: {sqlEx.Message}");
                                 throw;
                             }
                         }
@@ -293,7 +293,7 @@ namespace OpenSim.Data.PGSQL
                             }
                             catch (NpgsqlException sqlEx)
                             {
-                                _Log.ErrorFormat("[REGION DB]: Store SceneObjectPrimShapes SQL error: {0} at line {1}", sqlEx.Message, sqlEx.Line);
+                                _Log.Error($"[REGION DB]: Store SceneObjectPrimShapes SQL error: {sqlEx.Message}");
                                 throw;
                             }
                         }
@@ -380,7 +380,7 @@ namespace OpenSim.Data.PGSQL
             :ForceMouselook, :ScriptAccessPin, :AllowedDrop, :DieAtEdge, :SalePrice, :SaleType, :ColorR, :ColorG, :ColorB, :ColorA,
             :ParticleSystem, :ClickAction, :Material, :CollisionSound, :CollisionSoundVolume, :PassTouches, :LinkNumber, :MediaURL, :DynAttrs,
             :PhysicsShapeType, :Density, :GravityModifier, :Friction, :Restitution, :PassCollisions, :RotationAxisLocks, :RezzerID, :Vehicle, :PhysInertia,
-            :standtargetx, :standtargety, :standtargetz,:sitactrange, :pseudocrc, :sopanims 
+            :standtargetx, :standtargety, :standtargetz,:sitactrange, :pseudocrc, :sopanims, :lnkstBinData
             where not EXISTS (SELECT ""UUID"" FROM prims WHERE ""UUID"" = :UUID);
         ";
 
@@ -784,7 +784,7 @@ namespace OpenSim.Data.PGSQL
                 cmd.ExecuteNonQuery();
             }
 
-            sql = @"INSERT INTO landaccesslist (""LandUUID"",""AccessUUID"",""LandFlags"",""Expires"") VALUES (:LandUUID,:AccessUUID,:Flags,:Expires)";
+            sql = @"INSERT INTO landaccesslist (""LandUUID"",""AccessUUID"",""Flags"",""Expires"") VALUES (:LandUUID,:AccessUUID,:Flags,:Expires)";
 
             using (NpgsqlConnection conn = new NpgsqlConnection(m_connectionString))
             using (NpgsqlCommand cmd = new NpgsqlCommand(sql, conn))
@@ -896,7 +896,7 @@ namespace OpenSim.Data.PGSQL
         public RegionSettings LoadRegionSettings(UUID regionUUID)
         {
             string sql = @"select * from regionsettings where ""regionUUID"" = :regionUUID";
-            RegionSettings regionSettings;
+            RegionSettings regionSettings = null;
             using (NpgsqlConnection conn = new NpgsqlConnection(m_connectionString))
             using (NpgsqlCommand cmd = new NpgsqlCommand(sql, conn))
             {
@@ -908,9 +908,12 @@ namespace OpenSim.Data.PGSQL
                     {
                         regionSettings = BuildRegionSettings(reader);
                         regionSettings.OnSave += StoreRegionSettings;
-
-                        return regionSettings;
                     }
+                }
+                if (regionSettings != null)
+                {
+                    LoadSpawnPoints(regionSettings);
+                    return regionSettings;
                 }
             }
 
@@ -920,7 +923,8 @@ namespace OpenSim.Data.PGSQL
             regionSettings.OnSave += StoreRegionSettings;
 
             //Store new values
-            StoreNewRegionSettings(regionSettings);
+            // StoreNewRegionSettings(regionSettings);
+            StoreRegionSettings(regionSettings);
 
             LoadSpawnPoints(regionSettings);
 
@@ -928,50 +932,69 @@ namespace OpenSim.Data.PGSQL
         }
 
         /// <summary>
-        /// Store region settings, need to check if the check is really necesary. If we can make something for creating new region.
+        /// Store region settings
         /// </summary>
         /// <param name="regionSettings">region settings.</param>
         public void StoreRegionSettings(RegionSettings regionSettings)
         {
-            //Little check if regionUUID already exist in DB
-            string regionUUID;
-            string sql = @"SELECT ""regionUUID"" FROM regionsettings WHERE ""regionUUID"" = :regionUUID";
-            using (NpgsqlConnection conn = new NpgsqlConnection(m_connectionString))
-            using (NpgsqlCommand cmd = new NpgsqlCommand(sql, conn))
-            {
-                cmd.Parameters.Add(_Database.CreateParameter("regionUUID", regionSettings.RegionUUID));
-                conn.Open();
-                regionUUID = cmd.ExecuteScalar().ToString();
-            }
+            const string queryString = """
+                         INSERT INTO regionsettings ( "regionUUID", block_terraform, block_fly, allow_damage, restrict_pushing,
+                         allow_land_resell, allow_land_join_divide, block_show_in_search, agent_limit, object_bonus,
+                         maturity, disable_scripts, disable_collisions, disable_physics, terrain_texture_1, terrain_texture_2,
+                         terrain_texture_3, terrain_texture_4, elevation_1_nw, elevation_2_nw, elevation_1_ne, elevation_2_ne,
+                         elevation_1_se, elevation_2_se, elevation_1_sw, elevation_2_sw, water_height, terrain_raise_limit,
+                         terrain_lower_limit, use_estate_sun, fixed_sun, sun_position, covenant, covenant_datetime, "Sandbox",
+                         sunvectorx, sunvectory, sunvectorz, loaded_creation_datetime, loaded_creation_id, "map_tile_ID",
+                         block_search, casino, "TelehubObject", "parcel_tile_ID", "cacheID", "TerrainPBR1", "TerrainPBR2",
+                         "TerrainPBR3", "TerrainPBR4")
+                         VALUES
+                         (:RegionUUID, :block_terraform, :block_fly, :allow_damage, :restrict_pushing, :allow_land_resell,
+                         :allow_land_join_divide, :block_show_in_search, :agent_limit, :object_bonus, :maturity, :disable_scripts,
+                         :disable_collisions, :disable_physics, :terrain_texture_1, :terrain_texture_2, :terrain_texture_3,
+                         :terrain_texture_4, :elevation_1_nw, :elevation_2_nw, :elevation_1_ne, :elevation_2_ne, :elevation_1_se,
+                         :elevation_2_se, :elevation_1_sw, :elevation_2_sw, :water_height, :terrain_raise_limit, :terrain_lower_limit,
+                         :use_estate_sun, :fixed_sun, :sun_position, :covenant, :covenant_datetime, :Sandbox, :sunvectorx,
+                         :sunvectory, :sunvectorz, :Loaded_Creation_DateTime, :Loaded_Creation_ID, :map_tile_ID,
+                         :block_search, :casino, :TelehubObject, :ParcelImageID, :cacheID, :TerrainPBR1, :TerrainPBR2,
+                         :TerrainPBR3, :TerrainPBR4)
+                         ON CONFLICT ("regionUUID")
+                         DO UPDATE SET "regionUUID" = :RegionUUID, block_terraform = :block_terraform, block_fly = :block_fly,
+                         allow_damage = :allow_damage, restrict_pushing = :restrict_pushing, allow_land_resell = :allow_land_resell,
+                         allow_land_join_divide = :allow_land_join_divide, block_show_in_search = :block_show_in_search,
+                         agent_limit = :agent_limit, object_bonus = :object_bonus, maturity = :maturity, disable_scripts = :disable_scripts,
+                         disable_collisions = :disable_collisions, disable_physics = :disable_physics, terrain_texture_1 = :terrain_texture_1,
+                         terrain_texture_2 = :terrain_texture_2, terrain_texture_3 = :terrain_texture_3, terrain_texture_4 = :terrain_texture_4,
+                         elevation_1_nw = :elevation_1_nw, elevation_2_nw = :elevation_2_nw, elevation_1_ne = :elevation_1_ne,
+                         elevation_2_ne = :elevation_2_ne, elevation_1_se = :elevation_1_se, elevation_2_se = :elevation_2_se,
+                         elevation_1_sw = :elevation_1_sw, elevation_2_sw = :elevation_2_sw, water_height = :water_height,
+                         terrain_raise_limit = :terrain_raise_limit, terrain_lower_limit = :terrain_lower_limit,
+                         use_estate_sun = :use_estate_sun, fixed_sun = :fixed_sun, sun_position = :sun_position, covenant = :covenant,
+                         covenant_datetime = :covenant_datetime, "Sandbox" = :Sandbox, sunvectorx = :sunvectorx,
+                         sunvectory = :sunvectory, sunvectorz = :sunvectorz, loaded_creation_datetime = :Loaded_Creation_DateTime,
+                         loaded_creation_id = :Loaded_Creation_ID, "map_tile_ID" = :map_tile_ID, block_search = :block_search,
+                         casino = :casino, "TelehubObject" = :TelehubObject, "parcel_tile_ID" = :ParcelImageID, "cacheID" = :cacheID,
+                         "TerrainPBR1" = :TerrainPBR1, "TerrainPBR2" = :TerrainPBR2, "TerrainPBR3" = :TerrainPBR3,
+                         "TerrainPBR4" = :TerrainPBR4
+                         """;
 
-            if (string.IsNullOrEmpty(regionUUID))
+            using (var connection = new NpgsqlConnection(m_connectionString))
             {
-                StoreNewRegionSettings(regionSettings);
-            }
-            else
-            {
-                //This method only updates region settings!!! First call LoadRegionSettings to create new region settings in DB
-                sql =
-                   @"UPDATE regionsettings SET block_terraform = :block_terraform ,block_fly = :block_fly ,allow_damage = :allow_damage
-,restrict_pushing = :restrict_pushing ,allow_land_resell = :allow_land_resell ,allow_land_join_divide = :allow_land_join_divide
-,block_show_in_search = :block_show_in_search ,agent_limit = :agent_limit ,object_bonus = :object_bonus ,maturity = :maturity
-,disable_scripts = :disable_scripts ,disable_collisions = :disable_collisions ,disable_physics = :disable_physics
-,terrain_texture_1 = :terrain_texture_1 ,terrain_texture_2 = :terrain_texture_2 ,terrain_texture_3 = :terrain_texture_3
-,terrain_texture_4 = :terrain_texture_4 ,elevation_1_nw = :elevation_1_nw ,elevation_2_nw = :elevation_2_nw
-,elevation_1_ne = :elevation_1_ne ,elevation_2_ne = :elevation_2_ne ,elevation_1_se = :elevation_1_se ,elevation_2_se = :elevation_2_se
-,elevation_1_sw = :elevation_1_sw ,elevation_2_sw = :elevation_2_sw ,water_height = :water_height ,terrain_raise_limit = :terrain_raise_limit
-,terrain_lower_limit = :terrain_lower_limit ,use_estate_sun = :use_estate_sun ,fixed_sun = :fixed_sun ,sun_position = :sun_position
-,covenant = :covenant ,covenant_datetime = :covenant_datetime, sunvectorx = :sunvectorx, sunvectory = :sunvectory, sunvectorz = :sunvectorz,
-""Sandbox"" = :Sandbox, loaded_creation_datetime = :loaded_creation_datetime, loaded_creation_id = :loaded_creation_id, ""map_tile_ID"" = :TerrainImageID,
-""TelehubObject"" = :telehubobject, ""parcel_tile_ID"" = :ParcelImageID, ""cacheID"" = :cacheID
- WHERE ""regionUUID"" = :regionUUID";
-
-                using (NpgsqlConnection conn = new NpgsqlConnection(m_connectionString))
-                using (NpgsqlCommand cmd = new NpgsqlCommand(sql, conn))
+                connection.Open();
+                NpgsqlCommand command = new NpgsqlCommand(queryString, connection, connection.BeginTransaction());
+                using (command)
                 {
-                    cmd.Parameters.AddRange(CreateRegionSettingParameters(regionSettings));
-                    conn.Open();
-                    cmd.ExecuteNonQuery();
+                    try
+                    {
+                        command.Parameters.AddRange(CreateRegionSettingParameters(regionSettings));
+                        command.ExecuteNonQuery();
+                        command.Transaction.Commit();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                        command.Transaction.Rollback();
+                        throw;
+                    }
                 }
             }
             SaveSpawnPoints(regionSettings);
@@ -980,39 +1003,6 @@ namespace OpenSim.Data.PGSQL
         public void Shutdown()
         {
             //Not used??
-        }
-
-        #region Private Methods
-
-        /// <summary>
-        /// Stores new regionsettings.
-        /// </summary>
-        /// <param name="regionSettings">The region settings.</param>
-        private void StoreNewRegionSettings(RegionSettings regionSettings)
-        {
-            string sql = @"INSERT INTO regionsettings
-                                (""regionUUID"",block_terraform,block_fly,allow_damage,restrict_pushing,allow_land_resell,allow_land_join_divide,
-                                block_show_in_search,agent_limit,object_bonus,maturity,disable_scripts,disable_collisions,disable_physics,
-                                terrain_texture_1,terrain_texture_2,terrain_texture_3,terrain_texture_4,elevation_1_nw,elevation_2_nw,elevation_1_ne,
-                                elevation_2_ne,elevation_1_se,elevation_2_se,elevation_1_sw,elevation_2_sw,water_height,terrain_raise_limit,
-                                terrain_lower_limit,use_estate_sun,fixed_sun,sun_position,covenant,covenant_datetime,sunvectorx, sunvectory, sunvectorz,
-                                ""Sandbox"", loaded_creation_datetime, loaded_creation_id
-                                )
-                            VALUES
-                                (:regionUUID,:block_terraform,:block_fly,:allow_damage,:restrict_pushing,:allow_land_resell,:allow_land_join_divide,
-                                :block_show_in_search,:agent_limit,:object_bonus,:maturity,:disable_scripts,:disable_collisions,:disable_physics,
-                                :terrain_texture_1,:terrain_texture_2,:terrain_texture_3,:terrain_texture_4,:elevation_1_nw,:elevation_2_nw,:elevation_1_ne,
-                                :elevation_2_ne,:elevation_1_se,:elevation_2_se,:elevation_1_sw,:elevation_2_sw,:water_height,:terrain_raise_limit,
-                                :terrain_lower_limit,:use_estate_sun,:fixed_sun,:sun_position,:covenant, :covenant_datetime, :sunvectorx,:sunvectory,
-                                :sunvectorz, :Sandbox, :loaded_creation_datetime, :loaded_creation_id )";
-
-            using (NpgsqlConnection conn = new NpgsqlConnection(m_connectionString))
-            using (NpgsqlCommand cmd = new NpgsqlCommand(sql, conn))
-            {
-                cmd.Parameters.AddRange(CreateRegionSettingParameters(regionSettings));
-                conn.Open();
-                cmd.ExecuteNonQuery();
-            }
         }
 
         #region Private DataRecord conversion methods
@@ -1080,6 +1070,12 @@ namespace OpenSim.Data.PGSQL
 
             if (!(row["cacheID"] is DBNull))
                 newSettings.CacheID = new UUID((Guid)row["cacheID"]);
+
+            newSettings.TerrainPBR1 = new UUID((Guid)row["TerrainPBR1"]);
+            newSettings.TerrainPBR2 = new UUID((Guid)row["TerrainPBR2"]);
+            newSettings.TerrainPBR3 = new UUID((Guid)row["TerrainPBR3"]);
+            newSettings.TerrainPBR4 = new UUID((Guid)row["TerrainPBR4"]);
+
             return newSettings;
         }
 
@@ -1552,53 +1548,59 @@ namespace OpenSim.Data.PGSQL
         /// <returns></returns>
         private NpgsqlParameter[] CreateRegionSettingParameters(RegionSettings settings)
         {
-            List<NpgsqlParameter> parameters = new List<NpgsqlParameter>();
-
-            parameters.Add(_Database.CreateParameter("regionUUID", settings.RegionUUID));
-            parameters.Add(_Database.CreateParameter("block_terraform", settings.BlockTerraform));
-            parameters.Add(_Database.CreateParameter("block_fly", settings.BlockFly));
-            parameters.Add(_Database.CreateParameter("allow_damage", settings.AllowDamage));
-            parameters.Add(_Database.CreateParameter("restrict_pushing", settings.RestrictPushing));
-            parameters.Add(_Database.CreateParameter("allow_land_resell", settings.AllowLandResell));
-            parameters.Add(_Database.CreateParameter("allow_land_join_divide", settings.AllowLandJoinDivide));
-            parameters.Add(_Database.CreateParameter("block_show_in_search", settings.BlockShowInSearch));
-            parameters.Add(_Database.CreateParameter("agent_limit", settings.AgentLimit));
-            parameters.Add(_Database.CreateParameter("object_bonus", settings.ObjectBonus));
-            parameters.Add(_Database.CreateParameter("maturity", settings.Maturity));
-            parameters.Add(_Database.CreateParameter("disable_scripts", settings.DisableScripts));
-            parameters.Add(_Database.CreateParameter("disable_collisions", settings.DisableCollisions));
-            parameters.Add(_Database.CreateParameter("disable_physics", settings.DisablePhysics));
-            parameters.Add(_Database.CreateParameter("terrain_texture_1", settings.TerrainTexture1));
-            parameters.Add(_Database.CreateParameter("terrain_texture_2", settings.TerrainTexture2));
-            parameters.Add(_Database.CreateParameter("terrain_texture_3", settings.TerrainTexture3));
-            parameters.Add(_Database.CreateParameter("terrain_texture_4", settings.TerrainTexture4));
-            parameters.Add(_Database.CreateParameter("elevation_1_nw", settings.Elevation1NW));
-            parameters.Add(_Database.CreateParameter("elevation_2_nw", settings.Elevation2NW));
-            parameters.Add(_Database.CreateParameter("elevation_1_ne", settings.Elevation1NE));
-            parameters.Add(_Database.CreateParameter("elevation_2_ne", settings.Elevation2NE));
-            parameters.Add(_Database.CreateParameter("elevation_1_se", settings.Elevation1SE));
-            parameters.Add(_Database.CreateParameter("elevation_2_se", settings.Elevation2SE));
-            parameters.Add(_Database.CreateParameter("elevation_1_sw", settings.Elevation1SW));
-            parameters.Add(_Database.CreateParameter("elevation_2_sw", settings.Elevation2SW));
-            parameters.Add(_Database.CreateParameter("water_height", settings.WaterHeight));
-            parameters.Add(_Database.CreateParameter("terrain_raise_limit", settings.TerrainRaiseLimit));
-            parameters.Add(_Database.CreateParameter("terrain_lower_limit", settings.TerrainLowerLimit));
-            parameters.Add(_Database.CreateParameter("use_estate_sun", settings.UseEstateSun));
-            parameters.Add(_Database.CreateParameter("Sandbox", settings.Sandbox));
-            parameters.Add(_Database.CreateParameter("fixed_sun", settings.FixedSun));
-            parameters.Add(_Database.CreateParameter("sun_position", settings.SunPosition));
-            parameters.Add(_Database.CreateParameter("sunvectorx", settings.SunVector.X));
-            parameters.Add(_Database.CreateParameter("sunvectory", settings.SunVector.Y));
-            parameters.Add(_Database.CreateParameter("sunvectorz", settings.SunVector.Z));
-            parameters.Add(_Database.CreateParameter("covenant", settings.Covenant));
-            parameters.Add(_Database.CreateParameter("covenant_datetime", settings.CovenantChangedDateTime));
-            parameters.Add(_Database.CreateParameter("Loaded_Creation_DateTime", settings.LoadedCreationDateTime));
-            parameters.Add(_Database.CreateParameter("Loaded_Creation_ID", settings.LoadedCreationID));
-            parameters.Add(_Database.CreateParameter("TerrainImageID", settings.TerrainImageID));
-            parameters.Add(_Database.CreateParameter("ParcelImageID", settings.ParcelImageID));
-            parameters.Add(_Database.CreateParameter("TelehubObject", settings.TelehubObject));
-
-            parameters.Add(_Database.CreateParameter("cacheID", settings.CacheID));
+            List<NpgsqlParameter> parameters =
+            [
+                _Database.CreateParameter("regionUUID", settings.RegionUUID),
+                _Database.CreateParameter("block_terraform", settings.BlockTerraform),
+                _Database.CreateParameter("block_fly", settings.BlockFly),
+                _Database.CreateParameter("allow_damage", settings.AllowDamage),
+                _Database.CreateParameter("restrict_pushing", settings.RestrictPushing),
+                _Database.CreateParameter("allow_land_resell", settings.AllowLandResell),
+                _Database.CreateParameter("allow_land_join_divide", settings.AllowLandJoinDivide),
+                _Database.CreateParameter("block_show_in_search", settings.BlockShowInSearch),
+                _Database.CreateParameter("agent_limit", settings.AgentLimit),
+                _Database.CreateParameter("object_bonus", settings.ObjectBonus),
+                _Database.CreateParameter("maturity", settings.Maturity),
+                _Database.CreateParameter("disable_scripts", settings.DisableScripts),
+                _Database.CreateParameter("disable_collisions", settings.DisableCollisions),
+                _Database.CreateParameter("disable_physics", settings.DisablePhysics),
+                _Database.CreateParameter("terrain_texture_1", settings.TerrainTexture1),
+                _Database.CreateParameter("terrain_texture_2", settings.TerrainTexture2),
+                _Database.CreateParameter("terrain_texture_3", settings.TerrainTexture3),
+                _Database.CreateParameter("terrain_texture_4", settings.TerrainTexture4),
+                _Database.CreateParameter("elevation_1_nw", settings.Elevation1NW),
+                _Database.CreateParameter("elevation_2_nw", settings.Elevation2NW),
+                _Database.CreateParameter("elevation_1_ne", settings.Elevation1NE),
+                _Database.CreateParameter("elevation_2_ne", settings.Elevation2NE),
+                _Database.CreateParameter("elevation_1_se", settings.Elevation1SE),
+                _Database.CreateParameter("elevation_2_se", settings.Elevation2SE),
+                _Database.CreateParameter("elevation_1_sw", settings.Elevation1SW),
+                _Database.CreateParameter("elevation_2_sw", settings.Elevation2SW),
+                _Database.CreateParameter("water_height", settings.WaterHeight),
+                _Database.CreateParameter("terrain_raise_limit", settings.TerrainRaiseLimit),
+                _Database.CreateParameter("terrain_lower_limit", settings.TerrainLowerLimit),
+                _Database.CreateParameter("use_estate_sun", settings.UseEstateSun),
+                _Database.CreateParameter("Sandbox", settings.Sandbox),
+                _Database.CreateParameter("fixed_sun", settings.FixedSun),
+                _Database.CreateParameter("sun_position", settings.SunPosition),
+                _Database.CreateParameter("sunvectorx", settings.SunVector.X),
+                _Database.CreateParameter("sunvectory", settings.SunVector.Y),
+                _Database.CreateParameter("sunvectorz", settings.SunVector.Z),
+                _Database.CreateParameter("covenant", settings.Covenant),
+                _Database.CreateParameter("covenant_datetime", settings.CovenantChangedDateTime),
+                _Database.CreateParameter("Loaded_Creation_DateTime", settings.LoadedCreationDateTime),
+                _Database.CreateParameter("Loaded_Creation_ID", settings.LoadedCreationID),
+                _Database.CreateParameter("map_tile_ID", settings.TerrainImageID),
+                _Database.CreateParameter("block_search", settings.GodBlockSearch),
+                _Database.CreateParameter("casino", settings.Casino),
+                _Database.CreateParameter("ParcelImageID", settings.ParcelImageID),
+                _Database.CreateParameter("TelehubObject", settings.TelehubObject),
+                _Database.CreateParameter("cacheID", settings.CacheID),
+                _Database.CreateParameter("TerrainPBR1", settings.TerrainPBR1),
+                _Database.CreateParameter("TerrainPBR2", settings.TerrainPBR2),
+                _Database.CreateParameter("TerrainPBR3", settings.TerrainPBR3),
+                _Database.CreateParameter("TerrainPBR4", settings.TerrainPBR4),
+            ];
 
             return parameters.ToArray();
         }
@@ -1874,12 +1876,12 @@ namespace OpenSim.Data.PGSQL
             if (prim.Animations != null)
                 parameters.Add(_Database.CreateParameter("sopanims", prim.SerializeAnimations()));
             else
-                parameters.Add(_Database.CreateParameter("sopanims", null));
+                parameters.Add(_Database.CreateParameterNullBytea("sopanims"));
 
             if (prim.IsRoot && prim.ParentGroup.LinksetData is not null)
                 parameters.Add(_Database.CreateParameter("lnkstBinData", prim.ParentGroup.LinksetData.ToBin()));
             else
-                parameters.Add(_Database.CreateParameter("lnkstBinData", null));
+                parameters.Add(_Database.CreateParameterNullBytea("lnkstBinData"));
 
             return parameters.ToArray();
         }
@@ -1924,8 +1926,17 @@ namespace OpenSim.Data.PGSQL
             parameters.Add(_Database.CreateParameter("ProfileEnd", s.ProfileEnd));
             parameters.Add(_Database.CreateParameter("ProfileCurve", s.ProfileCurve));
             parameters.Add(_Database.CreateParameter("ProfileHollow", s.ProfileHollow));
-            parameters.Add(_Database.CreateParameter("Texture", s.TextureEntry));
-            parameters.Add(_Database.CreateParameter("ExtraParams", s.ExtraParams));
+
+            if (s.TextureEntry is null)
+                parameters.Add(_Database.CreateParameterNullBytea("Texture"));
+            else
+                parameters.Add(_Database.CreateParameter("Texture", s.TextureEntry));
+
+            if (s.ExtraParams is null)
+                parameters.Add(_Database.CreateParameterNullBytea("ExtraParams"));
+            else
+                parameters.Add(_Database.CreateParameter("ExtraParams", s.ExtraParams));
+
             parameters.Add(_Database.CreateParameter("State", s.State));
 
             if (null == s.Media)
@@ -1938,14 +1949,16 @@ namespace OpenSim.Data.PGSQL
             }
 
             byte[] matovrdata = s.RenderMaterialsOvrToRawBin();
-            parameters.Add(_Database.CreateParameter("MatOvrd", matovrdata));
+            if(matovrdata is null)
+                parameters.Add(_Database.CreateParameterNullBytea("MatOvrd"));
+            else
+                parameters.Add(_Database.CreateParameter("MatOvrd", matovrdata));
 
             return parameters.ToArray();
         }
 
         #endregion
 
-        #endregion
 
         private void LoadSpawnPoints(RegionSettings rs)
         {
@@ -1960,14 +1973,14 @@ namespace OpenSim.Data.PGSQL
                 conn.Open();
                 using (NpgsqlDataReader reader = cmd.ExecuteReader())
                 {
-                    if (reader.Read())
+                    while (reader.Read())
                     {
-                        SpawnPoint sp = new SpawnPoint();
-
-                        sp.Yaw = (float)reader["Yaw"];
-                        sp.Pitch = (float)reader["Pitch"];
-                        sp.Distance = (float)reader["Distance"];
-
+                        var sp = new SpawnPoint
+                        {
+                            Yaw = Convert.ToSingle(reader["Yaw"]),
+                            Pitch = Convert.ToSingle(reader["Pitch"]),
+                            Distance = Convert.ToSingle(reader["Distance"])
+                        };
                         rs.AddSpawnPoint(sp);
                     }
                 }
@@ -2007,15 +2020,62 @@ namespace OpenSim.Data.PGSQL
 
         public void SaveExtra(UUID regionID, string name, string value)
         {
+            const string queryString = """
+                                       INSERT INTO regionextra ("RegionID", "Name", "value")
+                                       VALUES (:RegionID, :Name, :Value)
+                                       """;
+            using var connection = new NpgsqlConnection(m_connectionString);
+            connection.Open();
+            using var command = new NpgsqlCommand(queryString, connection, connection.BeginTransaction());
+            try
+            {
+                command.Parameters.AddWithValue("RegionID", regionID.ToString());
+                command.Parameters.AddWithValue("Name", name);
+                command.Parameters.AddWithValue("Value", value);
+                command.ExecuteNonQuery();
+                command.Transaction.Commit();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                command.Transaction.Rollback();
+            }
         }
 
         public void RemoveExtra(UUID regionID, string name)
         {
+            const string queryString = """DELETE FROM regionextra WHERE "RegionID"=:RegionID AND "Name"=:Name""";
+            using var connection = new NpgsqlConnection(m_connectionString);
+            connection.Open();
+            using var command = new NpgsqlCommand(queryString, connection, connection.BeginTransaction());
+            try
+            {
+                command.Parameters.AddWithValue("RegionID", regionID.ToString());
+                command.Parameters.AddWithValue("Name", name);
+                command.ExecuteNonQuery();
+                command.Transaction.Commit();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                command.Transaction.Rollback();
+            }
         }
 
         public Dictionary<string, string> GetExtra(UUID regionID)
         {
-            return null;
+            const string queryString = """SELECT * FROM regionextra WHERE "RegionID" = :RegionID""";
+            using NpgsqlConnection conn = new NpgsqlConnection(m_connectionString);
+            using NpgsqlCommand cmd = new NpgsqlCommand(queryString, conn);
+            cmd.Parameters.Add(_Database.CreateParameter("RegionID", regionID.ToString()));
+            conn.Open();
+            using NpgsqlDataReader reader = cmd.ExecuteReader();
+            Dictionary<string, string> extraSettings = new Dictionary<string, string>();
+            while (reader.Read())
+            {
+                extraSettings.Add(reader["Name"].ToString(), reader["value"].ToString());
+            }
+            return extraSettings;
         }
     }
 }

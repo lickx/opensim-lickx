@@ -818,7 +818,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
                                 IClientAPI remoteClient = sp.ControllingClient;
                                 if (remoteClient is not null)
-                                    remoteClient.SendAlertMessage("Please wait while your attachments are loading");
+                                    remoteClient.SendAlertMessage("Loading your avatar...");
 
                                 foreach (SceneObjectGroup defso in deftatt)
                                 {

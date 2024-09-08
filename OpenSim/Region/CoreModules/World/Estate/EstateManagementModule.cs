@@ -229,7 +229,6 @@ namespace OpenSim.Region.CoreModules.World.Estate
         public void setEstateTerrainBaseTexture(int level, UUID texture)
         {
             SetEstateTerrainBaseTexture(null, level, texture);
-            sendRegionHandshakeToAll();
         }
 
         public void setEstateTerrainTextureHeights(int corner, float lowValue, float highValue)
@@ -542,25 +541,50 @@ namespace OpenSim.Region.CoreModules.World.Estate
             if (texture.IsZero())
                 return;
 
-            switch (level)
+            if(remoteClient is not null && (remoteClient.ViewerFlags & ViewerFlags.TPBR) != 0)
             {
-                case 0:
-                    Scene.RegionInfo.RegionSettings.TerrainTexture1 = texture;
-                    break;
-                case 1:
-                    Scene.RegionInfo.RegionSettings.TerrainTexture2 = texture;
-                    break;
-                case 2:
-                    Scene.RegionInfo.RegionSettings.TerrainTexture3 = texture;
-                    break;
-                case 3:
-                    Scene.RegionInfo.RegionSettings.TerrainTexture4 = texture;
-                    break;
+                switch (level)
+                {
+                    case 0:
+                        Scene.RegionInfo.RegionSettings.TerrainPBR1 = texture;
+                        break;
+                    case 1:
+                        Scene.RegionInfo.RegionSettings.TerrainPBR2 = texture;
+                        break;
+                    case 2:
+                        Scene.RegionInfo.RegionSettings.TerrainPBR3 = texture;
+                        break;
+                    case 3:
+                        Scene.RegionInfo.RegionSettings.TerrainPBR4 = texture;
+                        break;
+                    default:
+                        return;
+                }
+            }
+            else
+            { 
+                switch (level)
+                {
+                    case 0:
+                        Scene.RegionInfo.RegionSettings.TerrainTexture1 = texture;
+                        break;
+                    case 1:
+                        Scene.RegionInfo.RegionSettings.TerrainTexture2 = texture;
+                        break;
+                    case 2:
+                        Scene.RegionInfo.RegionSettings.TerrainTexture3 = texture;
+                        break;
+                    case 3:
+                        Scene.RegionInfo.RegionSettings.TerrainTexture4 = texture;
+                        break;
+                    default:
+                        return;
+                }
             }
 
             Scene.RegionInfo.RegionSettings.Save();
             TriggerRegionInfoChange();
-            SendRegionInfoPacketToAll();
+            sendRegionHandshakeToAll();
         }
 
         public void SetEstateTerrainTextureHeights(IClientAPI client, int corner, float lowValue, float highValue)
@@ -583,12 +607,13 @@ namespace OpenSim.Region.CoreModules.World.Estate
                     Scene.RegionInfo.RegionSettings.Elevation1NE = lowValue;
                     Scene.RegionInfo.RegionSettings.Elevation2NE = highValue;
                     break;
+                default:
+                    return;
             }
 
             Scene.RegionInfo.RegionSettings.Save();
             TriggerRegionInfoChange();
             sendRegionHandshakeToAll();
-//            sendRegionInfoPacketToAll();
         }
 
         private void HandleCommitEstateTerrainTextureRequest(IClientAPI remoteClient)

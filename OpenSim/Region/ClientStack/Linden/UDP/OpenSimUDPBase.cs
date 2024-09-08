@@ -26,16 +26,26 @@
  */
 
 using System;
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Threading;
 using log4net;
 using OpenSim.Framework;
-using OpenSim.Framework.Monitoring;
+using OpenMetaverse;
+using OpenMetaverse.Packets;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace OpenMetaverse
+namespace OpenSim.Region.ClientStack.LindenUDP
 {
+    public readonly struct IncomingPacket(LLClientView client, Packet packet)
+    {
+        /// <summary>Client this packet came from</summary>
+        public readonly LLClientView Client = client;
+
+        /// <summary>Packet data that has been received</summary>
+        public readonly Packet Packet = packet;
+    }
+
     /// <summary>
     /// Base UDP server
     /// </summary>
@@ -63,11 +73,24 @@ namespace OpenMetaverse
         public static int m_udpBuffersPoolPtr = -1;
 
         /// <summary>Returns true if the server is currently listening for inbound packets, otherwise false</summary>
-        public bool IsRunningInbound { get; private set; }
+        internal bool m_IsRunningInbound;
+        public bool IsRunningInbound
+        {
+            get { return m_IsRunningInbound; }
+            private set { m_IsRunningInbound = value; }
+        }
+
+        public CancellationTokenSource InboundCancellationSource = new();
+
 
         /// <summary>Returns true if the server is currently sending outbound packets, otherwise false</summary>
         /// <remarks>If IsRunningOut = false, then any request to send a packet is simply dropped.</remarks>
-        public bool IsRunningOutbound { get; private set; }
+        internal bool m_IsRunningOutbound;
+        public bool IsRunningOutbound
+        {
+            get { return m_IsRunningOutbound; }
+            private set { m_IsRunningOutbound = value; }
+        }
 
         /// <summary>
         /// Number of UDP receives.
@@ -126,7 +149,7 @@ namespace OpenMetaverse
                 try { m_udpSocket.Close(); } catch { }
         }
 
-        public UDPPacketBuffer GetNewUDPBuffer(IPEndPoint remoteEndpoint)
+        public static UDPPacketBuffer GetNewUDPBuffer(IPEndPoint remoteEndpoint)
         {
             lock (m_udpBuffersPoolLock)
             {
@@ -143,7 +166,7 @@ namespace OpenMetaverse
             return new UDPPacketBuffer(remoteEndpoint);
         }
 
-        public void FreeUDPBuffer(UDPPacketBuffer buf)
+        public static void FreeUDPBuffer(UDPPacketBuffer buf)
         {
             lock (m_udpBuffersPoolLock)
             {
@@ -167,19 +190,11 @@ namespace OpenMetaverse
         /// the UDP socket. This value is passed up to the operating system
         /// and used in the system networking stack. Use zero to leave this
         /// value as the default</param>
-        /// <param name="asyncPacketHandling">Set this to true to start
-        /// receiving more packets while current packet handler callbacks are
-        /// still running. Setting this to false will complete each packet
-        /// callback before the next packet is processed</param>
-        /// <remarks>This method will attempt to set the SIO_UDP_CONNRESET flag
-        /// on the socket to get newer versions of Windows to behave in a sane
-        /// manner (not throwing an exception when the remote side resets the
-        /// connection). This call is ignored on Mono where the flag is not
-        /// necessary</remarks>
+
 
         public virtual void StartInbound(int recvBufferSize)
         {
-            if (!IsRunningInbound)
+            if (!m_IsRunningInbound)
             {
                 m_log.DebugFormat("[UDPBASE]: Starting inbound UDP loop");
 
@@ -230,12 +245,10 @@ namespace OpenMetaverse
                 if (m_udpPort == 0)
                     m_udpPort = ((IPEndPoint)m_udpSocket.LocalEndPoint).Port;
 
-                IsRunningInbound = true;
+                m_IsRunningInbound = true;
 
-                // kick off an async receive.  The Start() method will return, the
-                // actual receives will occur asynchronously and will be caught in
-                // AsyncEndRecieve().
-                AsyncBeginReceive();
+                // kick start the receiver tasks dance.
+                Task.Run(AsyncBeginReceive).ConfigureAwait(false);
             }
         }
 
@@ -246,17 +259,19 @@ namespace OpenMetaverse
         {
             m_log.DebugFormat("[UDPBASE]: Starting outbound UDP loop");
 
-            IsRunningOutbound = true;
+            m_IsRunningOutbound = true;
         }
 
         public virtual void StopInbound()
         {
-            if (IsRunningInbound)
+            if (m_IsRunningInbound)
             {
                 m_log.DebugFormat("[UDPBASE]: Stopping inbound UDP loop");
 
-                IsRunningInbound = false;
+                m_IsRunningInbound = false;
+                InboundCancellationSource.Cancel();
                 m_udpSocket.Close();
+                m_udpSocket = null;
             }
         }
 
@@ -264,122 +279,58 @@ namespace OpenMetaverse
         {
             m_log.DebugFormat("[UDPBASE]: Stopping outbound UDP loop");
 
-            IsRunningOutbound = false;
+            m_IsRunningOutbound = false;
         }
 
-        private void AsyncBeginReceive()
+        private async void AsyncBeginReceive()
         {
-            while (IsRunningInbound)
+            SocketAddress workSktAddress = new(m_udpSocket.AddressFamily);
+            while (m_IsRunningInbound)
             {
-                UDPPacketBuffer buf = GetNewUDPBuffer(new IPEndPoint(IPAddress.Any, 0)); // we need a fresh one here, for now at least
+                UDPPacketBuffer buf = GetNewUDPBuffer(null); // we need a fresh one here, for now at least
                 try
                 {
-                    // kick off an async read
-                    IAsyncResult iar = m_udpSocket.BeginReceiveFrom(
-                        buf.Data,
-                        0,
-                        buf.Data.Length,
-                        SocketFlags.None,
-                        ref buf.RemoteEndPoint,
-                        AsyncEndReceive,
-                        buf);
-
-                    if (!iar.CompletedSynchronously)
+                    int nbytes = 
+                        await m_udpSocket.ReceiveFromAsync(buf.Data.AsMemory(), SocketFlags.None, workSktAddress, InboundCancellationSource.Token).ConfigureAwait(false);
+                    if (!m_IsRunningInbound || InboundCancellationSource.IsCancellationRequested)
+                    {
+                        FreeUDPBuffer(buf);
                         return;
-                }
-                catch (SocketException e)
-                {
-                    if (e.SocketErrorCode == SocketError.ConnectionReset)
-                    {
-                        m_log.Warn("[UDPBASE]: SIO_UDP_CONNRESET was ignored, attempting to salvage the UDP listener on port " + m_udpPort);
-                        {
-                            try
-                            {
-                                IAsyncResult iar = m_udpSocket.BeginReceiveFrom(
-                                    buf.Data,
-                                    0,
-                                    buf.Data.Length,
-                                    SocketFlags.None,
-                                    ref buf.RemoteEndPoint,
-                                    AsyncEndReceive,
-                                    buf);
-
-                                if (!iar.CompletedSynchronously)
-                                    return;
-                            }
-                            catch (SocketException) { }
-                            catch (ObjectDisposedException) { return; }
-                        }
-                        m_log.Warn("[UDPBASE]: Salvaged the UDP listener on port " + m_udpPort);
                     }
-                }
-                catch (Exception e)
-                {
-                    m_log.Error(
-                        string.Format("[UDPBASE]: Error processing UDP begin receive {0}.  Exception  ", UdpReceives), e);
-                }
-            }
-        }
 
-        private void AsyncEndReceive(IAsyncResult iar)
-        {
-            if (IsRunningInbound)
-            {
-                bool sync = iar.CompletedSynchronously;
-                try
-                {
-                    // get the buffer that was created in AsyncBeginReceive
-                    // this is the received data
-                    UDPPacketBuffer buffer = (UDPPacketBuffer)iar.AsyncState;
-
-                    int startTick = Util.EnvironmentTickCount();
-
-                    // get the length of data actually read from the socket, store it with the
-                    // buffer
-                    buffer.DataLength = m_udpSocket.EndReceiveFrom(iar, ref buffer.RemoteEndPoint);
-
-
-                    UdpReceives++;
-
-                    // call the abstract method PacketReceived(), passing the buffer that
-                    // has just been filled from the socket read.
-                    PacketReceived(buffer);
-
-                    // If more than one thread can be calling AsyncEndReceive() at once (e.g. if m_asyncPacketHandler)
-                    // then a particular stat may be inaccurate due to a race condition.  We won't worry about this
-                    // since this should be rare and  won't cause a runtime problem.
-                    if (m_currentReceiveTimeSamples >= s_receiveTimeSamples)
+                    if (nbytes > 0)
                     {
-                        AverageReceiveTicksForLastSamplePeriod
-                            = (float)m_receiveTicksInCurrentSamplePeriod / s_receiveTimeSamples;
+                        int startTick = Util.EnvironmentTickCount();
 
-                        m_receiveTicksInCurrentSamplePeriod = 0;
-                        m_currentReceiveTimeSamples = 0;
+                        buf.RemoteEndPoint = Util.GetEndPoint(workSktAddress);
+                        buf.DataLength = nbytes;
+                        UdpReceives++;
+
+                        PacketReceived(buf);
+
+                        if (m_currentReceiveTimeSamples >= s_receiveTimeSamples)
+                        {
+                            AverageReceiveTicksForLastSamplePeriod
+                                = (float)m_receiveTicksInCurrentSamplePeriod / s_receiveTimeSamples;
+
+                            m_receiveTicksInCurrentSamplePeriod = 0;
+                            m_currentReceiveTimeSamples = 0;
+                        }
+                        else
+                        {
+                            m_receiveTicksInCurrentSamplePeriod += Util.EnvironmentTickCountSubtract(startTick);
+                            m_currentReceiveTimeSamples++;
+                        }
                     }
                     else
-                    {
-                        m_receiveTicksInCurrentSamplePeriod += Util.EnvironmentTickCountSubtract(startTick);
-                        m_currentReceiveTimeSamples++;
-                    }
+                        FreeUDPBuffer(buf);
                 }
-                catch (SocketException se)
+                catch (OperationCanceledException)
                 {
-                    m_log.Error(
-                        string.Format(
-                            "[UDPBASE]: Error processing UDP end receive {0}, socket error code {1}.  Exception  ",
-                            UdpReceives, se.ErrorCode),
-                        se);
                 }
-                catch(ObjectDisposedException) { }
                 catch (Exception e)
                 {
-                    m_log.Error(
-                        string.Format("[UDPBASE]: Error processing UDP end receive {0}.  Exception  ", UdpReceives), e);
-                }
-                finally
-                {
-                    if (IsRunningInbound && !sync)
-                        AsyncBeginReceive();
+                    m_log.Error($"[UDPBASE]: Error processing UDP receiveFrom. Exception ", e);
                 }
             }
         }

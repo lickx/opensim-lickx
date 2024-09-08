@@ -57,6 +57,8 @@ namespace OpenSim.Region.OptionalModules.World.NPC
         /// </summary>
         public event ChatToNPC OnChatToNPC;
 
+        public ViewerFlags ViewerFlags { get; private set; }
+
         /// <summary>
         /// Fired when the NPC receives an instant message.
         /// </summary>
@@ -639,7 +641,7 @@ namespace OpenSim.Region.OptionalModules.World.NPC
 
         public bool IsGroupMember(UUID groupID)
         {
-            return (m_hostGroupID == groupID);
+            return m_hostGroupID.Equals(groupID);
         }
 
         public Dictionary<UUID, ulong> GetGroupPowers()

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) Contributors, http://opensimulator.org/
  * See CONTRIBUTORS.TXT for a full list of copyright holders.
  *
@@ -26,38 +26,47 @@
  */
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using OpenSim.Framework;
 using OpenMetaverse;
-using OpenMetaverse.Packets;
+using Npgsql;
 
-namespace OpenSim.Region.ClientStack.LindenUDP
+namespace OpenSim.Data.PGSQL
 {
-    /// <summary>
-    /// Holds a reference to a <seealso cref="LLUDPClient"/> and a <seealso cref="Packet"/>
-    /// for incoming packets
-    /// </summary>
-    public sealed class IncomingPacket
+    public class PGSQLMuteListData: PGSQLGenericTableHandler<MuteData>, IMuteListData
     {
-        /// <summary>Client this packet came from</summary>
-        public LLClientView Client;
-
-        /// <summary>Packet data that has been received</summary>
-        public Packet Packet;
-
-        /// <summary>
-        /// No arg constructor.
-        /// </summary>
-        public IncomingPacket() {}
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="client">Reference to the client this packet came from</param>
-        /// <param name="packet">Packet data</param>
-        public IncomingPacket(LLClientView client, Packet packet)
+        public PGSQLMuteListData(string connectionString)
+            : base(connectionString, "MuteList", "MuteListStore")
         {
-            Client = client;
-            Packet = packet;
+        }
+
+        public MuteData[] Get(UUID agentID)
+        {
+            var data = base.Get("AgentID", agentID.ToString());
+            return data;
+        }
+
+        public bool Delete(UUID agentID, UUID muteID, string muteName)
+        {
+            var query = $"DELETE FROM MuteList WHERE \"AgentID\" = :AgentID and " +
+                        $"\"MuteID\" = :MuteID and " +
+                        $"\"MuteName\" = :MuteName";
+
+            using (NpgsqlConnection conn = new NpgsqlConnection(m_ConnectionString))
+            using (NpgsqlCommand cmd = new NpgsqlCommand())
+            {
+                cmd.CommandText = query;
+                cmd.Parameters.AddWithValue(":AgentID", agentID.ToString());
+                cmd.Parameters.AddWithValue(":MuteID", muteID.ToString());
+                cmd.Parameters.AddWithValue("MuteName", muteName);
+                cmd.Connection = conn;
+                conn.Open();
+                cmd.ExecuteNonQuery();
+
+                return true;
+            }
         }
     }
 }

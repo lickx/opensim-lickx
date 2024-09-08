@@ -56,6 +56,7 @@ using OpenMetaverse.StructuredData;
 using Amib.Threading;
 using System.Collections.Concurrent;
 using System.Net.Http;
+using System.Security.Cryptography.X509Certificates;
 
 namespace OpenSim.Framework
 {
@@ -173,11 +174,15 @@ namespace OpenSim.Framework
         private static readonly string regexInvalidPathChars = $"[{new String(Path.GetInvalidPathChars())}]";
         private static readonly object XferLock = new();
 
-        public static readonly char[] SplitCommaArray = new char[] { ',' };
-        public static readonly char[] SplitDotArray = new char[] { '.' };
-        public static readonly char[] SplitColonArray = new char[] { ':' };
-        public static readonly char[] SplitSemicolonArray = new char[] { ';' };
-        public static readonly char[] SplitSlashArray = new char[] { '/' };
+        public static readonly char[] SplitCommaArray = [','];
+        public static readonly char[] SplitDotArray = ['.'];
+        public static readonly char[] SplitColonArray = [':'];
+        public static readonly char[] SplitSemicolonArray = [';'];
+        public static readonly char[] SplitSlashArray = ['/'];
+        public static readonly char[] SplitSpaceArray = [' '];
+        public static readonly char[] SplitSlashSpaceArray = ['/', ' '];
+        public static readonly char[] SplitDoubleQuoteSpaceArray = ['"', ' '];
+        public static readonly char[] SplitSlashColonArray = ['/', ':'];
 
         public static readonly XmlReaderSettings SharedXmlReaderSettings = new()
         {
@@ -520,9 +525,9 @@ namespace OpenSim.Framework
                 Uri uri = new(uristr);
                 serviceURI = uri.AbsoluteUri;
                 if (uri.Port == 80)
-                    serviceURI = $"{serviceURI.Trim(new char[] { '/', ' ' })}:80/";
+                    serviceURI = $"{serviceURI.Trim(SplitSlashSpaceArray)}:80/";
                 else if (uri.Port == 443)
-                    serviceURI = $"{serviceURI.Trim(new char[] { '/', ' ' })}:443/";
+                    serviceURI = $"{serviceURI.Trim(SplitSlashSpaceArray)}:443/";
                 serviceHost = uri.Host;
 
                 IPEndPoint ep = Util.getEndPoint(serviceHost, uri.Port);
@@ -646,15 +651,16 @@ namespace OpenSim.Framework
             }
 
             if (!string.IsNullOrEmpty(regionName))
-                regionName = regionName.Trim(new char[] { '"', ' ' });
+                regionName = regionName.Trim(SplitDoubleQuoteSpaceArray);
             serverURI = uri.AbsoluteUri;
             if (uri.Port == 80)
-                serverURI = $"{serverURI.Trim(new char[] { '/', ' ' })}:80/";
+                serverURI = $"{serverURI.Trim(SplitSlashSpaceArray)}:80/";
             else if (uri.Port == 443)
-                serverURI = $"{serverURI.Trim(new char[] { '/', ' ' })}:443/";
+                serverURI = $"{serverURI.Trim(SplitSlashSpaceArray)}:443/";
             return true;
         }
 
+        //obsolete  use Math.Clamp
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static T Clamp<T>(T x, T min, T max)
             where T : IComparable<T>
@@ -1093,14 +1099,18 @@ namespace OpenSim.Framework
         /// Is the platform Windows?
         /// </summary>
         /// <returns>true if so, false otherwise</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool IsWindows()
         {
+            return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            /*
             PlatformID platformId = Environment.OSVersion.Platform;
 
             return (platformId == PlatformID.Win32NT
                 || platformId == PlatformID.Win32S
                 || platformId == PlatformID.Win32Windows
                 || platformId == PlatformID.WinCE);
+            */
         }
 
         public static bool LoadArchSpecificWindowsDll(string libraryName)
@@ -1135,9 +1145,9 @@ namespace OpenSim.Framework
 
         public static bool IsEnvironmentSupported(ref string reason)
         {
-            if (Environment.Version.Major < 6)
+            if (Environment.Version.Major < 8)
             {
-                reason = "Dotnet 6.0 is required";
+                reason = "Dotnet 8.0 is required";
                 return false;
             }
             return true;
@@ -1206,16 +1216,14 @@ namespace OpenSim.Framework
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static byte[] ComputeMD5Hash(string data, Encoding encoding)
         {
-            using MD5 md5 = MD5.Create();
-            return md5.ComputeHash(encoding.GetBytes(data));
+            return MD5.HashData(encoding.GetBytes(data));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static UUID ComputeASCIIMD5UUID(string data)
         {
-            using MD5 md5 = MD5.Create();
-            byte[] bytes = md5.ComputeHash(Encoding.ASCII.GetBytes(data));
-            UUID uuid = new(bytes,2);
+            byte[] bytes = MD5.HashData(Encoding.ASCII.GetBytes(data));
+            UUID uuid = new(bytes, 2);
             uuid.c &= 0x0fff;
             uuid.c |= 0x3000;
             uuid.d &= 0x3f;
@@ -1337,8 +1345,7 @@ namespace OpenSim.Framework
 
         private static byte[] ComputeSHA1Hash(byte[] src)
         {
-            using SHA1 sha = SHA1.Create();
-            return sha.ComputeHash(src);
+            return SHA1.HashData(src);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1356,9 +1363,7 @@ namespace OpenSim.Framework
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static UUID ComputeSHA1UUID(byte[] src)
         {
-            byte[] ret;
-            using (SHA1 sha = SHA1.Create())
-                ret = sha.ComputeHash(src);
+            byte[] ret = SHA1.HashData(src);
             UUID uuid = new(ret, 2);
             uuid.c &= 0x0fff;
             uuid.c |= 0x5000;
@@ -1456,7 +1461,7 @@ namespace OpenSim.Framework
             {
                 iv = ivString.Length == 0 ?
                     Convert.FromHexString(encryptedText[..sep]):
-                    MD5.Create().ComputeHash(Utils.StringToBytesNoTerm(ivString));
+                    MD5.HashData(Utils.StringToBytesNoTerm(ivString));
                 buffer = Convert.FromHexString(encryptedText[(sep + 1)..]);
             }
             catch
@@ -1464,7 +1469,7 @@ namespace OpenSim.Framework
                 return string.Empty;
             }
 
-            byte[] aesKey = SHA256.Create().ComputeHash(Utils.StringToBytesNoTerm(secret));
+            byte[] aesKey = SHA256.HashData(Utils.StringToBytesNoTerm(secret));
 
             using Aes aes = Aes.Create();
             aes.Key = aesKey;
@@ -1478,6 +1483,71 @@ namespace OpenSim.Framework
             using StreamReader streamReader = new(cryptoStream);
           
             return streamReader.ReadToEnd();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void CreateOrUpdateSelfsignedCert(string certFileName, string certHostName, string certHostIp, string certPassword)
+        {
+            CreateOrUpdateSelfsignedCertificate(certFileName, certHostName, certHostIp, certPassword);
+        }
+
+        /// <summary>
+        /// Create or renew an SSL selfsigned certificate using the parameters set in the startup section of OpenSim.ini
+        /// </summary>
+        /// <param name="certFileName">The certificate file name.</param>
+        /// <param name="certHostName">The certificate host DNS name (CN).</param>
+        /// <param name="certHostIp">The certificate host IP address.</param>
+        /// <param name="certPassword">The certificate password.</param>
+        private static void CreateOrUpdateSelfsignedCertificate(string certFileName, string certHostName, string certHostIp, string certPassword)
+        {
+            SubjectAlternativeNameBuilder san = new();
+            san.AddDnsName(certHostName);
+            san.AddIpAddress(IPAddress.Parse(certHostIp));
+
+            // What OpenSim check (CN).
+            X500DistinguishedName dn = new($"CN={certHostName}");
+
+            using (RSA rsa = RSA.Create(2048))
+            {
+                CertificateRequest request = new(dn, rsa, HashAlgorithmName.SHA256,RSASignaturePadding.Pkcs1);
+
+                // (Optional)...
+                request.CertificateExtensions.Add(
+                new X509KeyUsageExtension(X509KeyUsageFlags.DataEncipherment | X509KeyUsageFlags.KeyEncipherment | X509KeyUsageFlags.DigitalSignature , false));
+
+                // (Optional) SSL Server Authentication...
+                request.CertificateExtensions.Add(
+                new X509EnhancedKeyUsageExtension(
+                    new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false));
+
+                request.CertificateExtensions.Add(san.Build());
+
+                X509Certificate2 certificate = request.CreateSelfSigned(new DateTimeOffset(DateTime.UtcNow), new DateTimeOffset(DateTime.UtcNow.AddDays(3650)));
+
+                string privateKey = Convert.ToBase64String(rsa.ExportRSAPrivateKey(), Base64FormattingOptions.InsertLineBreaks);
+
+                // Create the SSL folder and sub folders if not exists.
+                if (!Directory.Exists("SSL\\src\\"))
+                    Directory.CreateDirectory("SSL\\src\\");
+
+                if (!Directory.Exists("SSL\\ssl\\"))
+                    Directory.CreateDirectory("SSL\\ssl\\");
+
+                // Store the RSA key in SSL\src\
+                File.WriteAllText($"SSL\\src\\{certFileName}.txt", privateKey);
+
+                // Export and store the .pfx and .p12 certificates in SSL\ssl\.
+                // Note: Pfx is a Pkcs12 certificate and both files work for OpenSim.
+                byte[] pfxCertBytes = string.IsNullOrEmpty(certPassword) 
+                                    ? certificate.Export(X509ContentType.Pfx) 
+                                    : certificate.Export(X509ContentType.Pfx, certPassword);
+                File.WriteAllBytes($"SSL\\ssl\\{certFileName}.pfx", pfxCertBytes);
+
+                byte[] p12CertBytes = string.IsNullOrEmpty(certPassword) 
+                                    ? certificate.Export(X509ContentType.Pkcs12) 
+                                    : certificate.Export(X509ContentType.Pkcs12, certPassword);
+                File.WriteAllBytes($"SSL\\ssl\\{certFileName}.p12", p12CertBytes);
+            }
         }
 
         public static int fast_distance2d(int x, int y)
@@ -1617,7 +1687,21 @@ namespace OpenSim.Framework
             return output.ToString();
         }
 
-        private static readonly ExpiringCacheOS<string, IPAddress> dnscache = new(10000);
+        private static readonly IPEndPoint dummyIPEndPoint = new IPEndPoint(IPAddress.Any, 0);
+        private static readonly ExpiringCacheOS<string, IPAddress> dnscache = new(30000);
+        private static readonly ExpiringCacheOS<SocketAddress, EndPoint> EndpointsCache = new(300000);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static EndPoint GetEndPoint(SocketAddress sckaddr)
+        {
+            if (!EndpointsCache.TryGetValue(sckaddr, 300000, out EndPoint ep))
+            {
+                ep = dummyIPEndPoint.Create(sckaddr);
+                EndpointsCache.AddOrUpdate(sckaddr, ep, 300);
+            }
+            return ep;
+        }
+
 
         /// <summary>
         /// Converts a URL to a IPAddress
@@ -1627,7 +1711,7 @@ namespace OpenSim.Framework
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static IPAddress GetHostFromURL(string url)
         {
-            return GetHostFromDNS(url.Split(new char[] { '/', ':' })[3]);
+            return GetHostFromDNS(url.Split(SplitSlashColonArray)[3]);
         }
 
         /// <summary>
@@ -1686,16 +1770,14 @@ namespace OpenSim.Framework
             if (ia == null)
                 return null;
 
-            IPEndPoint newEP;
             try
             {
-                newEP = new IPEndPoint(ia, port);
+                return  new IPEndPoint(ia, port);
             }
             catch
             {
-                newEP = null;
+                return null;
             }
-            return newEP;
         }
 
         public static IPEndPoint getEndPoint(string hostname, int port)
@@ -2240,7 +2322,7 @@ namespace OpenSim.Framework
 
         public static void SerializeToFile(string filename, Object obj)
         {
-            IFormatter formatter = new BinaryFormatter();
+            var formatter = new BinaryFormatter();
             try
             {
                 using Stream stream = new FileStream(filename, FileMode.Create,FileAccess.Write, FileShare.None);
@@ -2257,7 +2339,7 @@ namespace OpenSim.Framework
             try
             {
                 using Stream stream = new FileStream(filename, FileMode.Open,FileAccess.Read, FileShare.None);
-                IFormatter formatter = new BinaryFormatter();
+                var formatter = new BinaryFormatter();
                 return formatter.Deserialize(stream);
             }
             catch (Exception e)
@@ -2494,10 +2576,10 @@ namespace OpenSim.Framework
             passPosition = connectionString.IndexOf("password", StringComparison.OrdinalIgnoreCase);
             if (passPosition == -1)
                 return connectionString;
-            passPosition = connectionString.IndexOf("=", passPosition);
+            passPosition = connectionString.IndexOf('=', passPosition);
             if (passPosition < connectionString.Length)
                 passPosition += 1;
-            passEndPosition = connectionString.IndexOf(";", passPosition);
+            passEndPosition = connectionString.IndexOf(';', passPosition);
 
             return $"{connectionString[..passPosition]}***{connectionString[passEndPosition..]}";
         }
@@ -3020,6 +3102,39 @@ namespace OpenSim.Framework
 
             start = end = 0;
             return false;
+        }
+
+        [DllImport("winmm.dll")]
+        private static extern uint timeBeginPeriod(uint period);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void TimeBeginPeriod(uint period)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                timeBeginPeriod(period);
+        }
+
+        [DllImport("winmm.dll")]
+        private static extern uint timeEndPeriod(uint period);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void TimeEndPeriod(uint period)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                timeEndPeriod(period);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void ThreadSleep(int period)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                timeEndPeriod(1);
+                Thread.Sleep(period);
+                timeEndPeriod(1);
+            }
+            else
+                Thread.Sleep(period);
         }
 
         /// <summary>
@@ -3746,7 +3861,7 @@ namespace OpenSim.Framework
             };
             reader.ReadEndElement();
 
-            UUID.TryParse(idStr, out UUID id);
+            _ = UUID.TryParse(idStr, out UUID id);
             return id;
         }
 
@@ -3883,7 +3998,7 @@ namespace OpenSim.Framework
                     secret = value[indxA..];
             }
 
-            string[] name = n.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] name = n.Split(SplitSpaceArray, StringSplitOptions.RemoveEmptyEntries);
             if (name.Length == 0)
             {
                 firstname = string.Empty;
@@ -3958,7 +4073,7 @@ namespace OpenSim.Framework
                     secret = value[indxA..];
             }
 
-            string[] name = n.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] name = n.Split(SplitSpaceArray, StringSplitOptions.RemoveEmptyEntries);
             if (name.Length == 0)
             {
                 firstname = string.Empty;
@@ -4032,7 +4147,7 @@ namespace OpenSim.Framework
             else
                 n = value[indxB..seps[2]];
 
-            string[] name = n.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] name = n.Split(SplitSpaceArray, StringSplitOptions.RemoveEmptyEntries);
             if (name.Length == 0)
             {
                 firstname = string.Empty;
@@ -4098,7 +4213,7 @@ namespace OpenSim.Framework
             else
                 n = value[indxB..seps[2]];
 
-            string[] name = n.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            string[] name = n.Split(SplitSpaceArray, StringSplitOptions.RemoveEmptyEntries);
             if (name.Length == 0)
             {
                 firstname = string.Empty;
@@ -4356,8 +4471,8 @@ namespace OpenSim.Framework
         /// <returns>uuid[;homeURI[;first last]]</returns>
         public static string ProduceUserUniversalIdentifier(AgentCircuitData acircuit)
         {
-            if (acircuit.ServiceURLs.ContainsKey("HomeURI"))
-                return UniversalIdentifier(acircuit.AgentID, acircuit.firstname, acircuit.lastname, acircuit.ServiceURLs["HomeURI"].ToString());
+            if (acircuit.ServiceURLs.TryGetValue("HomeURI", out object homeobj))
+                return UniversalIdentifier(acircuit.AgentID, acircuit.firstname, acircuit.lastname, homeobj.ToString());
             else
                 return acircuit.AgentID.ToString();
         }

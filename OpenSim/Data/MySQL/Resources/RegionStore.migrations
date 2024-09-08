@@ -551,10 +551,19 @@ ALTER TABLE `land` ADD COLUMN `environment` MEDIUMTEXT default NULL;
 COMMIT;
 
 :VERSION 64         #----- material overrides
+BEGIN;
 ALTER TABLE `primshapes` ADD COLUMN `MatOvrd` blob default NULL;
 COMMIT;
 
 :VERSION 65         #----- add linkset data binary storage column
 BEGIN;
 ALTER TABLE `prims` ADD COLUMN `lnkstBinData` blob default NULL;
+COMMIT;
+
+:VERSION 66         #----- add PBR Terrain storage column
+BEGIN;
+ALTER TABLE `regionsettings` ADD COLUMN `TerrainPBR1` varchar(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+ALTER TABLE `regionsettings` ADD COLUMN `TerrainPBR2` varchar(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+ALTER TABLE `regionsettings` ADD COLUMN `TerrainPBR3` varchar(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+ALTER TABLE `regionsettings` ADD COLUMN `TerrainPBR4` varchar(36) NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
 COMMIT;
