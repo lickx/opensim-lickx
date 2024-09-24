@@ -6489,6 +6489,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     return World.SceneGridInfo == null ? string.Empty : World.SceneGridInfo.GridName;
 
                 case "objectmail_hostname":
+                    goto case "mailname";
+                case "mailname":
                     if (m_emailModule is not null)
                         return m_internalObjectHost;
                     return "";
