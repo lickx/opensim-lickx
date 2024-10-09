@@ -84,6 +84,8 @@ namespace OpenSim.Region.CoreModules.World.Warp3DMap
         private float m_renderMinHeight = -100f;
         private float m_renderMaxHeight = 4096f;
 
+        private string m_tilesPath = ".";
+
         private bool m_Enabled = false;
 
         #region Region Module interface
@@ -132,6 +134,10 @@ namespace OpenSim.Region.CoreModules.World.Warp3DMap
                 m_renderMinHeight = -100f;
             else if (m_renderMinHeight > m_renderMaxHeight - 10f)
                 m_renderMinHeight = m_renderMaxHeight - 10f;
+
+            m_tilesPath = Util.GetConfigVarFromSections<string>(source, "GenTilesDirectory", configSections, m_tilesPath);
+	    if (!Directory.Exists(m_tilesPath))
+	        Directory.CreateDirectory(m_tilesPath);
         }
 
         public void AddRegion(Scene scene)
@@ -208,7 +214,7 @@ namespace OpenSim.Region.CoreModules.World.Warp3DMap
 
             Bitmap tile = GenImage();
             // image may be reloaded elsewhere, so no compression format
-            string filename = "MAP-" + m_scene.RegionInfo.RegionID.ToString() + ".png";
+            string filename = System.IO.Path.Combine(m_tilesPath, "MAP-" + m_scene.RegionInfo.RegionID.ToString() + ".png");
             tile.Save(filename,ImageFormat.Png);
             m_primMesher = null;
             return tile;
