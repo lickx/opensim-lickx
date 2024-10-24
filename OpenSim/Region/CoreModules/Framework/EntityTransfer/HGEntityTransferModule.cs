@@ -804,112 +804,122 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                 }
                 else
                 {
-                    if (aCircuit.ServiceURLs != null && aCircuit.ServiceURLs.ContainsKey("AssetServerURI"))
+                    if (sp.IsDeleted)
+                        return false;
+
+                    if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
                     {
-                        ScenePresence defsp = sp;
-                        List<SceneObjectGroup> deftatt = attachments;
-                        List<SceneObjectGroup> toadd = new List<SceneObjectGroup>(deftatt.Count);
-                        m_incomingSceneObjectEngine.QueueJob(
-                            string.Format("HG UUID Gather attachments {0}", defsp.Name), () =>
+                        m_log.DebugFormat(
+                            "[HG ENTITY TRANSFER]: Denied Attachments for banned avatar {0}", sp.Name);
+                        return false;
+                    }
+
+                    // Upstream does let the avi in, even if their assetserver can't be reached
+                    // The visitor will obviously be without visible attachments in this case
+                    if (aCircuit.ServiceURLs == null || !aCircuit.ServiceURLs.ContainsKey("AssetServerURI"))
+                    {
+                        sp.GotAttachmentsData = true;
+                        return true;
+                    }
+
+                    ScenePresence defsp = sp;
+                    List<SceneObjectGroup> deftatt = new(attachments.Count);
+                    List<SceneObjectGroup> defhuds = new();
+
+                    // Prioritize non-HUDS, as AOs, dance huds etc can hold a lot of assets
+                    foreach (SceneObjectGroup sog in attachments)
+                    {
+                        if (sog.AttachmentPoint >= 31 && sog.AttachmentPoint <= 38)
+                        {
+                            defhuds.Add(sog);
+                        }
+                        else
+                        {
+                            deftatt.Add(sog);
+                        }
+                    }
+                    deftatt.AddRange(defhuds);
+
+                    IClientAPI remoteClient = sp.ControllingClient;
+                    UUID groupID = remoteClient.ActiveGroupId;
+                    remoteClient.SendAlertMessage("Loading your avatar...");
+
+                    m_incomingSceneObjectEngine.QueueJob(
+                        string.Format("HG UUID Gather attachments {0}", defsp.Name), () =>
+                        {
+                            string url = aCircuit.ServiceURLs["AssetServerURI"].ToString();
+                            IDictionary<UUID, sbyte> ids = new Dictionary<UUID, sbyte>();
+                            HGUuidGatherer uuidGatherer = new HGUuidGatherer(m_scene.AssetService, url, ids);
+
+                            foreach (SceneObjectGroup sog in deftatt)
                             {
-                                string url = aCircuit.ServiceURLs["AssetServerURI"].ToString();
-                                IDictionary<UUID, sbyte> ids = new Dictionary<UUID, sbyte>();
-                                HGUuidGatherer uuidGatherer = new HGUuidGatherer(m_scene.AssetService, url, ids);
-
-                                IClientAPI remoteClient = sp.ControllingClient;
-                                if (remoteClient is not null)
-                                    remoteClient.SendAlertMessage("Loading your avatar...");
-
-                                foreach (SceneObjectGroup defso in deftatt)
+                                if(sog.OwnerID.NotEqual(defsp.UUID))
                                 {
-                                    if(defso.OwnerID.NotEqual(defsp.UUID))
-                                    {
-                                        m_log.ErrorFormat(
-                                            "[HG TRANSFER MODULE] attachment {0}({1} owner {2} does not match HG avatarID {3}",
-                                                defso.Name, defso.UUID, defso.OwnerID, defsp.UUID);
-                                        continue;
-                                    }
-                                    uuidGatherer.AddForInspection(defso);
-                                    while (!uuidGatherer.Complete)
-                                    {
-                                        if (sp.IsDeleted)
-                                        {
-                                            deftatt = null;
-                                            defsp = null;
-                                            uuidGatherer = null;
-                                            toadd = null;
-                                            return;
-                                        }
-                                        uuidGatherer.GatherNext();
-                                    }
-                                    toadd.Add(defso);
+                                    m_log.ErrorFormat(
+                                        "[HG ENTITY TRANSFER] Owner ({0}) of attachment '{1}' does not match HG visitor's ID ({2})",
+                                            sog.OwnerID, sog.Name, defsp.UUID);
+                                    continue;
                                 }
-                                deftatt = null;
-
+                                // get asset uuids for scene object
+                                uuidGatherer.AddForInspection(sog);
+                                while (!uuidGatherer.Complete)
+                                {
+                                    if (sp.IsDeleted)
+                                    {
+                                        deftatt = null;
+                                        defsp = null;
+                                        uuidGatherer = null;
+                                        return;
+                                    }
+                                    uuidGatherer.GatherNext();
+                                }
+                                // fetch assets for scene object
                                 foreach (UUID id in ids.Keys)
                                 {
                                     int tickStart = Util.EnvironmentTickCount();
-
                                     uuidGatherer.FetchAsset(id);
-
                                     int ticksElapsed = Util.EnvironmentTickCountSubtract(tickStart);
 
                                     if (sp.IsDeleted || ticksElapsed > 30000)
                                     {
                                         m_log.WarnFormat(
-                                            "[HG ENTITY TRANSFER]: Aborting fetch attachments assets for HG user {0}", sp.Name);
+                                            "[HG ENTITY TRANSFER]: Aborting fetching assets for for HG visitor {0}", defsp.Name);
 
+                                        deftatt = null;
                                         defsp = null;
                                         uuidGatherer = null;
-                                        toadd = null;
                                         return;
                                     }
                                 }
+                                ids.Clear(); // this scene object is done fetching
 
-                                if (sp.IsDeleted)
-                                    return;
-
-                                if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
+                                // add scene object
+                                if (!m_scene.AddSceneObject(sog))
                                 {
                                     m_log.DebugFormat(
-                                        "[HG ENTITY TRANSFER]: Denied Attachments for banned avatar {0}", sp.Name);
-                                    return;
-                                }
-
-                                UUID groupID = remoteClient.ActiveGroupId;
-
-                                m_log.DebugFormat("[HG ENTITY TRANSFER]: Adding attachments and resume attached scripts for HG user {0}", sp.Name);
-
-                                foreach(SceneObjectGroup so in attachments)
-                                {
-                                    if (!m_scene.AddSceneObject(so))
+                                        "[HG ENTITY TRANSFER]: Could not add attachment '{0}' for HG visitor {1}",
+                                        sog.Name, defsp.Name);
+                                } else {
+                                    sog.SetGroup(groupID, remoteClient);
+                                    if (sog.ContainsScripts())
                                     {
-                                        m_log.DebugFormat(
-                                            "[HG ENTITY TRANSFER]: Problem adding attachment {0} {1} into {2} ",
-                                            so.Name, so.UUID, m_sceneName);
-                                        continue;
-                                    }
-                                    so.SetGroup(groupID, remoteClient);
-                                    if (so.ContainsScripts())
-                                    {
-                                        so.RootPart.ParentGroup.CreateScriptInstances(
-                                            0, false, Scene.DefaultScriptEngine, GetStateSource(so));
-                                        so.aggregateScriptEvents();
-                                        so.ResumeScripts();
+                                        sog.RootPart.ParentGroup.CreateScriptInstances(
+                                            0, false, Scene.DefaultScriptEngine, GetStateSource(sog));
+                                        sog.aggregateScriptEvents();
+                                        sog.ResumeScripts();
                                     }
                                 }
+                            }
 
-                                defsp = null;
-                                uuidGatherer = null;
-                                toadd = null;
-                                sp.GotAttachmentsData = true;
-                                string gridName = m_scene.SceneGridInfo == null ? string.Empty : " @ "+m_scene.SceneGridInfo.GridName;
-                                string regionName = m_scene.RegionInfo == null ? string.Empty : " to "+m_scene.RegionInfo.RegionName;
-                                string welcomeMsg = "\nWelcome"+regionName+gridName+"!";
-                                sp.ControllingClient.SendAgentAlertMessage("Hypergrid teleport complete."+welcomeMsg, false);
-                            },
-                            OwnerID.ToString());
-                    }
+                            deftatt = null;
+                            defsp = null;
+                            uuidGatherer = null;
+
+                            sp.GotAttachmentsData = true;
+                            remoteClient.SendAlertMessage("Avatar loaded; Hypergrid teleport complete.");
+                            // at this point the job engine is done
+                        },
+                        OwnerID.ToString());
                 }
             }
 

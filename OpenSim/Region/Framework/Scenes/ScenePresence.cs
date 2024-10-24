@@ -1591,9 +1591,12 @@ namespace OpenSim.Region.Framework.Scenes
             // Resume scripts
             foreach (SceneObjectGroup sog in attachments)
             {
-                sog.RootPart.ParentGroup.CreateScriptInstances(0, false, m_scene.DefaultScriptEngine, GetStateSource());
-                sog.ResumeScripts();
-                sog.ScheduleGroupForFullUpdate();
+                if (sog.ContainsScripts())
+                {
+                    sog.RootPart.ParentGroup.CreateScriptInstances(0, false, m_scene.DefaultScriptEngine, GetStateSource());
+                    sog.ResumeScripts();
+                    sog.ScheduleGroupForFullUpdate();
+                }
             }
         }
 
