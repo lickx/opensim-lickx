@@ -38,6 +38,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.Net;
+using System.Runtime.InteropServices;
 using log4net;
 using NDesk.Options;
 using Nini.Config;
@@ -79,6 +80,7 @@ namespace OpenSim
         private string m_timedScript = "disabled";
         private int m_timeInterval = 1200;
         private System.Timers.Timer m_scriptTimer;
+        private PosixSignalRegistration m_signalReg;
 
         public OpenSim(IConfigSource configSource) : base(configSource)
         {
@@ -132,6 +134,12 @@ namespace OpenSim
             m_log.Info("[OPENSIM MAIN]: Using async_call_method " + Util.FireAndForgetMethod);
 
             m_log.InfoFormat("[OPENSIM MAIN] Running GC in {0} mode", GCSettings.IsServerGC ? "server":"workstation");
+
+            m_signalReg = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+                    {
+                        m_log.Info("Received SIGTERM, shutting down");
+                        MainConsole.Instance.RunCommand("shutdown");
+                    });
         }
 
         /// <summary>
@@ -1520,5 +1528,7 @@ namespace OpenSim
             result = result.TrimEnd(' ');
             return result;
         }
+
     }
+
 }
