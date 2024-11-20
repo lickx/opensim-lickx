@@ -44,6 +44,7 @@ namespace OpenSim.Services.UserAccountService
     {
         private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static bool m_Initialized;
+        protected bool m_useCache = true;
 
         public GridUserService(IConfigSource config) : base(config)
         {
@@ -69,6 +70,13 @@ namespace OpenSim.Services.UserAccountService
                     "This number may not be accurate as a region may crash or not be cleanly shutdown and leave grid users shown as online\n."
                     + "For this reason, users online for more than 5 days are not currently counted",
                     HandleShowGridUsersOnline);
+
+                IConfig griduserConfig = config.Configs["GridUserService"];
+                if (griduserConfig != null)
+                {
+                    m_useCache = griduserConfig.GetBoolean("UseCache", m_useCache);
+                }
+
             }
         }
 
@@ -126,27 +134,49 @@ namespace OpenSim.Services.UserAccountService
             MainConsole.Instance.Output("Users online: {0}", onlineRecentlyCount);
         }
 
+        private static ExpiringCacheOS<string, GridUserData> cache = new ExpiringCacheOS<string, GridUserData>(100000);
         private GridUserData GetGridUserData(string userID)
         {
-            GridUserData d = null;
-            if (userID.Length > 36) // it's a UUI
-            {
-                d = m_Database.Get(userID);
-            }
-            else // it's a UUID
-            {
-                GridUserData[] ds = m_Database.GetAll(userID);
-                if (ds == null)
-                    return null;
+            if (userID.Length > 36)
+                userID = userID.Substring(0, 36);
 
-                if (ds.Length > 0)
-                {
-                    d = ds[0];
-                    foreach (GridUserData dd in ds)
-                        if (dd.UserID.Length > d.UserID.Length) // find the longest
-                            d = dd;
-                }
+            if (m_useCache && cache.TryGetValue(userID, out GridUserData d))
+                return d;
+
+            GridUserData[] ds = m_Database.GetAll(userID);
+            if (ds == null || ds.Length == 0)
+            {
+                if (m_useCache) cache.Add(userID, null, 300000);
+                return null;
             }
+
+            d = ds[0];
+            if (ds.Length > 1)
+            {
+                // try find most recent record
+                try
+                {
+                    int tsta = int.Parse(d.Data["Login"]);
+                    int tstb = int.Parse(d.Data["Logout"]);
+                    int cur = tstb > tsta? tstb : tsta;
+
+                    for (int i = 1; i < ds.Length; ++i)
+                    {
+                        GridUserData dd = ds[i];
+                        tsta = int.Parse(dd.Data["Login"]);
+                        tstb = int.Parse(dd.Data["Logout"]);
+                        if(tsta > tstb)
+                            tstb = tsta;
+                        if (tstb > cur) 
+                        {
+                            cur = tstb;
+                            d = dd;
+                        }
+                    }
+                }
+                catch { }
+            }
+            if (m_useCache) cache.Add(userID, d, 300000);
             return d;
         }
 
@@ -227,6 +257,8 @@ namespace OpenSim.Services.UserAccountService
             d.Data["Login"] = Util.UnixTimeSinceEpoch().ToString();
 
             m_Database.Store(d);
+            if (m_useCache && userID.Length >= 36)
+                cache.Add(userID.Substring(0, 36), d, 300000);
 
             return ToInfo(d);
         }
@@ -249,7 +281,13 @@ namespace OpenSim.Services.UserAccountService
             d.Data["LastPosition"] = lastPosition.ToString();
             d.Data["LastLookAt"] = lastLookAt.ToString();
 
-            return m_Database.Store(d);
+            if(m_Database.Store(d))
+            {
+                if (m_useCache && userID.Length >= 36)
+                    cache.Add(userID.Substring(0, 36), d, 300000);
+                return true;
+            }
+            return false;
         }
 
         public bool SetHome(string userID, UUID homeID, Vector3 homePosition, Vector3 homeLookAt)
@@ -266,7 +304,13 @@ namespace OpenSim.Services.UserAccountService
             d.Data["HomePosition"] = homePosition.ToString();
             d.Data["HomeLookAt"] = homeLookAt.ToString();
 
-            return m_Database.Store(d);
+            if(m_Database.Store(d))
+            {
+                if (m_useCache && userID.Length >= 36)
+                    cache.Add(userID.Substring(0, 36), d, 300000);
+                return true;
+            }
+            return false;
         }
 
         public bool SetLastPosition(string userID, UUID sessionID, UUID regionID, Vector3 lastPosition, Vector3 lastLookAt)
@@ -285,7 +329,13 @@ namespace OpenSim.Services.UserAccountService
             d.Data["LastPosition"] = lastPosition.ToString();
             d.Data["LastLookAt"] = lastLookAt.ToString();
 
-            return m_Database.Store(d);
+            if(m_Database.Store(d))
+            {
+                if (m_useCache && userID.Length >= 36)
+                    cache.Add(userID.Substring(0, 36), d, 300000);
+                return true;
+            }
+            return false;
         }
     }
 }
