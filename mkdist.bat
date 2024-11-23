@@ -18,22 +18,22 @@ rem if exist %VERSION_FILE% del %VERSION_FILE%
 
 SET TARGET_ZIP=opensim-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 echo %TARGET_ZIP%
-set excludes=-x "*.pdb" "*Tests*" "bin/Gloebit.dll" "bin/OpenSimMutelist.Modules.dll"
+set excludes=-x "*Tests*" "bin/Gloebit.*" "bin/OpenSimMutelist.Modules.*"
 zip -r -o "%TARGET_ZIP%" bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses %excludes%
 
 if not exist bin\OpenSimMutelist.Modules.dll goto skipmutelist
 SET TARGET_ZIP=opensimmutelist-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
-set excludes=-x "*.pdb" "*Tests*"
+set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
-zip -r -o "%TARGET_ZIP%" bin/OpenSimMutelist.Modules.dll %excludes%
+zip -r -o "%TARGET_ZIP%" bin/OpenSimMutelist.Modules.* %excludes%
 :skipmutelist
 
 if not exist bin\Gloebit.dll goto skipgloebit
 SET TARGET_ZIP=gloebit-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
-set excludes=-x "*.pdb" "*Tests*"
+set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
 copy addon-modules\Gloebit\GloebitMoneyModule\Gloebit.ini.example bin\Gloebit.ini.example
-zip -r -o "%TARGET_ZIP%" bin/Gloebit.dll bin/Gloebit.ini.example %excludes%
+zip -r -o "%TARGET_ZIP%" bin/Gloebit.* %excludes%
 :skipgloebit
 
 
