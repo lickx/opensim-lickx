@@ -427,7 +427,7 @@ namespace OpenSim.Services.InventoryService
                     return false;
                 }
 
-                check.Version = xFolder.version;
+                check.Version = (ushort)xFolder.version;
                 xFolder = ConvertFromOpenSim(check);
 
 //                m_log.DebugFormat(
@@ -675,7 +675,7 @@ namespace OpenSim.Services.InventoryService
             {
                 ParentID = folder.parentFolderID,
                 Type = (short)folder.type,
-                Version = folder.version,
+                Version = (ushort)folder.version,
                 Name = folder.folderName,
                 Owner = folder.agentID,
                 ID = folder.folderID
@@ -688,7 +688,7 @@ namespace OpenSim.Services.InventoryService
             {
                 parentFolderID = folder.ParentID,
                 type = (int)folder.Type,
-                version = folder.Version,
+                version = (int)folder.Version,
                 folderName = folder.Name,
                 agentID = folder.Owner,
                 folderID = folder.ID
