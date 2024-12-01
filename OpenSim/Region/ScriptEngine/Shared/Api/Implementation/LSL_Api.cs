@@ -3519,7 +3519,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                                         return LSL_Key.NullKey;
                                     pos += m_host.GetWorldPosition();
                                 }
-                                else if ((pos + m_host.GetWorldPosition()).LengthSquared() > m_Script10mDistanceSquare)
+                                else if ((pos - m_host.GetWorldPosition()).LengthSquared() > m_Script10mDistanceSquare)
                                     return LSL_Key.NullKey;
 
                                 break;
@@ -3553,7 +3553,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                             case ScriptBaseClass.REZ_VEL:
                                 try
                                 {
-                                    pos = lparam.GetVector3Item(idx);
+                                    vel = lparam.GetVector3Item(idx);
                                 }
                                 catch (InvalidCastException)
                                 {
