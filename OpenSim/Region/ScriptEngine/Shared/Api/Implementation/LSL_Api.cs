@@ -728,7 +728,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         {
             if (linknum == ScriptBaseClass.LINK_THIS)
                return part;
- 
+
             if (linknum <= part.ParentGroup.PrimCount)
                 return part.ParentGroup.GetLinkNumPart(linknum);
 
