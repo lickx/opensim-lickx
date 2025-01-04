@@ -1,1 +1,1 @@
-@dotnet build -c Release OpenSim.sln
+@dotnet build --configuration Release OpenSim.sln
