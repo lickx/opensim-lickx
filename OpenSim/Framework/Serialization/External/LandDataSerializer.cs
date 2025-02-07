@@ -114,21 +114,20 @@ namespace OpenSim.Framework.Serialization.External
         {
             if (!xtr.IsEmptyElement)
             {
-                while (xtr.Read() && xtr.NodeType != XmlNodeType.EndElement)
+                _ = xtr.Read();
+                while (xtr.IsStartElement("ParcelAccessEntry"))
                 {
-                    LandAccessEntry lae = new LandAccessEntry();
-
-                    xtr.ReadStartElement("ParcelAccessEntry");
-
-                    ExternalRepresentationUtils.ExecuteReadProcessors<LandAccessEntry>(lae, m_laeProcessors, xtr);
-
-                    xtr.ReadEndElement();
-
-                    ld.ParcelAccessList.Add(lae);
+                    if (!xtr.IsEmptyElement)
+                    { 
+                        _ = xtr.Read();
+                        LandAccessEntry lae = new();
+                        ExternalRepresentationUtils.ExecuteReadProcessors<LandAccessEntry>(lae, m_laeProcessors, xtr);
+                        ld.ParcelAccessList.Add(lae);
+                    }
+                    _ = xtr.Read();
                 }
             }
-
-            xtr.Read();
+            _ = xtr.Read();
         }
 
         /// <summary>
