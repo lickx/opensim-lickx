@@ -527,6 +527,8 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
 
             LSL_Key llRezObjectWithParams(string inventory, LSL_List lparam);
          LSL_String llGetStartString();
+        LSL_Integer llGetLinkSitFlags(LSL_Integer linknum);
+               void llSetLinkSitFlags(LSL_Integer linknum, LSL_Integer flags);
 
     }
 }
