@@ -431,6 +431,7 @@
 [GridUserService]
     ; for the server connector
     LocalServiceModule = "OpenSim.Services.UserAccountService.dll:GridUserService"
+    ;UseCache = true
 
 
 [AgentPreferencesService]
@@ -441,6 +442,8 @@
 [PresenceService]
     ; for the server connector
     LocalServiceModule = "OpenSim.Services.PresenceService.dll:PresenceService"
+    ;AllowDuplicatePresences = false
+    ;UseCache = true
 
 [AvatarService]
     ; for the server connector

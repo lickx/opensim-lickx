@@ -1230,8 +1230,6 @@ namespace OpenSim.Region.CoreModules.World.Land
                     for (int y = start_y; y < end_y; y++)
                     {
                         ILandObject tempLandObject = GetLandObject(x, y);
-                        if (tempLandObject is null)
-                            return;
                         if (tempLandObject != startLandObject)
                             return;
                         area++;
@@ -1695,8 +1693,13 @@ namespace OpenSim.Region.CoreModules.World.Land
                 string LastOwnerName;
                 if (land.LandData.IsGroupOwned)
                 {
-                    GroupRecord groupRecord = m_groupManager.GetGroupRecord(land.LandData.OwnerID);
-                    LastOwnerName = "group " + groupRecord.GroupName;
+                    if (m_groupManager is not null)
+                    {
+                        GroupRecord groupRecord = m_groupManager.GetGroupRecord(land.LandData.OwnerID);
+                        LastOwnerName = "group " + groupRecord.GroupName;
+                    }
+                    else
+                        LastOwnerName = "a group";
                 }
                 else
                     LastOwnerName = m_userManager.GetUserName(land.LandData.OwnerID);

@@ -222,7 +222,7 @@ namespace OpenSim.Services.HypergridService
             }
         }
 
-        public bool LinkRegion(string regionName, out UUID regionID, out ulong regionHandle, out string externalName, out string imageURL, out string reason, out int sizeX, out int sizeY)
+        public bool LinkLocalRegion(string regionName, out UUID regionID, out ulong regionHandle, out string externalName, out string imageURL, out string reason, out int sizeX, out int sizeY)
         {
             regionID = UUID.Zero;
             regionHandle = 0;
@@ -245,15 +245,16 @@ namespace OpenSim.Services.HypergridService
                 else
                 {
                     reason = "Grid setup problem. Try specifying a particular region here.";
-                    m_log.DebugFormat("[GATEKEEPER SERVICE]: Unable to send information. Please specify a default region for this grid!");
+                    m_log.Debug("[GATEKEEPER SERVICE]: Unable to send information. Please specify a default region for this grid!");
                     return false;
                 }
             }
             else
             {
-                region = m_GridService.GetRegionByName(m_ScopeID, regionName);
+                region = m_GridService.GetLocalRegionByName(m_ScopeID, regionName);
                 if (region is null)
                 {
+                    m_log.DebugFormat($"[GATEKEEPER SERVICE]: LinkLocalRegion could not find local region {regionName}");
                     reason = "Region not found";
                     return false;
                 }

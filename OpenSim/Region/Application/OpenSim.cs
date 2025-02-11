@@ -38,6 +38,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Timers;
 using System.Net;
+using System.Runtime.InteropServices;
 using log4net;
 using NDesk.Options;
 using Nini.Config;
@@ -79,6 +80,7 @@ namespace OpenSim
         private string m_timedScript = "disabled";
         private int m_timeInterval = 1200;
         private System.Timers.Timer m_scriptTimer;
+        private PosixSignalRegistration m_signalReg;
 
         public OpenSim(IConfigSource configSource) : base(configSource)
         {
@@ -132,6 +134,12 @@ namespace OpenSim
             m_log.Info("[OPENSIM MAIN]: Using async_call_method " + Util.FireAndForgetMethod);
 
             m_log.InfoFormat("[OPENSIM MAIN] Running GC in {0} mode", GCSettings.IsServerGC ? "server":"workstation");
+
+            m_signalReg = PosixSignalRegistration.Create(PosixSignal.SIGTERM, context =>
+                    {
+                        m_log.Info("Received SIGTERM, shutting down");
+                        MainConsole.Instance.RunCommand("shutdown");
+                    });
         }
 
         /// <summary>
@@ -317,7 +325,7 @@ namespace OpenSim
 
             m_console.Commands.AddCommand("Archiving", false, "save oar",
                                           //"save oar [-v|--version=<N>] [-p|--profile=<url>] [<OAR path>]",
-                                          "save oar [-h|--home=<url>] [--noassets] [--publish] [--perm=<permissions>] [--all] [<OAR path>]",
+                                          "save oar [-h|--home=<url>] [--noassets] [--publish] [--perm=<permissions>] [--all] [--tenant=<uuid>] [<OAR path>]",
                                           "Save a region's data to an OAR archive.",
 //                                          "-v|--version=<N> generates scene objects as per older versions of the serialization (e.g. -v=0)" + Environment.NewLine
                                           "-h|--home=<url> adds the url of the profile service to the saved user information.\n"
@@ -327,6 +335,7 @@ namespace OpenSim
                                           + "   this is useful if you're making oars generally available that might be reloaded to the same grid from which you published\n"
                                           + "--perm=<permissions> stops objects with insufficient permissions from being saved to the OAR.\n"
                                           + "   <permissions> can contain one or more of these characters: \"C\" = Copy, \"T\" = Transfer\n"
+                                          + "--tenant=<uuid> only save objects owned by tenant with uuid.\n"
                                           + "--all saves all the regions in the simulator, instead of just the current region.\n"
                                           + "The OAR path must be a filesystem path."
                                           + " If this is not given then the oar is saved to region.oar in the current directory.",
@@ -1516,5 +1525,7 @@ namespace OpenSim
             result = result.TrimEnd(' ');
             return result;
         }
+
     }
+
 }

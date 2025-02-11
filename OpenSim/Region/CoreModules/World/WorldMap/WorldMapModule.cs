@@ -77,6 +77,7 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
         private string m_regionName;
 
         private byte[] myMapImageJPEG;
+        private string m_tilesPath = ".";
         protected volatile bool m_Enabled = false;
 
         private ManualResetEvent m_mapBlockRequestEvent = new ManualResetEvent(false);
@@ -158,6 +159,10 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
                 Util.GetConfigVarFromSections<bool>(config, "ExportMapAddRegionName", configSections, m_exportPrintRegionName);
             m_localV1MapAssets =
                 Util.GetConfigVarFromSections<bool>(config, "LocalV1MapAssets", configSections, m_localV1MapAssets);
+	    m_tilesPath =
+                Util.GetConfigVarFromSections<string>(config, "GenTilesDirectory", configSections, m_tilesPath);
+	    if (!Directory.Exists(m_tilesPath))
+	        Directory.CreateDirectory(m_tilesPath);
         }
 
         public virtual void AddRegion(Scene scene)
@@ -1289,7 +1294,7 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
             startY--;
 
             bool doneLocal = false;
-            string filename = "MAP-" + m_scene.RegionInfo.RegionID.ToString() + ".png";
+            string filename = Path.Combine(m_tilesPath, "MAP-" + m_scene.RegionInfo.RegionID.ToString() + ".png");
             try
             {
                 using(Image localMap = Bitmap.FromFile(filename))

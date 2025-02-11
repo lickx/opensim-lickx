@@ -876,7 +876,12 @@ namespace OpenSim.Region.Framework.Scenes
             RegionInfo.RegionSettings = rs;
 
             if (estateDataService is not null)
-                RegionInfo.EstateSettings = estateDataService.LoadEstateSettings(RegionInfo.RegionID, false);
+            {
+                EstateSettings es = estateDataService.LoadEstateSettings(RegionInfo.RegionID, false);
+                if (es == null)
+                    m_log.Error($"[SCENE]: Region {Name} failed to load estate settings. Using defaults");
+                RegionInfo.EstateSettings = es;
+            }
 
             SceneGridInfo = new GridInfo(config, RegionInfo.ServerURI);
 
@@ -1674,7 +1679,7 @@ namespace OpenSim.Region.Framework.Scenes
                     terrainMS = (float)(nowMS - lastMS);
                     lastMS = nowMS;
 
-                    if (PhysicsEnabled && Frame % m_update_physics == 0)
+                    if (m_physicsEnabled && Frame % m_update_physics == 0)
                         m_sceneGraph.UpdatePreparePhysics();
 
                     nowMS = Util.GetTimeStampMS();
@@ -1711,10 +1716,9 @@ namespace OpenSim.Region.Framework.Scenes
 
                     // Perform the main physics update.  This will do the actual work of moving objects and avatars according to their
                     // velocity
-                    if (Frame % m_update_physics == 0)
+                    if (m_physicsEnabled && Frame % m_update_physics == 0)
                     {
-                        if (PhysicsEnabled)
-                            physicsFPS = m_sceneGraph.UpdatePhysics(FrameTime);
+                        physicsFPS = m_sceneGraph.UpdatePhysics(FrameTime);
                     }
 
                     nowMS = Util.GetTimeStampMS();
@@ -5789,7 +5793,10 @@ Environment.Exit(1);
             if (estateDataService is not null)
             {
                 bool parcelEnvOvr = RegionInfo.EstateSettings.AllowEnvironmentOverride;
-                RegionInfo.EstateSettings = estateDataService.LoadEstateSettings(RegionInfo.RegionID, false);
+                EstateSettings es = estateDataService.LoadEstateSettings(RegionInfo.RegionID, false);
+                if (es == null)
+                    m_log.Error($"[SCENE]: Region {RegionInfo.RegionName} failed to reload estate settings. Using defaults");
+                RegionInfo.EstateSettings = es;
                 if(parcelEnvOvr && !RegionInfo.EstateSettings.AllowEnvironmentOverride)
                     ClearAllParcelEnvironments();
             }

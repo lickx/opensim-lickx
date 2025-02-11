@@ -1035,6 +1035,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Float llGetRegionTimeOfDay()
+        {
+            return m_LSL_Functions.llGetRegionTimeOfDay();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_String llGetTimestamp()
         {
             return m_LSL_Functions.llGetTimestamp();
@@ -2814,5 +2820,24 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         {
             return m_LSL_Functions.llDerezObject(objectUUID, flag);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Key llRezObjectWithParams(string inventory, LSL_List lparam)
+        {
+            return m_LSL_Functions.llRezObjectWithParams(inventory, lparam);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Integer llGetLinkSitFlags(LSL_Integer linknum)
+        {
+            return m_LSL_Functions.llGetLinkSitFlags(linknum);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void llSetLinkSitFlags(LSL_Integer linknum, LSL_Integer flags)
+        {
+            m_LSL_Functions.llSetLinkSitFlags(linknum, flags);
+        }
+
     }
 }

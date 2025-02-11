@@ -222,6 +222,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
         LSL_Vector llGetTextureScale(int side);
          LSL_Float llGetTime();
          LSL_Float llGetTimeOfDay();
+         LSL_Float llGetRegionTimeOfDay();
         LSL_String llGetTimestamp();
         LSL_Vector llGetTorque();
        LSL_Integer llGetUnixTime();
@@ -523,5 +524,11 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
 
         LSL_Integer llIsFriend(LSL_Key agent_id);
         LSL_Integer llDerezObject(LSL_Key objectUUID, LSL_Integer flag);
+
+            LSL_Key llRezObjectWithParams(string inventory, LSL_List lparam);
+         LSL_String llGetStartString();
+        LSL_Integer llGetLinkSitFlags(LSL_Integer linknum);
+               void llSetLinkSitFlags(LSL_Integer linknum, LSL_Integer flags);
+
     }
 }
