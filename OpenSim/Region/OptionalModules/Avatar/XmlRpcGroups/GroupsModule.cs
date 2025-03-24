@@ -1080,11 +1080,16 @@ namespace OpenSim.Region.OptionalModules.Avatar.XmlRpcGroups
         {
             if (m_debugEnabled) m_log.DebugFormat("[GROUPS]: {0} called", System.Reflection.MethodBase.GetCurrentMethod().Name);
 
-            m_groupData.SetAgentActiveGroupRole(GetRequestingAgentID(remoteClient), GetRequestingAgentID(remoteClient), groupID, titleRoleID);
+            UUID agentID = remoteClient.AgentId;
+            m_groupData.SetAgentActiveGroupRole(agentID, agentID, groupID, titleRoleID);
 
-            // TODO: Not sure what all is needed here, but if the active group role change is for the group
-            // the client currently has set active, then we need to do a scene presence update too
-            // if (m_groupData.GetAgentActiveMembership(GetRequestingAgentID(remoteClient)).GroupID == GroupID)
+            // If the active group role change is for the group
+            // the client currently has set active, then we need to
+            // set the active group again for the tag to update
+            if (m_groupData.GetAgentActiveMembership(agentID, agentID).GroupID == groupID)
+            {
+                m_groupData.SetAgentActiveGroup(agentID, agentID, groupID);
+            }
 
             SendDataUpdate(remoteClient, true);
         }

@@ -33,7 +33,6 @@ using log4net;
 using Mono.Addins;
 using Nini.Config;
 using OpenMetaverse;
-using OpenMetaverse.ImportExport.Collada14;
 using OpenMetaverse.StructuredData;
 using OpenSim.Framework;
 using OpenSim.Region.Framework.Interfaces;
