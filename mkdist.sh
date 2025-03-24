@@ -9,7 +9,7 @@ echo "${GIT_BRANCH}@${GIT_REV} (${LAST_COMMIT_DATE})" > bin/.version
 # or just ommit extended version info:
 #rm -f bin/.version
 
-EXCLUDES="*Tests* *Gloebit* *OpenSimMutelist*"
+EXCLUDES="*Tests* *Gloebit* *OpenSimMutelist* *MoneyServer* *OpenSim.Data.MySQL.MySQLMoneyDataWrapper* *OpenSim.Modules.Currency* *OpenSim.ini.sample* *server_cert.p12* *SineWaveCert.pfx*"
 TARGETZIP=opensim-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
 echo "${TARGETZIP}"
 zip -r -o ${TARGETZIP} bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses -x ${EXCLUDES}
@@ -29,5 +29,13 @@ if [ -f bin/Gloebit.dll ]; then
     echo "${TARGETZIP}"
     cp addon-modules/Gloebit/GloebitMoneyModule/Gloebit.ini.example bin/Gloebit.ini.example
     zip -r -o ${TARGETZIP} bin/Gloebit.* -x ${EXCLUDES}
+fi
+
+#Make seperate zip for moneyserver:
+if [ -f bin/MoneyServer.dll ]; then
+    TARGETZIP=moneyserver-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
+    EXCLUDES="*Tests*"
+    echo "${TARGETZIP}"
+    zip -r -o ${TARGETZIP} bin\MoneyServer.* bin\OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin\OpenSim.Modules.Currency.* bin\OpenSim.ini.sample bin\server_cert.p12 bin\SineWaveCert.pfx -x ${EXCLUDES}
 fi
 
