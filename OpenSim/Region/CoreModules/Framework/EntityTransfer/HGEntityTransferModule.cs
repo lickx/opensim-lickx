@@ -825,6 +825,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                     ScenePresence defsp = sp;
                     List<SceneObjectGroup> deftatt = new(attachments.Count);
                     List<SceneObjectGroup> defhuds = new();
+                    int requestStartTick = Environment.TickCount;
 
                     // Prioritize non-HUDS, as AOs, dance huds etc can hold a lot of assets
                     foreach (SceneObjectGroup sog in attachments)
@@ -842,7 +843,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
                     IClientAPI remoteClient = sp.ControllingClient;
                     UUID groupID = remoteClient.ActiveGroupId;
-                    remoteClient.SendAlertMessage("Loading your avatar...");
 
                     m_incomingSceneObjectEngine.QueueJob(
                         string.Format("HG UUID Gather attachments {0}", defsp.Name), () =>
@@ -916,7 +916,9 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                             uuidGatherer = null;
 
                             sp.GotAttachmentsData = true;
-                            remoteClient.SendAlertMessage("Avatar loaded; Hypergrid teleport complete.");
+                            string loadtime = Convert.ToString(Environment.TickCount - requestStartTick);
+                            remoteClient.SendAlertMessage("Your avatar has finished loading ("+loadtime+"ms)");
+                            
                             // at this point the job engine is done
                         },
                         OwnerID.ToString());
