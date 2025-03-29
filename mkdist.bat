@@ -36,12 +36,12 @@ copy addon-modules\Gloebit\GloebitMoneyModule\Gloebit.ini.example bin\Gloebit.in
 zip -r -o "%TARGET_ZIP%" bin/Gloebit.* %excludes%
 :skipgloebit
 
-if not exist bin\MoneyServer.dll goto skipmoneyserver
-SET TARGET_ZIP=moneyserver-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
+if not exist bin\MoneyServer.dll goto skipopensimcurrency
+SET TARGET_ZIP=opensimcurrency-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
 zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/OpenSim.ini.sample bin/server_cert.p12 bin/SineWaveCert.pfx %excludes%
-:skipmoneyserver
+:skipopensimcurrency
 
 
 :end
