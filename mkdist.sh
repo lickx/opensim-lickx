@@ -31,9 +31,9 @@ if [ -f bin/Gloebit.dll ]; then
     zip -r -o ${TARGETZIP} bin/Gloebit.* -x ${EXCLUDES}
 fi
 
-#Make seperate zip for moneyserver:
+#Make seperate zip for opensim.currency:
 if [ -f bin/MoneyServer.dll ]; then
-    TARGETZIP=moneyserver-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
+    TARGETZIP=opensimcurrency-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
     EXCLUDES="*Tests*"
     echo "${TARGETZIP}"
     zip -r -o ${TARGETZIP} bin\MoneyServer.* bin\OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin\OpenSim.Modules.Currency.* bin\OpenSim.ini.sample bin\server_cert.p12 bin\SineWaveCert.pfx -x ${EXCLUDES}
