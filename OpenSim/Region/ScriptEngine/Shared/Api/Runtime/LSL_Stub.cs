@@ -651,6 +651,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_String llGetInventoryDesc(string name)
+        {
+            return m_LSL_Functions.llGetInventoryDesc(name);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_Integer llGetInventoryType(string name)
         {
             return m_LSL_Functions.llGetInventoryType(name);
@@ -1287,6 +1293,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Integer llListFindListNext(LSL_List src, LSL_List test, LSL_Integer instance)
+        {
+            return m_LSL_Functions.llListFindListNext(src, test, instance);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_Integer llListFindStrided(LSL_List src, LSL_List test, LSL_Integer lstart, LSL_Integer lend, LSL_Integer lstride)
         {
             return m_LSL_Functions.llListFindStrided(src, test, lstart, lend, lstride);
@@ -1659,6 +1671,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_List llGetVisualParams(string id, LSL_List visualparams)
+        {
+            return m_LSL_Functions.llGetVisualParams(id, visualparams);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_Key llRequestInventoryData(LSL_String name)
         {
             return m_LSL_Functions.llRequestInventoryData(name);
@@ -1681,6 +1699,13 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         {
             return m_LSL_Functions.llRequestSimulatorData(simulator, data);
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Float llGetSimStats(LSL_Integer stat_type)
+        {
+            return m_LSL_Functions.llGetSimStats(stat_type);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public LSL_Key llRequestURL()
         {
@@ -1931,6 +1956,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public void llSetDamage(double damage)
         {
             m_LSL_Functions.llSetDamage(damage);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Float llGetHealth(LSL_String key)
+        {
+            return m_LSL_Functions.llGetHealth(key);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -2837,6 +2868,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
         public void llSetLinkSitFlags(LSL_Integer linknum, LSL_Integer flags)
         {
             m_LSL_Functions.llSetLinkSitFlags(linknum, flags);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_String llHMAC(LSL_String private_key, LSL_String message, LSL_String algo)
+        {
+            return m_LSL_Functions.llHMAC(private_key, message, algo);
         }
 
     }
