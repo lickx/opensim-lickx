@@ -19,13 +19,13 @@ rem if exist %VERSION_FILE% del %VERSION_FILE%
 SET TARGET_ZIP=opensim-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 echo %TARGET_ZIP%
 set excludes=-x "*Tests*" "bin/Gloebit.*" "bin/OpenSimMutelist.Modules.*" "bin/MoneyServer.*" "OpenSim.Data.MySQL.MySQLMoneyDataWrapper.*" "OpenSim.Modules.Currency.dll.*" "OpenSim.ini.sample" "server_cert.p12" "SineWaveCert.pfx"
-zip -r -o "%TARGET_ZIP%" bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses %excludes%
+zip -r -o "%TARGET_ZIP%" bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses helper/index.html helper/robots.txt helper/search extra/OpenSimSearch %excludes%
 
 if not exist bin\OpenSimMutelist.Modules.dll goto skipmutelist
 SET TARGET_ZIP=opensimmutelist-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
-zip -r -o "%TARGET_ZIP%" bin/OpenSimMutelist.Modules.* %excludes%
+zip -r -o "%TARGET_ZIP%" bin/OpenSimMutelist.Modules.* helper/mute extra/OpenSimMutelist %excludes%
 :skipmutelist
 
 if not exist bin\Gloebit.dll goto skipgloebit

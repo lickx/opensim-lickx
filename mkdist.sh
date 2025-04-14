@@ -12,14 +12,14 @@ echo "${GIT_BRANCH}@${GIT_REV} (${LAST_COMMIT_DATE})" > bin/.version
 EXCLUDES="*Tests* *Gloebit* *OpenSimMutelist* *MoneyServer* *OpenSim.Data.MySQL.MySQLMoneyDataWrapper* *OpenSim.Modules.Currency* *OpenSim.ini.sample* *server_cert.p12* *SineWaveCert.pfx*"
 TARGETZIP=opensim-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
 echo "${TARGETZIP}"
-zip -r -o ${TARGETZIP} bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses -x ${EXCLUDES}
+zip -r -o ${TARGETZIP} bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses helper/index.html helper/robots.txt helper/search extra/OpenSimSearch -x ${EXCLUDES}
 
 #Make seperate zip for OpenSimMutelist addon:
 if [ -f bin/OpenSimMutelist.Modules.dll ]; then
     TARGETZIP=opensimmutelist-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
     EXCLUDES="*Tests*"
     echo "${TARGETZIP}"
-    zip -r -o ${TARGETZIP} bin/OpenSimMutelist.Modules.* -x ${EXCLUDES}
+    zip -r -o ${TARGETZIP} bin/OpenSimMutelist.Modules.* helper/mute extra/OpenSimMutelist -x ${EXCLUDES}
 fi
 
 #Make seperate zip for Gloebit addon:
