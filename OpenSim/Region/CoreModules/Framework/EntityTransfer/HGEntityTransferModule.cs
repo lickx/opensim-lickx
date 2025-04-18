@@ -652,17 +652,15 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
             if (OwnerID.IsZero())
             {
                 m_log.DebugFormat(
-                    "[HG TRANSFER MODULE]: Denied object {0}({1}) entry into {2} because ownerID is zero",
+                    "[HG ENTITY TRANSFER MODULE]: Denied object {0}({1}) entry into {2} because ownerID is zero",
                         so.Name, so.UUID, m_sceneName);
                 return false;
             }
 
-            if (m_sceneRegionInfo.EstateSettings.IsBanned(OwnerID))
+            if (!m_scene.Permissions.IsAdministrator(so.OwnerID) && m_sceneRegionInfo.EstateSettings.IsBanned(OwnerID))
             {
                 m_log.DebugFormat(
-                    "[HG TRANSFER MODULE]: Denied prim crossing of {0} {1} into {2} for banned avatar {3}",
-                    so.Name, so.UUID, m_sceneName, so.OwnerID);
-
+                    $"[HG ENTITY TRANSFER MODULE]: Denied {so.Name} {so.UUID} into { m_sceneName} of banned owner {so.OwnerID}");
                 return false;
             }
 
@@ -677,8 +675,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
             if (m_scene.GetScenePresence(OwnerID) == null)
             {
                 m_log.DebugFormat(
-                "[HG TRANSFER MODULE]: Denied attachment {0}({1}) owner {2} not in region {3}",
-                    so.Name, so.UUID, OwnerID, m_sceneName);
+                    $"[HG ENTITY TRANSFER MODULE]: Denied attachment {so.Name}({so.UUID}) owner {so.OwnerID} not in region {m_sceneName}");
                 return false;
             }
 
