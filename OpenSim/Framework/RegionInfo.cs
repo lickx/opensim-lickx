@@ -683,45 +683,39 @@ namespace OpenSim.Framework
         private void DoDefaultLandingSanityChecks()
         {
             // Sanity Check Default Landing
+            float buffer_zone = 5f;
+
             bool ValuesCapped = false;
 
             // Minimum Positions
-            if (DefaultLandingPoint.X < Constants.DefaultLandingBorderBuffer)
+            if (DefaultLandingPoint.X < buffer_zone)
             {
-                DefaultLandingPoint.X = Constants.DefaultLandingBorderBuffer;
+                DefaultLandingPoint.X = buffer_zone;
                 ValuesCapped = true;
             }
 
-            if (DefaultLandingPoint.Y < Constants.DefaultLandingBorderBuffer)
+            if (DefaultLandingPoint.Y < buffer_zone)
             {
-                DefaultLandingPoint.Y = Constants.DefaultLandingBorderBuffer;
+                DefaultLandingPoint.Y = buffer_zone;
                 ValuesCapped = true;
             }
 
             // Maximum Positions
-            if (DefaultLandingPoint.X > RegionSizeX - Constants.DefaultLandingBorderBuffer)
+            if (DefaultLandingPoint.X > RegionSizeX - buffer_zone)
             {
-                DefaultLandingPoint.X = RegionSizeX - Constants.DefaultLandingBorderBuffer;
+                DefaultLandingPoint.X = RegionSizeX - buffer_zone;
                 ValuesCapped = true;
             }
 
-            if (DefaultLandingPoint.Y > RegionSizeY - Constants.DefaultLandingBorderBuffer)
+            if (DefaultLandingPoint.Y > RegionSizeY - buffer_zone)
             {
-                DefaultLandingPoint.Y = RegionSizeY - Constants.DefaultLandingBorderBuffer;
+                DefaultLandingPoint.Y = RegionSizeY - buffer_zone;
                 ValuesCapped = true;
             }
 
             // Height
-            if (DefaultLandingPoint.Z < Constants.MinSimulationHeight)
-            {
-                DefaultLandingPoint.Z = Constants.MinSimulationHeight;
-                ValuesCapped = true;
-            }
-            else if (DefaultLandingPoint.Z > Constants.MaxSimulationHeight)
-            { 
-                DefaultLandingPoint.Z = Constants.MaxSimulationHeight;
-                ValuesCapped = true;
-            }
+            if (DefaultLandingPoint.Z < 0f)
+                DefaultLandingPoint.Z = 0f;
 
             if (ValuesCapped)
                 m_log.WarnFormat("[RegionInfo]: The default landing location for {0} has been capped to {1}", RegionName, DefaultLandingPoint);
