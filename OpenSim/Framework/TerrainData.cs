@@ -364,6 +364,7 @@ namespace OpenSim.Framework
             zmax = float.MinValue;
             zmin = float.MaxValue;
 
+
             int mpy = Constants.TerrainPatchSize * py;
             fixed (float* map = m_heightmap)
             {
@@ -378,7 +379,7 @@ namespace OpenSim.Framework
                         float val = *yt;
                         if (val > zmax)
                             zmax = val;
-                        if (val < zmin)
+                        else if (val < zmin)
                             zmin = val;
                         yt++;
                     }
