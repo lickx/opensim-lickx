@@ -31,6 +31,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Reflection;
 
+using OpenMetaverse;
+
 using log4net;
 
 namespace OpenSim.Framework
@@ -359,35 +361,30 @@ namespace OpenSim.Framework
 
         public unsafe void GetPatchMinMax(int px, int py, out float zmin, out float zmax)
         {
-            float min, max;
+            zmax = float.MinValue;
+            zmin = float.MaxValue;
+
+            int mpy = Constants.TerrainPatchSize * py;
             fixed (float* map = m_heightmap)
             {
-                float* p = map + px * m_mapPatchsStride + Constants.TerrainPatchSize * py;
-                float* endp = p + m_mapPatchsStride;
-                min = max = *p;
-                float* y = p;
-                int j = Constants.TerrainPatchSize - 1;
-
-                do
+                float* p = map + px * m_mapPatchsStride;
+                float* pend = p + m_mapPatchsStride;
+                while (p < pend)
                 {
-                    do
+                    float* yt = p + mpy; 
+                    float* ytend = yt + 16;
+                    while(yt < ytend)
                     {
-                        float val = *y++;
-                        if (val > max)
-                            max = val;
-                        else if (val < min)
-                            min = val;
+                        float val = *yt;
+                        if (val > zmax)
+                            zmax = val;
+                        if (val < zmin)
+                            zmin = val;
+                        yt++;
                     }
-                    while(--j > 0);
-
                     p += m_mapStride;
-                    y = p;
-                    j =  Constants.TerrainPatchSize;
                 }
-                while (p < endp);
             }
-            zmin = min;
-            zmax = max;
         }
 
         public unsafe void GetPatchBlock(float* block, int px, int py, float sub, float premult)
