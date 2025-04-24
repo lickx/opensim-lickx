@@ -913,11 +913,7 @@ namespace OpenSim.Region.CoreModules.World.Terrain
         /// doing it async, since currently this is 2 heavy for heartbeat
         private void EventManager_TerrainCheckUpdates()
         {
-            if(Monitor.TryEnter(_modifyLock))
-            { 
-                Util.FireAndForget(EventManager_TerrainCheckUpdatesAsync);
-                Monitor.Exit(_modifyLock);
-            }
+            Util.FireAndForget(EventManager_TerrainCheckUpdatesAsync);
         }
 
         object TerrainCheckUpdatesLock = new();
@@ -960,20 +956,14 @@ namespace OpenSim.Region.CoreModules.World.Terrain
         /// </summary>
         private void EventManager_OnTerrainTick()
         {
-            if(Monitor.TryEnter(_modifyLock))
-            { 
-                { 
-                    if (m_tainted)
-                    {
-                        m_tainted = false;
-                        m_scene.PhysicsScene.SetTerrain(m_channel.GetFloatsSerialised());
-                        m_scene.SaveTerrain();
+            if (m_tainted)
+            {
+                m_tainted = false;
+                m_scene.PhysicsScene.SetTerrain(m_channel.GetFloatsSerialised());
+                m_scene.SaveTerrain();
 
-                        // Clients who look at the map will never see changes after they looked at the map, so i've commented this out.
-                        //m_scene.CreateTerrainTexture(true);
-                    }
-                }
-                Monitor.Exit(_modifyLock);
+                // Clients who look at the map will never see changes after they looked at the map, so i've commented this out.
+                //m_scene.CreateTerrainTexture(true);
             }
         }
 
@@ -1056,14 +1046,14 @@ namespace OpenSim.Region.CoreModules.World.Terrain
             return wasLimited;
         }
 
-        private bool EnforceEstateLimits(int startX, int endX, int startY, int endY)
+        private bool EnforceEstateLimits(int startX, int startY, int endX, int endY)
         {
             TerrainData terrData = m_channel.GetTerrainData();
 
             bool wasLimited = false;
             for (int x = startX; x <= endX; x += Constants.TerrainPatchSize)
             {
-                for (int y = startY; y <= endY; y += Constants.TerrainPatchSize)
+                for (int y = startX; y <= endY; y += Constants.TerrainPatchSize)
                 {
                     if (terrData.IsTaintedAt(x, y))
                     {
@@ -1375,166 +1365,163 @@ namespace OpenSim.Region.CoreModules.World.Terrain
             double now = Util.GetTimeStamp();
             if(now < NextModifyTerrainTime)
                 return;
-            if(Monitor.TryEnter(_modifyLock))
-            { 
-                try
+
+            try
+            {
+                NextModifyTerrainTime = double.MaxValue; // block it
+
+                //m_log.DebugFormat("brushs {0} seconds {1} height {2}, parcel {3}", brushSize, seconds, height, parcelLocalID);
+                bool god = m_scene.Permissions.IsGod(user);
+                bool allowed = false;
+                if (north == south && east == west)
                 {
-                    NextModifyTerrainTime = double.MaxValue; // block it
-
-                    //m_log.DebugFormat("brushs {0} seconds {1} height {2}, parcel {3}", brushSize, seconds, height, parcelLocalID);
-                    bool god = m_scene.Permissions.IsGod(user);
-                    bool allowed = false;
-                    if (north == south && east == west)
+                    if (m_painteffects.ContainsKey((StandardTerrainEffects)action))
                     {
-                        if (m_painteffects.ContainsKey((StandardTerrainEffects)action))
+                        bool[,] allowMask = new bool[m_channel.Width, m_channel.Height];
+                    
+                        allowMask.Initialize();
+
+                        int startX = (int)(west - brushSize + 0.5);
+                        if (startX < 0)
+                            startX = 0;
+
+                        int startY = (int)(north - brushSize + 0.5);
+                        if (startY < 0)
+                            startY = 0;
+
+                        int endX = (int)(west + brushSize + 0.5);
+                        if (endX >= m_channel.Width)
+                            endX = m_channel.Width - 1;
+                        int endY = (int)(north + brushSize + 0.5);
+                        if (endY >= m_channel.Height)
+                            endY = m_channel.Height - 1;
+
+                        int x, y;
+
+                        for (x = startX; x <= endX; x++)
                         {
-                            bool[,] allowMask = new bool[m_channel.Width, m_channel.Height];
+                            for (y = startY; y <= endY; y++)
+                            {
+                                if (m_scene.Permissions.CanTerraformLand(user, new Vector3(x, y, -1)))
+                                {
+                                    allowMask[x, y] = true;
+                                    allowed = true;
+                                }
+                            }
+                        }
+                        if (allowed)
+                        {
+                            StoreUndoState();
+                            m_painteffects[(StandardTerrainEffects) action].PaintEffect(
+                                m_channel, allowMask, west, south, height, brushSize, seconds,
+                                startX, endX, startY, endY);
 
-                            allowMask.Initialize();
+                            //block changes outside estate limits
+                            if (!god)
+                                EnforceEstateLimits(startX, endX, startY, endY);
+                        }
+                    }
+                    else
+                    {
+                        m_log.Debug("Unknown terrain brush type " + action);
+                    }
+                }
+                else
+                {
+                    if (m_floodeffects.ContainsKey((StandardTerrainEffects)action))
+                    {
+                        bool[,] fillArea = new bool[m_channel.Width, m_channel.Height];
+                        fillArea.Initialize();
 
-                            int startX = (int)(west - brushSize + 0.5);
-                            if (startX < 0)
-                                startX = 0;
+                        int startX = (int)west;
+                        int startY = (int)south;
+                        int endX = (int)east;
+                        int endY = (int)north;
 
-                            int startY = (int)(north - brushSize + 0.5);
-                            if (startY < 0)
-                                startY = 0;
+                        if (startX < 0)
+                            startX = 0;
+                        else if (startX >= m_channel.Width)
+                            startX = m_channel.Width - 1;
 
-                            int endX = (int)(west + brushSize + 0.5);
-                            if (endX >= m_channel.Width)
-                                endX = m_channel.Width - 1;
-                            int endY = (int)(north + brushSize + 0.5);
-                            if (endY >= m_channel.Height)
-                                endY = m_channel.Height - 1;
+                        if (endX < 0)
+                            endX = 0;
+                        else if (endX >= m_channel.Width)
+                            endX = m_channel.Width - 1;
 
-                            int x, y;
+                        if (startY < 0)
+                            startY = 0;
+                        else if (startY >= m_channel.Height)
+                            startY = m_channel.Height - 1;
 
+                        if (endY < 0)
+                            endY = 0;
+                        else if (endY >= m_channel.Height)
+                            endY = m_channel.Height - 1;
+
+                        int x, y;
+                        if (parcelLocalID == -1)
+                        {
                             for (x = startX; x <= endX; x++)
                             {
                                 for (y = startY; y <= endY; y++)
                                 {
                                     if (m_scene.Permissions.CanTerraformLand(user, new Vector3(x, y, -1)))
                                     {
-                                        allowMask[x, y] = true;
+                                        fillArea[x, y] = true;
                                         allowed = true;
                                     }
                                 }
                             }
-                            if (allowed)
-                            {
-                                StoreUndoState();
-                                m_painteffects[(StandardTerrainEffects) action].PaintEffect(
-                                    m_channel, allowMask, west, south, height, brushSize, seconds,
-                                    startX, endX, startY, endY);
-
-                                //block changes outside estate limits
-                                if (!god)
-                                    EnforceEstateLimits(startX, endX, startY, endY);
-                            }
                         }
                         else
                         {
-                            m_log.Debug("Unknown terrain brush type " + action);
+                            if (!m_scene.Permissions.CanTerraformLand(user, new Vector3(-1, -1, parcelLocalID)))
+                                return;
+
+                            ILandObject parcel = m_scene.LandChannel.GetLandObject(parcelLocalID);
+                            if(parcel == null)
+                                return;
+
+                            bool[,] parcelmap = parcel.GetLandBitmap();
+                            //ugly
+                            for (x = startX; x <= endX; x++)
+                            {
+                                int px = x >> 2;
+                                y = startY;
+                                while( y <= endY)
+                                {
+                                    int py = y >> 2;
+                                    bool inp = parcelmap[px, py];
+                                    fillArea[x, y++] = inp;
+                                    fillArea[x, y++] = inp;
+                                    fillArea[x, y++] = inp;
+                                    fillArea[x, y++] = inp;
+                                }
+                            }
+
+                            allowed = true;
+                        }
+
+                        if (allowed)
+                        {
+                            StoreUndoState();
+                            m_floodeffects[(StandardTerrainEffects)action].FloodEffect(m_channel, fillArea, height, seconds,
+                                startX, endX, startY, endY);
+
+                            //block changes outside estate limits
+                            if (!god)
+                                EnforceEstateLimits(startX, endX, startY, endY);
                         }
                     }
                     else
                     {
-                        if (m_floodeffects.ContainsKey((StandardTerrainEffects)action))
-                        {
-                            bool[,] fillArea = new bool[m_channel.Width, m_channel.Height];
-                            fillArea.Initialize();
-
-                            int startX = (int)west;
-                            int startY = (int)south;
-                            int endX = (int)east;
-                            int endY = (int)north;
-
-                            if (startX < 0)
-                                startX = 0;
-                            else if (startX >= m_channel.Width)
-                                startX = m_channel.Width - 1;
-
-                            if (endX < 0)
-                                endX = 0;
-                            else if (endX >= m_channel.Width)
-                                endX = m_channel.Width - 1;
-
-                            if (startY < 0)
-                                startY = 0;
-                            else if (startY >= m_channel.Height)
-                                startY = m_channel.Height - 1;
-
-                            if (endY < 0)
-                                endY = 0;
-                            else if (endY >= m_channel.Height)
-                                endY = m_channel.Height - 1;
-
-                            int x, y;
-                            if (parcelLocalID == -1)
-                            {
-                                for (x = startX; x <= endX; x++)
-                                {
-                                    for (y = startY; y <= endY; y++)
-                                    {
-                                        if (m_scene.Permissions.CanTerraformLand(user, new Vector3(x, y, -1)))
-                                        {
-                                            fillArea[x, y] = true;
-                                            allowed = true;
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (!m_scene.Permissions.CanTerraformLand(user, new Vector3(-1, -1, parcelLocalID)))
-                                    return;
-
-                                ILandObject parcel = m_scene.LandChannel.GetLandObject(parcelLocalID);
-                                if(parcel == null)
-                                    return;
-
-                                bool[,] parcelmap = parcel.GetLandBitmap();
-                                //ugly
-                                for (x = startX; x <= endX; x++)
-                                {
-                                    int px = x >> 2;
-                                    y = startY;
-                                    while( y <= endY)
-                                    {
-                                        int py = y >> 2;
-                                        bool inp = parcelmap[px, py];
-                                        fillArea[x, y++] = inp;
-                                        fillArea[x, y++] = inp;
-                                        fillArea[x, y++] = inp;
-                                        fillArea[x, y++] = inp;
-                                    }
-                                }
-
-                                allowed = true;
-                            }
-
-                            if (allowed)
-                            {
-                                StoreUndoState();
-                                m_floodeffects[(StandardTerrainEffects)action].FloodEffect(m_channel, fillArea, height, seconds,
-                                    startX, endX, startY, endY);
-
-                                //block changes outside estate limits
-                                if (!god)
-                                    EnforceEstateLimits(startX, endX, startY, endY);
-                            }
-                        }
-                        else
-                        {
-                            m_log.Debug("Unknown terrain flood type " + action);
-                        }
+                        m_log.Debug("Unknown terrain flood type " + action);
                     }
                 }
-                finally
-                {
-                    NextModifyTerrainTime = Util.GetTimeStamp() + 0.02; // 20ms cooldown
-                }
-               Monitor.Exit(_modifyLock);
+            }
+            finally
+            {
+                NextModifyTerrainTime = Util.GetTimeStamp() + 0.02; // 20ms cooldown
             }
         }
 
