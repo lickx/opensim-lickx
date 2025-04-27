@@ -1,7 +1,10 @@
 OpenSimMutelist
 https://github.com/lickx/OpenSimMutelist
 
-For having grid-stored mutelists on a grid
+The advantage of this 3rd party module over the standard
+mutelist module, is that mutes are stored on the grid
+instead of the user's viewer cache; thus surviving
+a viewer cache clear.
 
 Only MySQL/MariaDB supported for now
 
