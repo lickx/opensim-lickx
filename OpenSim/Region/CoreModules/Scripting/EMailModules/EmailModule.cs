@@ -623,7 +623,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                         else
                             client.Connect(IMAP_SERVER_HOSTNAME, IMAP_SERVER_PORT, MailKit.Security.SecureSocketOptions.None);
 
-                        if (!string.IsNullOrEmpty(IMAP_SERVER_LOGIN) && !string.IsNullOrEmpty(IMAP_SERVER_PASSWORD))
+                        if (client.IsConnected && !string.IsNullOrEmpty(IMAP_SERVER_LOGIN) && !string.IsNullOrEmpty(IMAP_SERVER_PASSWORD))
                         {
                             client.Authenticate(IMAP_SERVER_LOGIN, IMAP_SERVER_PASSWORD);
                             client.Inbox.Open(FolderAccess.ReadWrite);
@@ -643,8 +643,8 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                             };
                             email.To.Add(MailboxAddress.Parse(address));
                             client.Inbox.Append(email);
+                            client.Disconnect(true);
                         }
-                        client.Disconnect(true);
                     }
                 }
             }
@@ -726,7 +726,7 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                     else
                         client.Connect(IMAP_SERVER_HOSTNAME, IMAP_SERVER_PORT, MailKit.Security.SecureSocketOptions.None);
 
-                    if (!string.IsNullOrEmpty(IMAP_SERVER_LOGIN) && !string.IsNullOrEmpty(IMAP_SERVER_PASSWORD))
+                    if (client.IsConnected && !string.IsNullOrEmpty(IMAP_SERVER_LOGIN) && !string.IsNullOrEmpty(IMAP_SERVER_PASSWORD))
                     {
                         client.Authenticate(IMAP_SERVER_LOGIN, IMAP_SERVER_PASSWORD);
 
@@ -754,8 +754,8 @@ namespace OpenSim.Region.CoreModules.Scripting.EmailModules
                             client.Inbox.AddFlags(uid, MessageFlags.Deleted, true);
                         }
                         client.Inbox.Expunge();
+                        client.Disconnect(true);
                     }
-                    client.Disconnect(true);
                 }
             }
 
