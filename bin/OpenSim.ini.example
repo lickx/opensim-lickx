@@ -491,6 +491,9 @@
     ;; if you don't trust grid admins, what are you doing there?
     allow_grid_gods = true
 
+    ;; This allows some control over permissions
+    ;; please note that this still doesn't duplicate SL, and is not intended to
+
     ;# {simple_build_permissions} {} {Allow building in parcel by access list (no groups)} {true false} false
     ;; More control over permissions
     ;; This is definitely not SL!
@@ -501,7 +504,8 @@
     ;; without having to use the Groups feature
     ; simple_build_permissions = false
 
-    ; Disallow "take copy" of ANY object set as "Allow anyone to take a copy"
+    ;# {take_copy_restricted} {} {Disallow "take copy"} {true false} false
+    ;; Disallow "take copy" of ANY object set as "Allow anyone to take a copy"
     ;take_copy_restricted = false
 
 [Estates]
