@@ -47,8 +47,6 @@ namespace OpenSim.Region.Framework.Scenes
         Scene m_scene;
         protected bool m_allowGridGods;
         protected bool m_forceGridGodsOnly;
-        protected bool m_regionOwnerIsGod;
-        protected bool m_regionManagerIsGod;
         protected bool m_forceGodModeAlwaysOn;
         protected bool m_allowGodActionsWithoutGodMode;
 
@@ -76,29 +74,13 @@ namespace OpenSim.Region.Framework.Scenes
             // gods are god everywhere.
             m_allowGridGods =
                     Util.GetConfigVarFromSections<bool>(config,
-                    "allow_grid_gods", sections, false);
+                    "allow_grid_gods", sections, true);
 
             // If grid gods are active, dont allow any other gods
             m_forceGridGodsOnly =
                     Util.GetConfigVarFromSections<bool>(config,
-                    "force_grid_gods_only", sections, false);
+                    "force_grid_gods_only", sections, true);
 
-            if(!m_forceGridGodsOnly)
-            {
-                // The owner of a region is a god in his region only.
-                m_regionOwnerIsGod =
-                    Util.GetConfigVarFromSections<bool>(config,
-                    "region_owner_is_god", sections, false);
-
-                // Region managers are gods in the regions they manage.
-                m_regionManagerIsGod =
-                    Util.GetConfigVarFromSections<bool>(config,
-                    "region_manager_is_god", sections, false);
-
-            }
-            else
-                m_allowGridGods = true; // reduce potencial user mistakes
-                 
             // God mode should be turned on in the viewer whenever
             // the user has god rights somewhere. They may choose
             // to turn it off again, though.
@@ -139,18 +121,6 @@ namespace OpenSim.Region.Framework.Scenes
             int level = 0;
             if (m_allowGridGods && m_userLevel >= 200)
                 level = m_userLevel;
-
-            if(m_forceGridGodsOnly || level >= (int)ImplicitGodLevels.RegionOwner)
-                return level;
-
-            if (m_regionOwnerIsGod && m_scene.RegionInfo.EstateSettings.IsEstateOwner(m_scenePresence.UUID))
-                level = (int)ImplicitGodLevels.RegionOwner;
-
-            if(level >= (int)ImplicitGodLevels.EstateManager)
-                return level;
-
-            if (m_regionManagerIsGod && m_scene.Permissions.IsEstateManager(m_scenePresence.UUID))
-                level = (int)ImplicitGodLevels.EstateManager;
 
             return level;
         }
