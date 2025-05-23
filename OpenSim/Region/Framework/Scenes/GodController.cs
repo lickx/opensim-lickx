@@ -46,7 +46,6 @@ namespace OpenSim.Region.Framework.Scenes
         ScenePresence m_scenePresence;
         Scene m_scene;
         protected bool m_allowGridGods;
-        protected bool m_forceGridGodsOnly;
         protected bool m_forceGodModeAlwaysOn;
         protected bool m_allowGodActionsWithoutGodMode;
 
@@ -75,11 +74,6 @@ namespace OpenSim.Region.Framework.Scenes
             m_allowGridGods =
                     Util.GetConfigVarFromSections<bool>(config,
                     "allow_grid_gods", sections, true);
-
-            // If grid gods are active, dont allow any other gods
-            m_forceGridGodsOnly =
-                    Util.GetConfigVarFromSections<bool>(config,
-                    "force_grid_gods_only", sections, true);
 
             // God mode should be turned on in the viewer whenever
             // the user has god rights somewhere. They may choose
