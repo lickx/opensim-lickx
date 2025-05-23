@@ -89,7 +89,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
         private bool m_propagatePermissions = false;
         private bool m_debugPermissions = false;
         private bool m_allowGridAdmins = false;
-        private bool m_forceGridAdminsOnly;
         private bool m_forceAdminModeAlwaysOn;
         private bool m_allowAdminActionsWithoutGodMode;
         private bool m_takeCopyRestricted = false;
@@ -162,8 +161,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
             m_allowGridAdmins = Util.GetConfigVarFromSections<bool>(config, "allow_grid_gods", sections, true);
             m_bypassPermissions = !Util.GetConfigVarFromSections<bool>(config, "serverside_object_permissions", sections, true);
             m_propagatePermissions = Util.GetConfigVarFromSections<bool>(config, "propagate_permissions", sections, true);
-
-            m_forceGridAdminsOnly = Util.GetConfigVarFromSections<bool>(config, "force_grid_gods_only", sections, true);
 
             m_forceAdminModeAlwaysOn = Util.GetConfigVarFromSections<bool>(config, "automatic_gods", sections, false);
             m_allowAdminActionsWithoutGodMode = Util.GetConfigVarFromSections<bool>(config, "implicit_gods", sections, false);
