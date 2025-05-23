@@ -89,8 +89,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
         private bool m_propagatePermissions = false;
         private bool m_debugPermissions = false;
         private bool m_allowGridAdmins = false;
-        private bool m_RegionOwnerIsAdmin = false;
-        private bool m_RegionManagerIsAdmin = false;
         private bool m_forceGridAdminsOnly;
         private bool m_forceAdminModeAlwaysOn;
         private bool m_allowAdminActionsWithoutGodMode;
@@ -161,18 +159,11 @@ namespace OpenSim.Region.CoreModules.World.Permissions
 
             string[] sections = new string[] { "Startup", "Permissions" };
 
-            m_allowGridAdmins = Util.GetConfigVarFromSections<bool>(config, "allow_grid_gods", sections, false);
+            m_allowGridAdmins = Util.GetConfigVarFromSections<bool>(config, "allow_grid_gods", sections, true);
             m_bypassPermissions = !Util.GetConfigVarFromSections<bool>(config, "serverside_object_permissions", sections, true);
             m_propagatePermissions = Util.GetConfigVarFromSections<bool>(config, "propagate_permissions", sections, true);
 
-            m_forceGridAdminsOnly = Util.GetConfigVarFromSections<bool>(config, "force_grid_gods_only", sections, false);
-            if(!m_forceGridAdminsOnly)
-            {            
-                m_RegionOwnerIsAdmin = Util.GetConfigVarFromSections<bool>(config, "region_owner_is_god",sections, false);
-                m_RegionManagerIsAdmin = Util.GetConfigVarFromSections<bool>(config, "region_manager_is_god",sections, false);
-            }
-            else
-                m_allowGridAdmins = true;
+            m_forceGridAdminsOnly = Util.GetConfigVarFromSections<bool>(config, "force_grid_gods_only", sections, true);
 
             m_forceAdminModeAlwaysOn = Util.GetConfigVarFromSections<bool>(config, "automatic_gods", sections, false);
             m_allowAdminActionsWithoutGodMode = Util.GetConfigVarFromSections<bool>(config, "implicit_gods", sections, false);
@@ -627,12 +618,6 @@ namespace OpenSim.Region.CoreModules.World.Permissions
         {
             if (user.IsZero())
                 return false;
-
-            if (m_RegionOwnerIsAdmin && m_scene.RegionInfo.EstateSettings.EstateOwner.Equals(user))
-                return true;
-
-            if (m_RegionManagerIsAdmin && IsEstateManager(user))
-                return true;
 
             if (IsGridAdministrator(user))
                 return true;
