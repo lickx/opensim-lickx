@@ -18,7 +18,7 @@ rem if exist %VERSION_FILE% del %VERSION_FILE%
 
 SET TARGET_ZIP=opensim-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 echo %TARGET_ZIP%
-set excludes=-x "*Tests*" "bin/Gloebit.*" "bin/OpenSimMutelist.Modules.*" "bin/MoneyServer.*" "OpenSim.Data.MySQL.MySQLMoneyDataWrapper.*" "OpenSim.Modules.Currency.dll.*" "OpenSim.ini.sample" "server_cert.p12" "SineWaveCert.pfx"
+set excludes=-x "*Tests*" "bin/Gloebit.*" "bin/OpenSimMutelist.Modules.*" "bin/MoneyServer.*" "OpenSim.Data.MySQL.MySQLMoneyDataWrapper.*" "OpenSim.Modules.Currency.dll.*" "server_cert.p12" "SineWaveCert.pfx"
 zip -r -o "%TARGET_ZIP%" bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses helper/index.html helper/robots.txt helper/search extra/OpenSimSearch %excludes%
 
 if not exist bin\OpenSimMutelist.Modules.dll goto skipmutelist
@@ -40,7 +40,7 @@ if not exist bin\MoneyServer.dll goto skipopensimcurrency
 SET TARGET_ZIP=opensimcurrency-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
-zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/OpenSim.ini.sample bin/server_cert.p12 bin/SineWaveCert.pfx %excludes%
+zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy %excludes%
 :skipopensimcurrency
 
 

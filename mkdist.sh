@@ -9,7 +9,7 @@ echo "${GIT_BRANCH}@${GIT_REV} (${LAST_COMMIT_DATE})" > bin/.version
 # or just ommit extended version info:
 #rm -f bin/.version
 
-EXCLUDES="*Tests* *Gloebit* *OpenSimMutelist* *MoneyServer* *OpenSim.Data.MySQL.MySQLMoneyDataWrapper* *OpenSim.Modules.Currency* *OpenSim.ini.sample* *server_cert.p12* *SineWaveCert.pfx*"
+EXCLUDES="*Tests* *Gloebit* *OpenSimMutelist* *MoneyServer* *OpenSim.Data.MySQL.MySQLMoneyDataWrapper* *OpenSim.Modules.Currency* *server_cert.p12* *SineWaveCert.pfx*"
 TARGETZIP=opensim-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
 echo "${TARGETZIP}"
 zip -r -o ${TARGETZIP} bin CONTRIBUTORS.txt LICENSE.txt README.md ThirdPartyLicenses helper/index.html helper/robots.txt helper/search extra/OpenSimSearch -x ${EXCLUDES}
@@ -36,6 +36,6 @@ if [ -f bin/MoneyServer.dll ]; then
     TARGETZIP=opensimcurrency-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
     EXCLUDES="*Tests*"
     echo "${TARGETZIP}"
-    zip -r -o ${TARGETZIP} bin\MoneyServer.* bin\OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin\OpenSim.Modules.Currency.* bin\OpenSim.ini.sample bin\server_cert.p12 bin\SineWaveCert.pfx -x ${EXCLUDES}
+    zip -r -o ${TARGETZIP} bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy -x ${EXCLUDES}
 fi
 
