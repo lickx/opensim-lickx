@@ -391,10 +391,10 @@
     ; DeniedClients = ""
 
     ; It is strongly recommended to block at least these viewers by uncommenting ;DeniedClients below:
-    ; The first 6 viewers are problematic/bugged official Firestorm releases,
-    ; the last 4 viewers are copybots pretending to be (a very outdated) Firestorm
-    ; The + is absolutely needed after the space before the version (it means 'one or more spaces')
-    ;DeniedClients = "Firestorm-Releasex64 +4.7.7.48706|Firestorm-Release +4.7.7.48706|Firestorm-Releasex64 +6.6.8.68380|Firestorm-Release +6.6.8.68380|Firestorm-Releasex64 +6.6.16.70339|Firestorm-Release +6.6.16.70339|Firestorm-Releasex64 +4.6.8.42696|Firestorm-Release +4.6.8.42696|Firestorm-Releasex64 +6.4.13.63251|Firestorm-Release +6.4.13.63251"
+    ; The first 4 viewers are problematic/bugged official Firestorm releases,
+    ; the last 7 viewers are copybots pretending to be (a very outdated) Firestorm and Singularity
+    ; The + is needed for older OpenSim versions (<0.9.3.1), after the space before the version (it means 'one or more spaces')
+    ; DeniedClients = "Firestorm-Release(x64)? +4.7.7.48706|Firestorm-Release(x64)? +6.6.8.68380|Firestorm-Release(x64)? +6.6.16.70339|Firestorm-Releasex64 +7.1.9.74745|Firestorm-Release(x64)? +6.2.0|Firestorm-Release(x64)? +4.6.8.42696|Firestorm-Release(x64)? +6.3.2.58086|Firestorm-Release(x64)? +6.3.8.58105|Firestorm-Release(x64)? +6.4.13.63251|Firestorm-Release(x64)? +6.4.23.64823|Singularity Alpha( 64)? +1.8.7.7610"
 
     ;# {ViewerDeniedMsg} {} {A message string} {"Access denied, your viewer is banned"}
     ; The message people see who attempt to teleport with a denied viewer
