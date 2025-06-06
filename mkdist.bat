@@ -40,6 +40,10 @@ if not exist bin\MoneyServer.dll goto skipopensimcurrency
 SET TARGET_ZIP=opensimcurrency-%GIT_BRANCH%-%LAST_COMMIT_DATE%_%GIT_REV%.zip
 set excludes=-x "*Tests*"
 echo %TARGET_ZIP%
+copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\MoneyServer.exe.config bin
+copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\MoneyServer.ini.example bin
+copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\server_cert.p12 bin
+copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\SineWaveCert.pfx bin
 zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy %excludes%
 :skipopensimcurrency
 

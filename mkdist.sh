@@ -36,6 +36,10 @@ if [ -f bin/MoneyServer.dll ]; then
     TARGETZIP=opensimcurrency-${GIT_BRANCH}-${LAST_COMMIT_DATE}_${GIT_REV}.zip
     EXCLUDES="*Tests*"
     echo "${TARGETZIP}"
+    cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/MoneyServer.exe.config bin
+    cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/MoneyServer.ini.example bin
+    cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/server_cert.p12 bin
+    cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/SineWaveCert.pfx bin
     zip -r -o ${TARGETZIP} bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy -x ${EXCLUDES}
 fi
 
