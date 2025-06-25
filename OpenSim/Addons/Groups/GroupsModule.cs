@@ -1602,6 +1602,5 @@ namespace OpenSim.Groups
         {
             return client is null ? UUID.Zero : client.AgentId;
         }
-
     }
 }

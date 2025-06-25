@@ -148,7 +148,7 @@ namespace OpenSim.Region.Framework.Scenes
         public bool IsRoot
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return Object.ReferenceEquals(ParentGroup.RootPart, this); }
+            get { return object.ReferenceEquals(ParentGroup.RootPart, this); }
         }
 
         /// <summary>
@@ -733,7 +733,7 @@ namespace OpenSim.Region.Framework.Scenes
             set { m_scriptAccessPin = (int)value; }
         }
 
-        public Byte[] TextureAnimation
+        public byte[] TextureAnimation
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return m_TextureAnimation; }
@@ -815,6 +815,7 @@ namespace OpenSim.Region.Framework.Scenes
             set
             {
                 m_groupPosition = value;
+
                 PhysicsActor actor = PhysActor;
                 if (actor != null && ParentGroup.Scene.PhysicsScene != null)
                 {
@@ -2572,7 +2573,6 @@ namespace OpenSim.Region.Framework.Scenes
             PhysicsActor pa = PhysActor;
             return pa is null ? AbsolutePosition : pa.CenterOfMass;
         }
-
 
         public Vector3 GetForce()
         {
@@ -4527,6 +4527,7 @@ namespace OpenSim.Region.Framework.Scenes
                 ParentGroup.Scene.EventManager.TriggerOnScriptChangedEvent(LocalId, (uint)val, data);
         }
 
+
         public void TrimPermissions()
         {
             BaseMask &= (uint)(PermissionMask.All | PermissionMask.Export);
@@ -5744,7 +5745,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-        public Byte[] SerializeAnimations()
+        public byte[] SerializeAnimations()
         {
             if (AnimationsNames == null)
                 return null;
@@ -5778,7 +5779,7 @@ namespace OpenSim.Region.Framework.Scenes
             }
         }
 
-        public void DeSerializeAnimations(Byte[] data)
+        public void DeSerializeAnimations(byte[] data)
         {
             if(data == null)
             {
