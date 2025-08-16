@@ -2888,5 +2888,22 @@ namespace OpenSim.Region.ScriptEngine.Shared.ScriptBase
             return m_LSL_Functions.llComputeHash(message, algo);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_String llGetRenderMaterial(LSL_Integer face)
+        {
+            return m_LSL_Functions.llGetRenderMaterial(face);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Integer llIsLinkGLTFMaterial(LSL_Integer linknum, LSL_Integer face)
+        {
+            return m_LSL_Functions.llIsLinkGLTFMaterial(linknum, face);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public LSL_Vector llWorldPosToHUD(LSL_Vector WorldPosition)
+        {
+            return m_LSL_Functions.llWorldPosToHUD(WorldPosition);
+        }
     }
 }

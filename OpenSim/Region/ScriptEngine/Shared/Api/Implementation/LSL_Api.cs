@@ -2354,7 +2354,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
         {
             if (face == ScriptBaseClass.ALL_SIDES)
                 face = 0;
-            if (face < 0)
+            else if (face < 0)
                 return ScriptBaseClass.NULL_KEY;
 
             Primitive.TextureEntry tex = part.Shape.Textures;
@@ -13929,7 +13929,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
 
             if ((m_item.PermsMask & ScriptBaseClass.PERMISSION_TRACK_CAMERA) == 0)
             {
-                Error("llGetCameraAspect", "No permissions to track the camera");
+                Error("llGetCameraFOV", "No permissions to track the camera");
                 return LSL_Float.Zero;
             }
 
@@ -19551,6 +19551,169 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api
                     break;
             }
             return new LSL_String();
+        }
+
+        public LSL_String llGetRenderMaterial(LSL_Integer lface )
+        {
+            return GetMaterial(m_host, lface.value);
+        }
+
+        protected static LSL_String GetMaterial(SceneObjectPart part, int face)
+        {
+            if (part.Shape.RenderMaterials is null ||
+                    part.Shape.RenderMaterials.entries is null ||
+                    part.Shape.RenderMaterials.entries.Length == 0)
+                return ScriptBaseClass.NULL_KEY;
+
+            if (face == ScriptBaseClass.ALL_SIDES)
+                face = 0;
+            else if (face < 0)
+                return ScriptBaseClass.NULL_KEY;
+            else if (face >= GetNumberOfSides(part))
+                return ScriptBaseClass.NULL_KEY;
+
+            UUID asset = UUID.Zero;
+            bool found = false;
+            foreach(Primitive.RenderMaterials.RenderMaterialEntry re in part.Shape.RenderMaterials.entries)
+            {
+                if(re.te_index == face)
+                {
+                    asset = re.id;
+                    found = true;
+                    break;
+                }
+            }
+
+            if(!found)
+                 return ScriptBaseClass.NULL_KEY;
+
+            lock (part.TaskInventory)
+            {
+                part.TaskInventory.LockItemsForRead(true);
+                try
+                { 
+                    foreach (KeyValuePair<UUID, TaskInventoryItem> inv in part.TaskInventory)
+                    {
+                        if (inv.Value.Type == (int)AssetType.Material && inv.Value.AssetID.Equals(asset))
+                            return inv.Value.Name.ToString();
+                    }
+                }
+                finally { part.TaskInventory.LockItemsForRead(false); }
+            }
+
+            if((part.ParentGroup.EffectiveOwnerPerms & (uint)PermissionMask.All) != (uint)PermissionMask.All)
+                return ScriptBaseClass.NULL_KEY;
+
+            return asset.ToString();
+        }
+
+        public LSL_Integer llIsLinkGLTFMaterial(LSL_Integer linknum, LSL_Integer lface)
+        {
+            SceneObjectPart part;
+            if (linknum == ScriptBaseClass.LINK_ROOT)
+                part = m_host.ParentGroup.RootPart;
+            else if (linknum == ScriptBaseClass.LINK_THIS)
+                part = m_host;
+            else
+                part = m_host.ParentGroup.GetLinkNumPart(linknum);
+            if(part is null)
+                return 0;
+
+            if (part.Shape.RenderMaterials is null ||
+                    part.Shape.RenderMaterials.entries is null ||
+                    part.Shape.RenderMaterials.entries.Length == 0)
+                return 0;
+
+            int face = lface.value;
+            if (face == ScriptBaseClass.ALL_SIDES)
+            {
+                int nsides = GetNumberOfSides(part);
+                bool[] pbr = new bool[nsides];
+                foreach(Primitive.RenderMaterials.RenderMaterialEntry re in part.Shape.RenderMaterials.entries)
+                {
+                    if(re.te_index > 0 && re.te_index < pbr.Length && re.id.IsNotZero())
+                        pbr[re.te_index] = true;
+                }
+                foreach(bool b in pbr)
+                {
+                    if (!b)
+                        return 0;
+                }
+                return 1;
+            }
+
+            if (face < 0)
+                return 0;
+            else if (face >= GetNumberOfSides(part))
+                return 0;
+            foreach(Primitive.RenderMaterials.RenderMaterialEntry re in part.Shape.RenderMaterials.entries)
+            {
+                if(re.te_index == face)
+                    return re.id.IsZero() ? 0 : 1;
+            }
+            return 0;
+        }
+
+        public LSL_Vector llWorldPosToHUD(LSL_Vector wp)
+        {
+            if(!m_host.ParentGroup.IsAttachment)
+                return LSL_Vector.Zero;
+
+            uint atp = m_host.ParentGroup.AttachmentPoint;
+            if(atp < (uint)AttachmentPoint.HUDCenter2 || atp > (uint)AttachmentPoint.HUDBottomRight)
+                return LSL_Vector.Zero;
+
+            if (m_item.PermsGranter.NotEqual(m_host.OwnerID) ||
+                (m_item.PermsMask & ScriptBaseClass.PERMISSION_TRACK_CAMERA) == 0)
+            {
+                Error("llGetCameraPos", "No permissions to track the camera");
+                return LSL_Vector.Zero;
+            }
+
+            ScenePresence sp = World.GetScenePresence(m_host.OwnerID);
+            if(sp is null)
+                return LSL_Vector.Zero;
+
+            Vector3 totarget = (Vector3)wp - sp.CameraPosition;
+            totarget.Normalize();
+            float at = totarget.Dot(sp.CameraAtAxis);
+            float left = totarget.Dot(sp.CameraLeftAxis);
+            float up = totarget.Dot(sp.CameraUpAxis);
+
+            if(atp != (uint)AttachmentPoint.HUDCenter2 && atp != (uint)AttachmentPoint.HUDCenter2)
+            {
+                int h = sp.ControllingClient.viewHeight;
+                if(h > 0)
+                {
+                    float aspect = 0.5f * (float)sp.ControllingClient.viewWidth / h;
+                    switch(atp)
+                    {
+                        case (uint)AttachmentPoint.HUDTop:
+                            up -= 0.5f;
+                            break;
+                        case (uint)AttachmentPoint.HUDTopLeft:
+                            up -= 0.5f;
+                            left -= aspect;
+                            break;
+                        case (uint)AttachmentPoint.HUDTopRight:
+                            up -= 0.5f;
+                            left += aspect;
+                            break;
+                        case (uint)AttachmentPoint.HUDBottom:
+                            up += 0.5f;
+                            break;
+                        case (uint)AttachmentPoint.HUDBottomLeft:
+                            up += 0.5f;
+                            left -= aspect;
+                            break;
+                        case (uint)AttachmentPoint.HUDBottomRight:
+                            up += 0.5f;
+                            left += aspect;
+                            break;
+                    }
+                }
+            }
+            return new(at > 0 ? 1 : -1, left, up);
         }
 
         static string HMAC_SHA224(string key, string message)
