@@ -1085,7 +1085,7 @@ namespace OpenSim.Region.Framework.Scenes
 
             Quaternion currentRot = RootPart.RotationOffset;
             if(setrot)
-                rotation = Quaternion.Conjugate(currentRot) * rotation;
+                rotation = Quaternion.Conjugate(in currentRot) * rotation;
 
             bool dorot = setrot || (Math.Abs(rotation.W) < 0.99999);
 
@@ -3264,11 +3264,11 @@ namespace OpenSim.Region.Framework.Scenes
 
             // Make the linking root SOP's rotation relative to the new root prim
             Quaternion oldRot = linkPart.RotationOffset;
-            Quaternion newRot = Quaternion.Conjugate(parentRot) * oldRot;
+            Quaternion newRot = Quaternion.Conjugate(in parentRot) * oldRot;
             linkPart.setRotationOffset(newRot);
 
             Vector3 axPos = linkPart.OffsetPosition;
-            axPos *= Quaternion.Conjugate(parentRot);
+            axPos *= Quaternion.Conjugate(in parentRot);
             linkPart.OffsetPosition = axPos;
 
             // If there is only one SOP in a SOG, the LinkNum is zero. I.e., not a linkset.
@@ -3680,11 +3680,11 @@ namespace OpenSim.Region.Framework.Scenes
             // Compute the SOP's rotation relative to the rotation of the group.
             parentRot = m_rootPart.RotationOffset;
  
-            Quaternion newRot = Quaternion.Conjugate(parentRot) * worldRot;
+            Quaternion newRot = Quaternion.Conjugate(in parentRot) * worldRot;
             part.setRotationOffset(newRot);
 
             Vector3 pos = part.OffsetPosition;
-            pos *= Quaternion.Conjugate(parentRot);
+            pos *= Quaternion.Conjugate(in parentRot);
 
             part.OffsetPosition = pos; // update position and orientation on physics also
 
@@ -3930,8 +3930,6 @@ namespace OpenSim.Region.Framework.Scenes
             if (m_scene is null || IsDeleted)
                 return;
 
-            HasGroupChanged = true;
-
             if (SetTemporary)
             {
                 DetachFromBackup();
@@ -3996,6 +3994,7 @@ namespace OpenSim.Region.Framework.Scenes
                 m_rootPart.UpdatePrimFlags(UsePhysics, SetTemporary, SetPhantom, SetVolumeDetect, false);
 
             m_scene.EventManager.TriggerParcelPrimCountTainted();
+            HasGroupChanged = true;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4506,17 +4505,6 @@ namespace OpenSim.Region.Framework.Scenes
         public void UpdateGroupRotationR(Quaternion rot)
         {
             m_rootPart.UpdateRotation(rot);
-
-            /* this is done by rootpart RotationOffset set called by UpdateRotation
-            PhysicsActor actor = m_rootPart.PhysActor;
-            if (actor is not null)
-            {
-                actor.Orientation = m_rootPart.RotationOffset;
-                m_scene.PhysicsScene.AddPhysicsActorTaint(actor);
-            }
-            */
-            HasGroupChanged = true;
-            ScheduleGroupForTerseUpdate();
         }
 
         /// <summary>
@@ -4527,13 +4515,6 @@ namespace OpenSim.Region.Framework.Scenes
         public void UpdateGroupRotationPR(Vector3 pos, Quaternion rot)
         {
             m_rootPart.UpdateRotation(rot);
-
-            //already done above
-            //PhysicsActor actor = m_rootPart.PhysActor;
-            //if (actor is not null)
-            //{
-            //    actor.Orientation = m_rootPart.RotationOffset;
-            //}
 
             if (IsAttachment)
             {
