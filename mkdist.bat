@@ -44,7 +44,8 @@ copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\MoneyServer.exe.con
 copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\MoneyServer.ini.example bin
 copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\server_cert.p12 bin
 copy addon-modules\opensim.currency\OpenSim.Grid.MoneyServer\SineWaveCert.pfx bin
-zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy %excludes%
+copy addon-modules\opensim.currency\config\OpenSim.ini.sample bin\OpenSim.ini-currency.example
+zip -r -o "%TARGET_ZIP%" bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx bin/OpenSim.ini-currency.example helper/economy %excludes%
 :skipopensimcurrency
 
 

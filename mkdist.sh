@@ -40,6 +40,7 @@ if [ -f bin/MoneyServer.dll ]; then
     cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/MoneyServer.ini.example bin
     cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/server_cert.p12 bin
     cp addon-modules/opensim.currency/OpenSim.Grid.MoneyServer/SineWaveCert.pfx bin
-    zip -r -o ${TARGETZIP} bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx helper/economy -x ${EXCLUDES}
+    cp addon-modules/opensim.currency/config/OpenSim.ini.sample bin/OpenSim.ini-currency.example
+    zip -r -o ${TARGETZIP} bin/MoneyServer.* bin/OpenSim.Data.MySQL.MySQLMoneyDataWrapper.* bin/OpenSim.Modules.Currency.* bin/server_cert.p12 bin/SineWaveCert.pfx bin/OpenSim.ini-currency.example helper/economy -x ${EXCLUDES}
 fi
 
