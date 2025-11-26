@@ -655,10 +655,16 @@ namespace OpenSim.Region.Framework.Scenes
 
         public string Grouptitle
         {
-            get { return m_groupTitle; }
+            get { return UseFakeGroupTitle ? "(Loading)" : m_groupTitle; }
             set { m_groupTitle = value; }
         }
         private string m_groupTitle;
+
+        /// <summary>
+        /// When this is 'true', return a dummy group title instead of the real group title. This is
+        /// used as part of a hack to force viewers to update the displayed avatar name.
+        /// </summary>
+        public bool UseFakeGroupTitle { get; set; }
 
         // Agent's Draw distance.
         private float m_drawDistance = 255f;
@@ -1614,7 +1620,6 @@ namespace OpenSim.Region.Framework.Scenes
         /// Group Title. So the following trick makes viewers update the avatar's name by briefly changing
         /// the group title (to "(Loading)"), and then restoring it.
         /// </remarks>
-/*
         public void ForceViewersUpdateName()
         {
             m_log.DebugFormat("[SCENE PRESENCE]: Forcing viewers to update the avatar name for " + Name);
@@ -1631,10 +1636,10 @@ namespace OpenSim.Region.Framework.Scenes
                 Thread.Sleep(5000);
 
                 UseFakeGroupTitle = false;
-                SendAvatarDataToAllClients(false);
+                SendAvatarDataToAllAgents();
             }, null, "Scenepresence.ForceViewersUpdateName");
         }
-*/
+
         public int GetStateSource()
         {
             return m_teleportFlags == TeleportFlags.Default ? 2 : 5; // StateSource.PrimCrossing : StateSource.Teleporting
@@ -2242,6 +2247,16 @@ namespace OpenSim.Region.Framework.Scenes
                         m_log.DebugFormat("[CompleteMovement]: Missing COF for {0} is {1}", client.AgentId, COF);
                         */
                     }
+
+                    if ((m_teleportFlags & TeleportFlags.ViaHGLogin) != 0)
+                    {
+                        // The avatar is arriving from another grid. This means that we may have changed the
+                        // avatar's name to or from the special Hypergrid format ("First.Last @grid.example.com").
+                        // Unfortunately, due to a viewer bug, viewers don't always show the new name.
+                        // But we have a trick that can force them to update the name anyway.
+                        ForceViewersUpdateName();
+                    }
+
                 }
 
                 if (m_teleportFlags > 0)
