@@ -7,7 +7,7 @@ include("databaseinfo.php");
 
 // Attempt to connect to the database
 try {
-  $db = new PDO("mysql:host=$DB_HOST;dbname=$DB_NAME", $DB_USER, $DB_PASSWORD);
+  $db = new PDO("$DB_DRIVER:host=$DB_HOST;dbname=$DB_NAME", $DB_USER, $DB_PASSWORD);
   $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 }
 catch(PDOException $e)
@@ -133,8 +133,8 @@ function dir_places_query($method_name, $params, $app_data)
     $query_end = 101;
 
     $sql = "SELECT * FROM search_parcels WHERE $cat_where" .
-           " (parcelname LIKE :text1" .
-           " OR description LIKE :text2)" .
+           " (LOWER(parcelname) LIKE LOWER(:text1)" .
+           " OR LOWER(description) LIKE LOWER(:text2))" .
            $type . " ORDER BY $order parcelname" .
            " LIMIT ".$query_start.",".$query_end.";";
     $query = $db->prepare($sql);
@@ -187,7 +187,7 @@ function dir_popular_query($method_name, $params, $app_data)
 
     if ($text != "")
     {
-        $terms[] = "(name LIKE :text)";
+        $terms[] = "(LOWER(name) LIKE LOWER(:text))";
 
         $text = "%text%";
         $sqldata['text'] = $text;
@@ -417,8 +417,8 @@ function dir_events_query($method_name, $params, $app_data)
 
     if ($search_text != "")
     {
-        $terms[] = "(name LIKE :text1 OR " .
-                    "description LIKE :text2)";
+        $terms[] = "(LOWER(name) LIKE LOWER(:text1) OR " .
+                    "LOWER(description) LIKE LOWER(:text2))";
 
         $search_text = "%$search_text%";
         $sqldata['text1'] = $search_text;
@@ -521,8 +521,8 @@ function dir_classified_query ($method_name, $params, $app_data)
 
     if ($text != "")
     {
-        $terms[] = "(name LIKE :text1" .
-                   " OR description LIKE :text2)";
+        $terms[] = "(LOWER(name) LIKE LOWER(:text1)" .
+                   " OR LOWER(description) LIKE LOWER(:text2))";
 
         $text = "%$text%";
         $sqldata['text1'] = $text;
