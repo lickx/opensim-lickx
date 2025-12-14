@@ -34,11 +34,11 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using OpenMetaverse;
 using OpenMetaverse.StructuredData;
-using Nini.Config;
 using log4net;
 
 using OpenSim.Framework;
@@ -855,6 +855,8 @@ namespace OpenSim.Region.ClientStack.Linden
 
                     int skipedMeshs = 0;
                     float primScaleMin = m_ModelCost.PrimScaleMin;
+                    
+                    OSD tmp;
                     // build prims from instances
                     for (int i = 0; i < instance_list.Count; i++)
                     {
@@ -870,71 +872,58 @@ namespace OpenSim.Region.ClientStack.Linden
                         }
 
                         OSDArray face_list = (OSDArray)inner_instance_list["face_list"];
-
+                        
                         PrimitiveBaseShape pbs = null;
-                        if (inner_instance_list.ContainsKey("mesh")) // seems to happen always but ...
+                        if (inner_instance_list.TryGetValue("mesh", out tmp)) // seems to happen always but ...
                         {
-                            int meshindx = inner_instance_list["mesh"].AsInteger();
-                            if (meshAssets.Count > meshindx)
+                            int meshindx = tmp.AsInteger();
+                            if (meshindx >= 0 && meshAssets.Count > meshindx)
                             {
                                 if(meshesSides != null && meshesSides.Length > meshindx)
-                                    pbs = PrimitiveBaseShape.CreateMesh(meshesSides[i], meshAssets[meshindx]);
+                                    pbs = PrimitiveBaseShape.CreateMesh(meshesSides[meshindx], meshAssets[meshindx]);
                                 else
                                     pbs = PrimitiveBaseShape.CreateMesh(face_list.Count, meshAssets[meshindx]);
                             }
                         }
-                        if(pbs == null) // fallback
-                            pbs = PrimitiveBaseShape.CreateBox();
 
-                        Primitive.TextureEntry textureEntry
-                            = new Primitive.TextureEntry(Primitive.TextureEntry.WHITE_TEXTURE);
+                        pbs ??= PrimitiveBaseShape.CreateBox(); //fallback
+
+                        Primitive.TextureEntry textureEntry = new(Primitive.TextureEntry.WHITE_TEXTURE);
 
                         for (uint face = 0; face < face_list.Count; face++)
                         {
                             OSDMap faceMap = (OSDMap)face_list[(int)face];
 
                             Primitive.TextureEntryFace f = textureEntry.CreateFace(face); //clone the default
-                            if (faceMap.ContainsKey("fullbright"))
-                                f.Fullbright = faceMap["fullbright"].AsBoolean();
-                            if (faceMap.ContainsKey("diffuse_color"))
-                                f.RGBA = faceMap["diffuse_color"].AsColor4();
 
-                            int textureNum = faceMap["image"].AsInteger();
-                            float imagerot = faceMap["imagerot"].AsInteger();
-                            float offsets = (float)faceMap["offsets"].AsReal();
-                            float offsett = (float)faceMap["offsett"].AsReal();
-                            float scales = (float)faceMap["scales"].AsReal();
-                            float scalet = (float)faceMap["scalet"].AsReal();
+                            if (faceMap.TryGetBool("fullbright", out bool fullbright))
+                                f.Fullbright = fullbright;
 
-                            if (imagerot != 0)
+                            if (faceMap.TryGetColor4("diffuse_color", out Color4 rgba))
+                                f.RGBA = rgba;
+
+                            if(faceMap.TryGetInt("image", out int textureNum) && textureNum >= 0 && textureNum < textures.Count)
+                                f.TextureID = textures[textureNum];
+
+                            if(faceMap.TryGetFloat("imagerot", out float imagerot) && imagerot != 0)
                                 f.Rotation = imagerot;
 
-                            if (offsets != 0)
+                            if(faceMap.TryGetFloat("offsets", out float offsets) && offsets != 0)
                                 f.OffsetU = offsets;
 
-                            if (offsett != 0)
+                            if(faceMap.TryGetFloat("offsett", out float offsett) && offsett != 0)
                                 f.OffsetV = offsett;
 
-                            if (scales != 0)
+                            if(faceMap.TryGetFloat("scales", out float scales) && scales != 0)
                                 f.RepeatU = scales;
 
-                            if (scalet != 0)
+                            if(faceMap.TryGetFloat("scalet", out float scalet) && scalet != 0)
                                 f.RepeatV = scalet;
 
-                            if (textures.Count > textureNum)
-                                f.TextureID = textures[textureNum];
- 
                             textureEntry.FaceTextures[face] = f;
                         }
 
-                        if(face_list.Count > 0)
-                        {
-                            int last = face_list.Count - 1;
-                            // we do need a better te compacting code
-                            textureEntry.DefaultTexture = textureEntry.FaceTextures[last];
-                            textureEntry.FaceTextures[last] = null;
-                            pbs.TextureEntry = textureEntry.GetBytes(last);
-                        }
+                        pbs.TextureEntry = textureEntry.GetBytes(face_list.Count);
 
                         Vector3 position = inner_instance_list["position"].AsVector3();
                         Quaternion rotation = inner_instance_list["rotation"].AsQuaternion();
@@ -2058,28 +2047,23 @@ namespace OpenSim.Region.ClientStack.Linden
                 return;
             }
 
-            OSDMap resp = new OSDMap();
-
-            bool fail = true;
-            IClientAPI client = null;
-            ScenePresence sp;
-            IGroupsModule m_GroupsModule;
+            OSDMap resp;
             UUID groupID = UUID.Zero;
 
             while(true)
             {
-                m_GroupsModule = m_Scene.RequestModuleInterface<IGroupsModule>();
+                IGroupsModule m_GroupsModule = m_Scene.RequestModuleInterface<IGroupsModule>();
                 if(m_GroupsModule == null)
                     break;
 
-                m_Scene.TryGetScenePresence(m_AgentID, out sp);
+                m_Scene.TryGetScenePresence(m_AgentID, out ScenePresence sp);
                 if(sp == null || sp.IsChildAgent || sp.IsDeleted)
                     break;
                 
                 if(sp.IsInTransit && !sp.IsInLocalTransit)
                     break;
 
-                client = sp.ControllingClient;
+                IClientAPI client = sp.ControllingClient;
 
                 OSDMap req;
                 try
@@ -2093,10 +2077,13 @@ namespace OpenSim.Region.ClientStack.Linden
                 }
 
                 OSD tmp;
-                if(!req.TryGetValue("group_id", out tmp) || !(tmp is OSDUUID))
+                if(!req.TryGetValue("group_id", out tmp) || tmp is not OSDUUID)
                     break;
 
                 groupID = tmp.AsUUID();
+                if(groupID.IsZero())
+                    groupID = sp.ControllingClient.ActiveGroupId;
+
                 if(groupID.IsZero())
                     break;
 
@@ -2110,44 +2097,63 @@ namespace OpenSim.Region.ClientStack.Linden
 
                 int memberCount = members.Count;
 
-                Dictionary<string,int> titles = new Dictionary<string,int>();
-                int i = 0;
-
-                ulong defaultPowers = 0;
-
+                Dictionary<string,int> titles = [];
+                Dictionary<ulong,int> powers = [];
 
                 // build titles array and index
                 roles.Sort(CompareRolesByMembersDesc);
 
-                OSDArray osdtitles = new OSDArray();
+                int i = 0;
+                OSDArray osdtitles = [];
                 foreach(GroupRolesData grd in roles)
                 {
-                    if(grd.Title == null)
-                        continue;
-                    string title = grd.Title;
-                    if(i==0)
-                        defaultPowers = grd.Powers;
+                    ref int powerentry = ref CollectionsMarshal.GetValueRefOrAddDefault(powers, grd.Powers, out bool _);
+                    powerentry++;
 
-                    if(!titles.ContainsKey(title))
+                    if(grd.Title == null)
                     {
-                        titles[title] = i++;
-                        osdtitles.Add(new OSDString(title));
+                        if(!titles.ContainsKey(string.Empty))
+                        {
+                            titles[string.Empty] = i++;
+                            osdtitles.Add(new OSDString(string.Empty));
+                        }
+                    }
+                    else if(!titles.ContainsKey(grd.Title))
+                    {
+                        titles[grd.Title] = i++;
+                        osdtitles.Add(new OSDString(grd.Title));
                     }
                 }
 
                 if(titles.Count == 0)
                     break;
 
-                OSDMap osdmembers = new OSDMap();
+                ulong defaultPowers = 0;
+                int maxPowers = -1;
+                foreach(KeyValuePair<ulong,int> kvp in powers)
+                {
+                    if (kvp.Value > maxPowers)
+                    {
+                        defaultPowers = kvp.Key;
+                        maxPowers = kvp.Value;
+                    }
+                }
+
+                OSDMap osdmembers = [];
                 foreach(GroupMembersData gmd in members)
                 {
-                    OSDMap m = new OSDMap();
+                    OSDMap m = [];
                     if(gmd.OnlineStatus != null && gmd.OnlineStatus != "")
                         m["last_login"] = new OSDString(gmd.OnlineStatus);
                     if(gmd.AgentPowers != defaultPowers)
                         m["powers"] = new OSDString((gmd.AgentPowers).ToString("X"));
-                    if(gmd.Title != null && titles.ContainsKey(gmd.Title) && titles[gmd.Title] != 0)
-                        m["title"] = new OSDInteger(titles[gmd.Title]);
+                    if(gmd.Title != null)
+                    { 
+                        if(titles.TryGetValue(gmd.Title, out int value) && value != 0)
+                            m["title"] = new OSDInteger(value);
+                    }
+                    else if(titles.TryGetValue(string.Empty, out int ovalue) && ovalue != 0)
+                        m["title"] = new OSDInteger(ovalue);
                     if(gmd.IsOwner)
                         m["owner"] = new OSDString("true");
                     if(gmd.Contribution != 0)
@@ -2156,30 +2162,35 @@ namespace OpenSim.Region.ClientStack.Linden
                     osdmembers[(gmd.AgentID).ToString()] = m;
                 }
 
-                OSDMap osddefaults = new OSDMap();
-                osddefaults["default_powers"] = new OSDString(defaultPowers.ToString("X"));
+                OSDMap osddefaults = new()
+                {
+                    ["default_powers"] = new OSDString(defaultPowers.ToString("X"))
+                };
 
-                resp["group_id"] = new OSDUUID(groupID);
-                resp["agent_id"] = new OSDUUID(m_AgentID);
-                resp["member_count"] = new OSDInteger(memberCount);
-                resp["defaults"] = osddefaults;
-                resp["titles"] = osdtitles;
-                resp["members"] = osdmembers;
+                 resp = new OSDMap
+                {
+                    ["group_id"] = new OSDUUID(groupID),
+                    ["agent_id"] = new OSDUUID(m_AgentID),
+                    ["member_count"] = new OSDInteger(memberCount),
+                    ["defaults"] = osddefaults,
+                    ["titles"] = osdtitles,
+                    ["members"] = osdmembers
+                };
 
-                fail = false;
-                break;
+                httpResponse.RawBuffer = Util.UTF8NBGetbytes(OSDParser.SerializeLLSDXmlString(resp));
+                httpResponse.StatusCode = (int)HttpStatusCode.OK;
+                return;
             }
 
-            if(fail)
+            resp = new()
             {
-                resp["group_id"] = new OSDUUID(groupID);
-                resp["agent_id"] = new OSDUUID(m_AgentID);
-                resp["member_count"] = new OSDInteger(0);
-                resp["defaults"] = new OSDMap();
-                resp["titles"] = new OSDArray();
-                resp["members"] = new OSDMap();
-            }
-
+                ["group_id"] = new OSDUUID(groupID),
+                ["agent_id"] = new OSDUUID(m_AgentID),
+                ["member_count"] = new OSDInteger(0),
+                ["defaults"] = new OSDMap(),
+                ["titles"] = new OSDArray(),
+                ["members"] = new OSDMap()
+            };
             httpResponse.RawBuffer = Util.UTF8NBGetbytes(OSDParser.SerializeLLSDXmlString(resp));
             httpResponse.StatusCode = (int)HttpStatusCode.OK;
         }

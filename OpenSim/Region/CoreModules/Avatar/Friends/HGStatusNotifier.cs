@@ -98,7 +98,6 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                     HGFriendsServicesConnector fConn = new(friendsServerURI);
 
                     List<UUID> friendsOnline = fConn.StatusNotification(new List<string> { friendID.ToString() }, userID, online);
-
                     if (friendsOnline.Count > 0)
                     {
                         IClientAPI client = m_FriendsModule.LocateClientObject(userID);

@@ -544,6 +544,13 @@ namespace OpenSim.Region.ScriptEngine.Yengine
                 MigrateInEventHandler(ms);
             }
 
+            XmlElement localHeapN = (XmlElement)scriptStateN.SelectSingleNode("LHeapUse");
+            if (localHeapN != null)
+                m_localsHeapUsed = int.Parse(localHeapN.InnerText);
+            //XmlElement stkN = (XmlElement)scriptStateN.SelectSingleNode("stkLft");
+            //if (stkN != null)
+            //    m_StackLeft = int.Parse(stkN.InnerText);
+
             XmlElement permissionsN = (XmlElement)scriptStateN.SelectSingleNode("Permissions");
             m_Item.PermsGranter = new UUID(permissionsN.GetAttribute("granter"));
             m_Item.PermsMask = Convert.ToInt32(permissionsN.GetAttribute("mask"));
@@ -884,17 +891,17 @@ namespace OpenSim.Region.ScriptEngine.Yengine
 
             lock (m_RunLock)
             {
-                glblVars.iarIntegers = (ints != null) ? ints : XMRInstArrays.noIntegers;
-                glblVars.iarFloats = (doubles != null) ? doubles : XMRInstArrays.noFloats;
-                glblVars.iarStrings = (strings != null) ? strings : XMRInstArrays.noStrings;
-                glblVars.iarVectors = (vectors != null) ? vectors : XMRInstArrays.noVectors;
-                glblVars.iarRotations = (rotations != null) ? rotations : XMRInstArrays.noRotations;
-                glblVars.iarLists = (lists != null) ? lists : XMRInstArrays.noLists;
-                glblVars.iarChars = XMRInstArrays.noChars;
-                glblVars.iarArrays = XMRInstArrays.noArrays;
-                glblVars.iarObjects = XMRInstArrays.noObjects;
-                glblVars.iarSDTClObjs = XMRInstArrays.noSDTClObjs;
-                glblVars.iarSDTIntfObjs = XMRInstArrays.noSDTIntfObjs;
+                glblVars.iarIntegers = ints ?? [];
+                glblVars.iarFloats = doubles ?? [];
+                glblVars.iarStrings = strings ?? [];
+                glblVars.iarVectors = vectors ?? [];
+                glblVars.iarRotations = rotations ?? [];
+                glblVars.iarLists = lists ?? [];
+                glblVars.iarChars = [];
+                glblVars.iarArrays = [];
+                glblVars.iarObjects = [];
+                glblVars.iarSDTClObjs = [];
+                glblVars.iarSDTIntfObjs = [];
             }
 
             lock (m_QueueLock)

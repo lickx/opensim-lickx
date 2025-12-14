@@ -64,7 +64,7 @@ namespace OpenSim.Region.Framework.Scenes
                 return;
             }
 
-            m_log.DebugFormat("Setting override for {0} to {1}", state, animID);
+            //m_log.DebugFormat("Setting override for {0} to {1}", state, animID);
 
             lock (MAOLock)
                 m_overrides[state] = animID;

@@ -43,7 +43,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
     {
         void state(string newState);
 
-                   //ApiDesc Returns absolute version as val (ie as postive value)
+                   //ApiDesc Returns absolute version as val (ie as positive value)
        LSL_Integer llAbs(LSL_Integer val);
                    //ApiDesc Returns cosine of val (val in radians)
          LSL_Float llAcos(LSL_Float val);
@@ -156,6 +156,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
         LSL_String llGetInventoryName(int type, int number);
        LSL_Integer llGetInventoryNumber(int type);
        LSL_Integer llGetInventoryPermMask(string item, int mask);
+        LSL_String llGetInventoryDesc(string name);
        LSL_Integer llGetInventoryType(string name);
            LSL_Key llGetKey();
            LSL_Key llGetLandOwnerAt(LSL_Vector pos);
@@ -264,6 +265,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
               void llListenControl(int number, int active);
               void llListenRemove(int number);
        LSL_Integer llListFindList(LSL_List src, LSL_List test);
+       LSL_Integer llListFindListNext(LSL_List src, LSL_List test, LSL_Integer instance);
        LSL_Integer llListFindStrided(LSL_List src, LSL_List test, LSL_Integer lstart, LSL_Integer lend, LSL_Integer lstride);
           LSL_List llListInsertList(LSL_List dest, LSL_List src, int start);
           LSL_List llListRandomize(LSL_List src, int stride);
@@ -283,6 +285,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
               void llMakeFire(int particles, double scale, double vel, double lifetime, double arc, string texture, LSL_Vector offset);
               void llMakeFountain(int particles, double scale, double vel, double lifetime, double arc, int bounce, string texture, LSL_Vector offset, double bounce_offset);
               void llMakeSmoke(int particles, double scale, double vel, double lifetime, double arc, string texture, LSL_Vector offset);
+              void llMapBeacon(string simname, LSL_Vector pos, LSL_List loptions);
               void llMapDestination(string simname, LSL_Vector pos, LSL_Vector look_at);
         LSL_String llMD5String(string src, int nonce);
         LSL_String llSHA1String(string src);
@@ -326,10 +329,12 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
               void llRemoveVehicleFlags(int flags);
            LSL_Key llRequestUserKey(LSL_String username);
            LSL_Key llRequestAgentData(string id, int data);
+          LSL_List llGetVisualParams(string id, LSL_List visualparams);
            LSL_Key llRequestInventoryData(LSL_String name);
               void llRequestPermissions(string agent, int perm);
            LSL_Key llRequestSecureURL();
            LSL_Key llRequestSimulatorData(string simulator, int data);
+         LSL_Float llGetSimStats(LSL_Integer stat_type);
            LSL_Key llRequestURL();
               void llResetLandBanList();
               void llResetLandPassList();
@@ -372,6 +377,7 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
               void llSetColor(LSL_Vector color, int face);
               void llSetContentType(LSL_Key id, LSL_Integer type);
               void llSetDamage(double damage);
+        LSL_Float llGetHealth(LSL_String key);
               void llSetForce(LSL_Vector force, int local);
               void llSetForceAndTorque(LSL_Vector force, LSL_Vector torque, int local);
               void llSetVelocity(LSL_Vector vel, int local);
@@ -466,7 +472,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
         LSL_String llXorBase64StringsCorrect(string str1, string str2);
        LSL_Integer llGetLinkNumberOfSides(LSL_Integer link);
               void llSetPhysicsMaterial(int material_bits, LSL_Float material_gravity_modifier, LSL_Float material_restitution, LSL_Float material_friction, LSL_Float material_density);
-
               void SetPrimitiveParamsEx(LSL_Key prim, LSL_List rules, string originFunc);
               void llSetKeyframedMotion(LSL_List frames, LSL_List options);
           LSL_List GetPrimitiveParamsEx(LSL_Key prim, LSL_List rules);
@@ -479,7 +484,6 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
         LSL_String llList2Json(LSL_String type, LSL_List values);
         LSL_String llJsonSetValue(LSL_String json, LSL_List specifiers, LSL_String value);
         LSL_String llJsonValueType(LSL_String json, LSL_List specifiers);
-
 
         LSL_Integer llGetDayLength();
         LSL_Integer llGetRegionDayLength();
@@ -529,6 +533,10 @@ namespace OpenSim.Region.ScriptEngine.Shared.Api.Interfaces
          LSL_String llGetStartString();
         LSL_Integer llGetLinkSitFlags(LSL_Integer linknum);
                void llSetLinkSitFlags(LSL_Integer linknum, LSL_Integer flags);
-
+         LSL_String llHMAC(LSL_String private_key, LSL_String message, LSL_String algo);
+         LSL_String llComputeHash(LSL_String message, LSL_String algo);
+         LSL_String llGetRenderMaterial(LSL_Integer face);
+        LSL_Integer llIsLinkGLTFMaterial(LSL_Integer linknum, LSL_Integer face);
+         LSL_Vector llWorldPosToHUD(LSL_Vector WorldPosition);
     }
 }

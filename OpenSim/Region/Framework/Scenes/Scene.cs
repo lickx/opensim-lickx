@@ -162,13 +162,6 @@ namespace OpenSim.Region.Framework.Scenes
         }
         private bool m_scripts_enabled;
 
-        public bool ClampNegativeZ
-        {
-            get { return m_clampNegativeZ; }
-        }
-
-        private readonly bool m_clampNegativeZ = false;
-
         /// <summary>
         /// Used to prevent simultaneous calls to code that adds and removes agents.
         /// </summary>
@@ -999,8 +992,6 @@ namespace OpenSim.Region.Framework.Scenes
                     m_clampPrimSize = true;
                 }
 
-                m_clampNegativeZ = startupConfig.GetBoolean("ClampNegativeZ", m_clampNegativeZ);
-
                 m_useTrashOnDelete = startupConfig.GetBoolean("UseTrashOnDelete",m_useTrashOnDelete);
                 m_trustBinaries = startupConfig.GetBoolean("TrustBinaries", m_trustBinaries);
                 m_allowScriptCrossings = startupConfig.GetBoolean("AllowScriptCrossing", m_allowScriptCrossings);
@@ -1129,7 +1120,7 @@ namespace OpenSim.Region.Framework.Scenes
             IConfig restartConfig = config.Configs["RestartModule"];
             if (restartConfig is not null)
             {
-                string markerPath = restartConfig.GetString("MarkerPath", String.Empty);
+                string markerPath = restartConfig.GetString("MarkerPath", string.Empty);
                 if (!string.IsNullOrEmpty(markerPath))
                 {
                     string path = Path.Combine(markerPath, RegionInfo.RegionID.ToString() + ".started");
@@ -1808,7 +1799,7 @@ namespace OpenSim.Region.Framework.Scenes
                             IConfig restartConfig = m_config.Configs["RestartModule"];
                             if (restartConfig is not null)
                             {
-                                string markerPath = restartConfig.GetString("MarkerPath", String.Empty);
+                                string markerPath = restartConfig.GetString("MarkerPath", string.Empty);
 
                                 if (!string.IsNullOrEmpty(markerPath))
                                 {
@@ -1870,7 +1861,7 @@ namespace OpenSim.Region.Framework.Scenes
 
                 // sleep if we can
                 if (nowMS > 0)
-                    {
+                {
                     Thread.Sleep((int)(nowMS + 0.5));
 
                     nowMS = Util.GetTimeStampMS();
@@ -1878,21 +1869,21 @@ namespace OpenSim.Region.Framework.Scenes
                     sleepError = sleepMS - frameMS;
                     sleepError = Math.Clamp(sleepError, 0.0f, 20f);
                     frameMS = (float)(nowMS - framestart);
-                    }
+                }
                 else
-                    {
+                {
                     nowMS = Util.GetTimeStampMS();
                     frameMS = (float)(nowMS - framestart);
                     sleepMS = 0.0f;
                     sleepError = 0.0f;
-                    }
+                }
 
                 // script time is not scene frame time, but is displayed per frame
                 float scriptTimeMS = GetAndResetScriptExecutionTime();
                 StatsReporter.AddFrameStats(TimeDilation, physicsFPS, agentMS,
                              physicsMS + physicsMS2, otherMS , sleepMS, frameMS, scriptTimeMS);
 
-          // Optionally warn if a frame takes double the amount of time that it should.
+                // Optionally warn if a frame takes double the amount of time that it should.
                 if (DebugUpdates
                     && Util.EnvironmentTickCountSubtract(
                         m_lastFrameTick, previousFrameTick) > (int)(FrameTime * 1000 * 2))
@@ -2367,7 +2358,7 @@ namespace OpenSim.Region.Framework.Scenes
             Vector3 dir = RayEnd - RayStart;
 
             float wheight = (float)RegionInfo.RegionSettings.WaterHeight;
-            Vector3 wpos = Vector3.Zero;
+            Vector3 wpos = new(0.0f, 0.0f, Constants.MinSimulationHeight);
             // Check for water surface intersection from above
             if ((RayStart.Z > wheight) && (RayEnd.Z < wheight))
             {
@@ -2543,9 +2534,6 @@ namespace OpenSim.Region.Framework.Scenes
 
             if (Permissions.CanRezObject(1, ownerID, pos))
             {
-                // rez ON the ground, not IN the ground
-                // pos.Z += 0.25F; The rez point should now be correct so that its not in the ground
-
                 AddNewPrim(ownerID, groupID, pos, rot, shape, addFlags);
             }
             else
@@ -3628,7 +3616,8 @@ namespace OpenSim.Region.Framework.Scenes
 
             if (target is not null && target2 is not null)
             {
-                Vector3 direction = Vector3.Normalize(RayEnd - RayStart);
+                Vector3 direction = RayEnd - RayStart;
+                direction.Normalize();
 
                 //pos = target2.AbsolutePosition;
                 //m_log.Info("[OBJECT_REZ]: TargetPos: " + pos.ToString() + ", RayStart: " + RayStart.ToString() + ", RayEnd: " + RayEnd.ToString() + ", Volume: " + Util.GetDistanceTo(RayStart,RayEnd).ToString() + ", mag1: " + Util.GetMagnitude(RayStart).ToString() + ", mag2: " + Util.GetMagnitude(RayEnd).ToString());
@@ -3636,7 +3625,7 @@ namespace OpenSim.Region.Framework.Scenes
                 // TODO: Raytrace better here
 
                 //EntityIntersection ei = m_sceneGraph.GetClosestIntersectingPrim(new Ray(AXOrigin, AXdirection));
-                Ray NewRay = new(RayStart,direction);
+                Ray NewRay = new(RayStart, direction);
 
                 // Ray Trace against target here
                 EntityIntersection ei = target2.TestIntersectionOBB(NewRay, Quaternion.Identity, frontFacesOnly, CopyCenters);
@@ -4370,7 +4359,6 @@ namespace OpenSim.Region.Framework.Scenes
                 {
                     m_log.WarnFormat("[CONNECTION BEGIN]: Denied access to: {0} ({1} {2}) at {3} because: {4}",
                                      agent.AgentID, agent.firstname, agent.lastname, RegionInfo.RegionName, reason);
-
                     return false;
                 }
             }
@@ -4784,7 +4772,7 @@ Label_GroupsDone:
             {
                 sp = GetScenePresence(agentID);
 
-                if (sp is null)
+                if (sp is null || sp.IsDeleted)
                 {
                     // If there is no scene presence, we may be handling a dead
                     // client. These can keep an avatar from reentering a region
@@ -4801,7 +4789,7 @@ Label_GroupsDone:
 
                     // need to try this again, bc client close may had not done it
                     m_authenticateHandler?.RemoveCircuit(agentID);
-                    m_clientManager.Remove(agentID);
+                    m_clientManager?.Remove(agentID);
                     m_capsModule?.RemoveCaps(agentID, 0);
 
                     return ret;

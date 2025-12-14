@@ -145,7 +145,7 @@ namespace OpenSim.Framework
                 }
                 else // New style version contains no spaces, just version number
                 {
-                    return $"{Channel}  {m_viewerInternal}";
+                    return $"{Channel} {m_viewerInternal}";
                 }
             }
         }
@@ -372,7 +372,7 @@ namespace OpenSim.Framework
                 OSDMap urls = (OSDMap)tmpOSD;
                 foreach (KeyValuePair<String, OSD> kvp in urls)
                 {
-                    ServiceURLs[kvp.Key] = kvp.Value;
+                    ServiceURLs[kvp.Key] = kvp.Value.AsString();
                     //System.Console.WriteLine("XXX " + kvp.Key + "=" + ServiceURLs[kvp.Key]);
                 }
             }

@@ -1787,7 +1787,6 @@ namespace OpenSim.Region.CoreModules.World.Land
             {
                 try
                 {
-
                     foreach (SceneObjectGroup obj in primsOverMe)
                     {
                         if (!ownersAndCount.ContainsKey(obj.OwnerID))

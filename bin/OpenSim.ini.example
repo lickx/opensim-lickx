@@ -241,37 +241,30 @@
 
     ;; Select a mesher here.
     ;;
-    ;# {meshing} {} {Select mesher} {Meshmerizer ZeroMesher} Meshmerizer
+    ;# {meshing} {} {Select mesher} {Meshmerizer ZeroMesher} ubODEMeshmerizer
     ;; ZeroMesher is faster but leaves the physics engine to model the mesh
     ;; using the basic shapes that it supports.
-    ;; Usually this is only a box.
-    ;; Default is Meshmerizer
+    ;; Usually this is only a box or a sphere
+    ;; Default is ubODEMeshmerizer
     ; meshing = Meshmerizer
     ; meshing = ZeroMesher
-    ;; select ubODEMeshmerizer only with ubOde physics engine
+    ;; With ubOde physics engine you must select ubODEMeshmerizer
     ; meshing = ubODEMeshmerizer
 
     ;; Choose one of the physics engines below
-    ;# {physics} {} {Select physics engine} {OpenDynamicsEngine BulletSim basicphysics POS} BulletSim
-    ;; BulletSim is the default physics engine.  It provides the best performance and most functionality.
-    ;; BulletSim supports varregions.
-    ;; OpenDynamicsEngine was the previous default physics engine in OpenSimulator 0.7.6.1 and before.
-    ;; It continues to provide a workable physics implementation.  It does not currently support varregions.
-    ;; basicphysics effectively does not model physics at all, making all objects phantom.
-    ;; Default is BulletSim
+    ;# {physics} {} {Select physics engine} {OpenDynamicsEngine BulletSim basicphysics POS} ubODE
+    ;; Default is ubODE
     ; physics = BulletSim
     ; physics = basicphysics
     ; physics = POS
-    ;; alternative OpenDynamicsEngine engine. ubODEMeshmerizer meshing above MUST be selected also
     ; physics = ubODE
 
     ; ubODE does allocate a lot of memory on stack. On linux you may need to increase its limit
     ; script opensim-ode-sh starts opensim setting that limit. You may need to increase it even more on large regions
     ; edit the line ulimit -s 262144, and change this last value
 
-    ;# {DefaultScriptEngine} {} {Default script engine} {YEngine} YEngine
-    ;; Default script engine to use (We only have YEngine; XEngine is EOL)
-    ;; see section [YEngine] below
+    ;# {DefaultScriptEngine} {} {Default script engine} {YEngine}
+    ;; Default script engine to use. Currently, we only have YEngine
     ; DefaultScriptEngine = "YEngine"
 
     ;# {HttpProxy} {} {Proxy URL for llHTTPRequest and dynamic texture loading} {} http://proxy.com:8080
@@ -398,10 +391,10 @@
     ; DeniedClients = ""
 
     ; It is strongly recommended to block at least these viewers by uncommenting ;DeniedClients below:
-    ; The first 6 viewers are problematic/bugged official Firestorm releases,
-    ; the last 4 viewers are copybots pretending to be (a very outdated) Firestorm
-    ; The + is absolutely needed after the space before the version (it means 'one or more spaces')
-    ;DeniedClients = "Firestorm-Releasex64 +4.7.7.48706|Firestorm-Release +4.7.7.48706|Firestorm-Releasex64 +6.6.8.68380|Firestorm-Release +6.6.8.68380|Firestorm-Releasex64 +6.6.16.70339|Firestorm-Release +6.6.16.70339|Firestorm-Releasex64 +4.6.8.42696|Firestorm-Release +4.6.8.42696|Firestorm-Releasex64 +6.4.13.63251|Firestorm-Release +6.4.13.63251"
+    ; The first 4 viewers are problematic/bugged official Firestorm releases,
+    ; the last 7 viewers are copybots pretending to be (a very outdated) Firestorm and Singularity
+    ; The + is needed for older OpenSim versions (<0.9.3.1), after the space before the version (it means 'one or more spaces')
+    ; DeniedClients = "Firestorm-Release(x64)? +4.7.7.48706|Firestorm-Release(x64)? +6.6.8.68380|Firestorm-Release(x64)? +6.6.16.70339|Firestorm-Releasex64 +7.1.9.74745|Firestorm-Release(x64)? +6.2.0|Firestorm-Release(x64)? +4.6.8.42696|Firestorm-Release(x64)? +6.3.2.58086|Firestorm-Release(x64)? +6.3.8.58105|Firestorm-Release(x64)? +6.4.13.63251|Firestorm-Release(x64)? +6.4.23.64823|Singularity Alpha( 64)? +1.8.7.7610"
 
     ;# {ViewerDeniedMsg} {} {A message string} {"Access denied, your viewer is banned"}
     ; The message people see who attempt to teleport with a denied viewer
@@ -500,13 +493,6 @@
 
     ;; This allows some control over permissions
     ;; please note that this still doesn't duplicate SL, and is not intended to
-    ;# {region_owner_is_god} {} {Allow region owner gods} {true false} false
-    ;; Allow region owners to assume god powers in their regions
-    ; region_owner_is_god = false
-
-    ;# {region_manager_is_god} {} {Allow region manager gods} {true false} false
-    ;; Allow region managers to assume god powers in regions they manage
-    ; region_manager_is_god = false
 
     ;# {simple_build_permissions} {} {Allow building in parcel by access list (no groups)} {true false} false
     ;; More control over permissions
@@ -518,7 +504,8 @@
     ;; without having to use the Groups feature
     ; simple_build_permissions = false
 
-    ; Disallow "take copy" of ANY object set as "Allow anyone to take a copy"
+    ;# {take_copy_restricted} {} {Disallow "take copy"} {true false} false
+    ;; Disallow "take copy" of ANY object set as "Allow anyone to take a copy"
     ;take_copy_restricted = false
 
 [Estates]

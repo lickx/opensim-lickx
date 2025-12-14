@@ -602,7 +602,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 }
                 else
                 {
-
                     double invLength = 1.0 / Math.Sqrt(lengthsq);
                     x *= invLength;
                     y *= invLength;
@@ -802,6 +801,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
             public int Length
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     if (m_data is null)
@@ -860,12 +860,13 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
             public object[] Data
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     m_data ??= new object[0];
                     return m_data;
                 }
-
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 set { m_data = value; }
             }
 
@@ -878,6 +879,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
             /// </remarks>
             /// <returns></returns>
             /// <param name='itemIndex'></param>
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Type GetLSLListItemType(int itemIndex)
             {
                 return Data[itemIndex].GetType();
@@ -906,7 +908,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                     return new LSL_Types.LSLFloat(io);
                 if (o is float fo)
                     return new LSL_Types.LSLFloat(fo);
-                if (o is Double dov)
+                if (o is double dov)
                     return new LSL_Types.LSLFloat(dov);
                 if (o is LSL_Types.LSLString lso)
                     return new LSL_Types.LSLFloat(lso.m_string);
@@ -1004,7 +1006,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
                     typeof(LSL_Types.LSLString).Name,
                     o is not null ? o.GetType().Name : "null"));
             }
-
 
             public LSL_Types.LSLInteger GetLSLIntegerItem(int itemIndex)
             {
@@ -1105,6 +1106,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                         Data[itemIndex].GetType().Name : "null"));
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public LSL_Types.key GetKeyItem(int itemIndex)
             {
                 return (LSL_Types.key)Data[itemIndex];
@@ -1137,12 +1139,14 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
             public object this[int i]
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get
                 {
                     if(m_data is null || i >= m_data.Length)
                         return null;
                     return m_data[i];
                 }
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 set
                 {
                     if (m_data is null || i >= m_data.Length)
@@ -1151,6 +1155,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static implicit operator Boolean(list l)
             {
                 return l.Length != 0;
@@ -1174,6 +1179,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 return a;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool operator ==(list a, list b)
             {
                 if (b is null)
@@ -1181,6 +1187,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 return a is not null && a.Length == b.Length;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public static bool operator !=(list a, list b)
             {
                 if (b is null)
@@ -1291,7 +1298,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
             public list GetSublist(int start, int end)
             {
-
                 object[] ret;
 
                 // Take care of neg start or end's
@@ -1315,7 +1321,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
                 if (start <= end)
                 {
-
                     // Start sublist beyond length
                     // Also deals with start AND end still negative
                     if (start >= Data.Length || end < 0)
@@ -1330,7 +1335,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
                         start = 0;
 
                     ret = new object[end - start + 1];
-
                     Array.Copy(Data, start, ret, 0, end - start + 1);
 
                     return new list(ret);
@@ -1341,9 +1345,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
                 else
                 {
-
                     list result;
-
                     // If end is negative, then prefix list is empty
                     if (end < 0)
                     {
@@ -1369,8 +1371,107 @@ namespace OpenSim.Region.ScriptEngine.Shared
                     }
 
                     return result + GetSublist(start, Data.Length);
-
                 }
+            }
+
+            // compare for ??ListFindList* functions
+            public static bool ListFind_areEqual(object l, object r)
+            {
+                if (l is null || r is null)
+                    return false;
+
+                if (l is LSLInteger lli)
+                {
+                    if (r is LSLInteger rli)
+                        return lli.value == rli.value;
+                    if (r is int ri)
+                        return lli.value == ri;
+                    return false;
+                    }
+
+                if (l is int li)
+                {
+                    if (r is LSLInteger rli)
+                        return li == rli.value;
+                    if (r is int ri)
+                        return li == ri;
+                    return false;
+                    }
+
+                if (l is LSLFloat llf)
+                {
+                    if (r is LSLFloat rlf)
+                        return llf.value == rlf.value;
+                    if (r is float rf)
+                        return llf.value == (double)rf;
+                    if (r is double rd)
+                        return llf.value == rd;
+                    return false;
+                    }
+                if (l is double ld)
+                {
+                    if (r is LSL_Types.LSLFloat rlf)
+                        return ld == rlf.value;
+                    if (r is float rf)
+                        return ld == (double)rf;
+                    if (r is double rd)
+                        return ld == rd;
+                    return false;
+                    }
+                if (l is float lf)
+                {
+                    if (r is LSLFloat rlf)
+                        return lf == (float)rlf.value;
+                    if (r is float rf)
+                        return lf == rf;
+                    if (r is double rd)
+                            return lf == (float)rd;
+                    return false;
+                    }
+
+                if (l is LSLString lls)
+                {
+                    if (r is LSLString rls)
+                        return lls.m_string.Equals(rls.m_string, StringComparison.Ordinal);
+                    if (r is string rs)
+                        return lls.m_string.Equals(rs, StringComparison.Ordinal);
+                        return false;
+                    }
+
+                if (l is string ls)
+                {
+                    if (r is LSLString rls)
+                        return ls.Equals(rls.m_string, StringComparison.Ordinal);
+                    if (r is string rs)
+                        return ls.Equals(rs, StringComparison.Ordinal);
+                    if (r is LSL_Types.key rlk)
+                        return ls.Equals(rlk.value, StringComparison.OrdinalIgnoreCase);
+                    return false;
+                }
+
+                if(l is key llk)
+                {
+                    if (r is key rlk)
+                        return llk.value.Equals(rlk.value, StringComparison.OrdinalIgnoreCase);
+                    if (r is string rk)
+                        return llk.value.Equals(rk, StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (l is Vector3 llv)
+                {
+                    if(r is Vector3 rlv)
+                        return llv.Equals(rlv);
+                    return false;
+                }
+
+                if (l is Quaternion llr)
+                {
+                    if(r is Quaternion rlr)
+                        return llr.Equals(rlr);
+                    return false;
+                }
+
+                return false;
             }
 
             private static int compare(object left, object right, bool ascending)
@@ -1859,9 +1960,9 @@ namespace OpenSim.Region.ScriptEngine.Shared
             public string ToCSV()
             {
                 if (m_data is null || m_data.Length == 0)
-                    return String.Empty;
+                    return string.Empty;
 
-                Object o = m_data[0];
+                object o = m_data[0];
                 int len = m_data.Length;
                 if (len == 1)
                     return o.ToString();
@@ -1879,7 +1980,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
             private string ToSoup()
             {
                 if (m_data is null || m_data.Length == 0)
-                    return String.Empty;
+                    return string.Empty;
 
                 StringBuilder sb = osStringBuilderCache.Acquire();
                 foreach (object o in m_data)
@@ -2134,6 +2235,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 }
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override bool Equals(object o)
             {
                 if (o is list lo)
@@ -2141,6 +2243,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 return false;
             }
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public override int GetHashCode()
             {
                 return Data.GetHashCode();
@@ -2310,7 +2413,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
                 }
             }
 
-            static public implicit operator String(LSLString s)
+            static public implicit operator string(LSLString s)
             {
                 return s.m_string;
             }
@@ -2548,7 +2651,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
                     value = 0;
                 }
             }
-
             #endregion
 
             #region Operators
@@ -3030,7 +3132,7 @@ namespace OpenSim.Region.ScriptEngine.Shared
 
             public override string ToString()
             {
-                return String.Format(Culture.FormatProvider, "{0:0.000000}", this.value);
+                return string.Format(Culture.FormatProvider, "{0:0.000000}", this.value);
             }
 
             public override bool Equals(Object o)
@@ -3044,7 +3146,6 @@ namespace OpenSim.Region.ScriptEngine.Shared
             {
                 return value.GetHashCode();
             }
-
 
             #endregion
         }

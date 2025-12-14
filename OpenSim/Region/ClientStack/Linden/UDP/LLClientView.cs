@@ -51,6 +51,7 @@ using AssetLandmark = OpenSim.Framework.AssetLandmark;
 using Caps = OpenSim.Framework.Capabilities.Caps;
 using PermissionMask = OpenSim.Framework.PermissionMask;
 using RegionFlags = OpenMetaverse.RegionFlags;
+using System.Linq;
 
 namespace OpenSim.Region.ClientStack.LindenUDP
 {
@@ -409,10 +410,9 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             set { m_startpos = value; }
         }
         public float StartFar { get; set; }
-        public float FOV { get; set; } = 1.25f;
+        public float FOV { get; set; } = 1.04f;
         public int viewHeight { get; set; } = 480;
         public int viewWidth { get; set; } = 640;
-
 
         public UUID AgentId { get { return m_agentId; } }
         public UUID ScopeId { get { return m_scopeId; } }
@@ -874,7 +874,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 //0xff, 0xff, 0, 148 // ID 148 (low frequency bigendian)
                 0xff, 0xff, 0, 1, 148 // ID 148 (low frequency bigendian) zero encoded
                 };
-
 
         public void SendRegionHandshake()
         {
@@ -3195,8 +3194,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             OutPacket(viewertime, ThrottleOutPacketType.Task);
         }
 
-
-
         public void SendViewerEffect(ViewerEffectPacket.EffectBlock[] effectBlocks)
         {
             ViewerEffectPacket packet = (ViewerEffectPacket)PacketPool.Instance.GetPacket(PacketType.ViewerEffect);
@@ -3409,7 +3406,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             eq.Enqueue(BuildEvent("ObjectPhysicsProperties", llsdBody),m_agentId);
             */
         }
-
 
         public void SendPartPhysicsProprieties(ISceneEntity entity)
         {
@@ -3687,14 +3683,15 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             OutPacket(reply, ThrottleOutPacketType.Land);
         }
 
-        public void SendScriptTeleportRequest(string objName, string simName, Vector3 pos, Vector3 lookAt)
+        public void SendScriptTeleportRequest(string objName, string simName, Vector3 pos, int options)
         {
             ScriptTeleportRequestPacket packet = (ScriptTeleportRequestPacket)PacketPool.Instance.GetPacket(PacketType.ScriptTeleportRequest);
-
+            packet.Header.Zerocoded = true;
             packet.Data.ObjectName = Utils.StringToBytes(objName);
             packet.Data.SimName = Utils.StringToBytes(simName);
             packet.Data.SimPosition = pos;
-            packet.Data.LookAt = lookAt;
+            packet.Data.LookAt = Vector3.Zero;
+            packet.Options = options == 3 ? [] : [ new(){Flags = (uint)options } ];
 
             OutPacket(packet, ThrottleOutPacketType.Task);
         }
@@ -4183,7 +4180,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             an.Data = new AvatarNotesReplyPacket.DataBlock
             {
                 TargetID = targetID,
-                Notes = Utils.StringToBytes(text)
+                Notes = Utils.StringToBytes(text, 1022)
             };
 
             OutPacket(an, ThrottleOutPacketType.Task);
@@ -4199,17 +4196,29 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 TargetID = targetID
             };
 
-            ap.Data = new AvatarPicksReplyPacket.DataBlock[picks.Count];
+            if(picks.Count > 0)
+            { 
+                List<KeyValuePair<UUID, string>> spicks = picks.ToList();
+                spicks.Sort((a,b) => string.Compare(a.Value, b.Value));
 
-            int i = 0;
-            foreach (KeyValuePair<UUID, string> pick in picks)
-            {
-                ap.Data[i++] = new AvatarPicksReplyPacket.DataBlock
+                int npicks = spicks.Count > Constants.MaxProfilePicks ? Constants.MaxProfilePicks : spicks.Count;
+                int maxtrlen = (LLUDPServer.MTU - 128) / npicks - 1;
+                if( maxtrlen > 128)
+                    maxtrlen = 128;
+
+                ap.Data = new AvatarPicksReplyPacket.DataBlock[npicks];
+                for(int i = 0; i < npicks; ++i)
                 {
-                    PickID = pick.Key,
-                    PickName = Utils.StringToBytes(pick.Value)
-                };
+                    KeyValuePair<UUID, string> pick = spicks[i];
+                    ap.Data[i] = new AvatarPicksReplyPacket.DataBlock
+                    {
+                        PickID = pick.Key,
+                        PickName = Utils.StringToBytes(pick.Value, maxtrlen)
+                    };
+                }
             }
+            else
+                ap.Data = [];
 
             OutPacket(ap, ThrottleOutPacketType.Task);
         }
@@ -4323,7 +4332,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             OutPacket(muteListUpdate, ThrottleOutPacketType.Task);
         }
 
-        public void SendPickInfoReply(UUID pickID, UUID creatorID, bool topPick, UUID parcelID, string name, string desc, UUID snapshotID, string user, string originalName, string simName, Vector3 posGlobal, int sortOrder, bool enabled)
+        public void SendPickInfoReply(UUID pickID, UUID creatorID, bool topPick, UUID parcelID, string name, string desc, UUID snapshotID, string user, string originalName, string simName, Vector3d posGlobal, int sortOrder, bool enabled)
         {
             PickInfoReplyPacket pickInfoReply = (PickInfoReplyPacket)PacketPool.Instance.GetPacket(PacketType.PickInfoReply);
 
@@ -4335,13 +4344,13 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 CreatorID = creatorID,
                 TopPick = topPick,
                 ParcelID = parcelID,
-                Name = Utils.StringToBytes(name),
-                Desc = Utils.StringToBytes(desc),
+                Name = Utils.StringToBytes(name, 128),
+                Desc = Utils.StringToBytes(desc, 1022),
                 SnapshotID = snapshotID,
-                User = Utils.StringToBytes(user),
-                OriginalName = Utils.StringToBytes(originalName),
+                User = Utils.StringToBytes(user, 128), // 64?
+                OriginalName = Utils.StringToBytes(originalName, 128),
                 SimName = Utils.StringToBytes(simName),
-                PosGlobal = new Vector3d(posGlobal),
+                PosGlobal = posGlobal,
                 SortOrder = sortOrder,
                 Enabled = enabled
             };
@@ -7531,8 +7540,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 zc.AddShortLimitedUTF8(osUTF8PartText);
 
                 //textcolor
-                byte[] tc = part.GetTextColor().GetBytes(false);
-                zc.AddBytes(tc, 4);
+                zc.AddColorArgb(part.TextColorArgb());
             }
 
             //media url
@@ -7952,7 +7960,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
             else
                 BlockLengh += extraParamBytes.Length;
 
-            byte[] hoverTextColor = null;
             osUTF8 osUTF8PartText = part.osUTF8Text;
             if (osUTF8PartText != null && osUTF8PartText.Length > 0)
             {
@@ -7960,8 +7967,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 BlockLengh += osUTF8PartText.Length;
                 if (osUTF8PartText[^1] != 0)
                     ++BlockLengh;
-                hoverTextColor = part.GetTextColor().GetBytes(false);
-                BlockLengh += hoverTextColor.Length;
+                BlockLengh += 4;
                 hastext = true;
             }
 
@@ -8047,7 +8053,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                     pathScaleY = 150;
             }
 
-
             // first is primFlags
             zc.AddUInt((uint)primflags);
 
@@ -8089,7 +8094,8 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 zc.AddBytes(osUTF8PartText.GetArray(), osUTF8PartText.Length);
                 if (osUTF8PartText[^1] != 0)
                     zc.AddZeros(1);
-                zc.AddBytes(hoverTextColor, hoverTextColor.Length);
+
+                zc.AddColorArgb(part.TextColorArgb());
             }
             if (hasmediaurl)
             {
@@ -8522,7 +8528,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 )
                 return true;
 
-            float qdelta = MathF.Abs(x.BodyRotation.Dot(m_thisAgentUpdateArgs.BodyRotation));
+            float qdelta = MathF.Abs(x.BodyRotation.Dot(ref m_thisAgentUpdateArgs.BodyRotation));
             return qdelta < QDELTABody; // significant if body rotation above(below cos) threshold
         }
 
@@ -9306,7 +9312,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                         avSetStartLocationRequestPacket.StartLocationData.LocationPos.Y = avatar.AbsolutePosition.Y;
                     }
                 }
-
             }
             c.OnSetStartLocationRequest?.Invoke(c, 0, avSetStartLocationRequestPacket.StartLocationData.LocationPos,
                                                 avSetStartLocationRequestPacket.StartLocationData.LocationLookAt,
@@ -9551,7 +9556,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                             bool IsPhantom = (data[48] != 0) ? true : false;
                             handlerUpdatePrimFlags(flags.AgentData.ObjectLocalID, UsePhysics, IsTemporary, IsPhantom, this);
                 */
-        bool UsePhysics = flags.AgentData.UsePhysics;
+            bool UsePhysics = flags.AgentData.UsePhysics;
             bool IsPhantom = flags.AgentData.IsPhantom;
             bool IsTemporary = flags.AgentData.IsTemporary;
             ObjectFlagUpdatePacket.ExtraPhysicsBlock[] blocks = flags.ExtraPhysics;
@@ -11191,7 +11196,6 @@ namespace OpenSim.Region.ClientStack.LindenUDP
         private static void HandleGetScriptRunning(LLClientView c, Packet Pack)
         {
             GetScriptRunningPacket scriptRunning = (GetScriptRunningPacket)Pack;
-
             c.OnGetScriptRunning?.Invoke(c, scriptRunning.Script.ObjectID, scriptRunning.Script.ItemID);
         }
 
@@ -11679,13 +11683,14 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 for (int i = 0; i < blockCount; i++)
                 {
                     GroupMembersData m = members[indx++];
+
                     groupMembersReply.MemberData[i] = new GroupMembersReplyPacket.MemberDataBlock
                     {
                         AgentID = m.AgentID,
                         Contribution = m.Contribution,
                         OnlineStatus = Util.StringToBytes256(m.OnlineStatus),
                         AgentPowers = m.AgentPowers,
-                        Title = Util.StringToBytes256(m.Title),
+                        Title = m.Title == null ? [] : Util.StringToBytes256(m.Title),
                         IsOwner = m.IsOwner
                     };
                 }
@@ -11719,7 +11724,7 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                 {
                     RoleID = d.RoleID,
                     Name = Util.StringToBytes256(d.Name),
-                    Title = Util.StringToBytes256(d.Title),
+                    Title =  d.Title == null ? [] : Util.StringToBytes256(d.Title),
                     Description = Util.StringToBytes1024(d.Description),
                     Powers = d.Powers,
                     Members = (uint)d.Members
@@ -12094,13 +12099,21 @@ namespace OpenSim.Region.ClientStack.LindenUDP
 
         private static void HandlePickInfoUpdate(LLClientView c, Packet Pack)
         {
+            if(c.OnPickInfoUpdate is null)
+                return;
             PickInfoUpdatePacket pickInfoUpdate = (PickInfoUpdatePacket)Pack;
+            string name = Utils.BytesToString(pickInfoUpdate.Data.Name);
+            if(name.Length > 128)
+                name = name[..128];
+            string desc = Utils.BytesToString(pickInfoUpdate.Data.Desc);
+            if(desc.Length > 1022)
+                desc = desc[..1022];
             c.OnPickInfoUpdate?.Invoke(c,
                         pickInfoUpdate.Data.PickID,
                         pickInfoUpdate.Data.CreatorID,
                         pickInfoUpdate.Data.TopPick,
-                        Utils.BytesToString(pickInfoUpdate.Data.Name),
-                        Utils.BytesToString(pickInfoUpdate.Data.Desc),
+                        name,
+                        desc,
                         pickInfoUpdate.Data.SnapshotID,
                         pickInfoUpdate.Data.SortOrder,
                         pickInfoUpdate.Data.Enabled);

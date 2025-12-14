@@ -1,0 +1,1 @@
+0 * * * * wget -q --spider https://example.com/helper/search/parser.php

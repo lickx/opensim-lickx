@@ -1396,7 +1396,8 @@ namespace OpenSim.Framework
 
         void SendRegionHandle(UUID regoinID, ulong handle);
         void SendParcelInfo(RegionInfo info, LandData land, UUID parcelID, uint x, uint y);
-        void SendScriptTeleportRequest(string objName, string simName, Vector3 pos, Vector3 lookAt);
+        //void SendScriptTeleportRequest(string objName, string simName, Vector3 pos, Vector3 lookAt, int options);
+        void SendScriptTeleportRequest(string objName, string simName, Vector3 pos, int options); //lookat does nothing
 
         void SendDirPlacesReply(UUID queryID, DirPlacesReplyData[] data);
         void SendDirPeopleReply(UUID queryID, DirPeopleReplyData[] data);
@@ -1427,7 +1428,7 @@ namespace OpenSim.Framework
         void GroupMembershipAddReplace(UUID GroupID,ulong GroupPowers);
         void SendAvatarNotesReply(UUID targetID, string text);
         void SendAvatarPicksReply(UUID targetID, Dictionary<UUID, string> picks);
-        void SendPickInfoReply(UUID pickID,UUID creatorID, bool topPick, UUID parcelID, string name, string desc, UUID snapshotID, string user, string originalName, string simName, Vector3 posGlobal, int sortOrder, bool enabled);
+        void SendPickInfoReply(UUID pickID, UUID creatorID, bool topPick, UUID parcelID, string name, string desc, UUID snapshotID, string user, string originalName, string simName, Vector3d posGlobal, int sortOrder, bool enabled);
 
         void SendAvatarClassifiedReply(UUID targetID, Dictionary<UUID, string> classifieds);
 
