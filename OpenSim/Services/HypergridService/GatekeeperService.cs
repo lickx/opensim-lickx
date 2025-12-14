@@ -445,7 +445,7 @@ namespace OpenSim.Services.HypergridService
 
                 if (!allowed)
                 {
-                    reason = "Destination does not allow visitors from your world";
+                    reason = "Destination does not allow visitors from your world; See https://tamai.nl/peering.html";
                     m_log.InfoFormat("[GATEKEEPER SERVICE]: Foreign agents are not permitted {0} {1} @ {2}. Refusing service.",
                         aCircuit.firstname, aCircuit.lastname, aCircuit.ServiceURLs["HomeURI"]);
                     return false;
