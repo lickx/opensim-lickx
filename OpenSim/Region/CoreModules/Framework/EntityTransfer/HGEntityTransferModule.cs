@@ -258,7 +258,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
         protected override bool CreateAgent(ScenePresence sp, GridRegion reg, GridRegion finalDestination, AgentCircuitData agentCircuit, uint teleportFlags, EntityTransferContext ctx, out string reason, out bool logout)
         {
             m_log.DebugFormat("[HG ENTITY TRANSFER MODULE]: CreateAgent {0} {1}", reg.ServerURI, finalDestination.ServerURI);
-
             reason = string.Empty;
             logout = false;
             int flags = Scene.GridService.GetRegionFlags(m_sceneRegionInfo.ScopeID, reg.RegionID);
@@ -801,16 +800,6 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                 }
                 else
                 {
-                    if (sp.IsDeleted)
-                        return false;
-
-                    if (m_sceneRegionInfo.EstateSettings.IsBanned(sp.UUID))
-                    {
-                        m_log.DebugFormat(
-                            "[HG ENTITY TRANSFER]: Denied Attachments for banned avatar {0}", sp.Name);
-                        return false;
-                    }
-
                     // Upstream does let the avi in, even if their assetserver can't be reached
                     // The visitor will obviously be without visible attachments in this case
                     if (aCircuit.ServiceURLs == null || !aCircuit.ServiceURLs.ContainsKey("AssetServerURI"))
@@ -914,8 +903,9 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
                             sp.GotAttachmentsData = true;
                             string loadtime = Convert.ToString(Environment.TickCount - requestStartTick);
-                            remoteClient.SendAlertMessage("Your avatar has finished loading ("+loadtime+"ms)");
-                            
+                            m_log.DebugFormat(
+                                "[HG TRANSFER MODULE]: Attachments of avatar {0} took {1}ms. to load", sp.Name, loadtime);
+
                             // at this point the job engine is done
                         },
                         OwnerID.ToString());
