@@ -1319,7 +1319,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
 
         protected virtual bool CreateAgent(ScenePresence sp, GridRegion reg, GridRegion finalDestination, AgentCircuitData agentCircuit, uint teleportFlags, EntityTransferContext ctx, out string reason, out bool logout)
         {
-            if (sp.GotAttachmentsData == false)
+            if (!sp.GotAttachmentsData)
             {
                 logout = false;
                 reason = "Cannot leave region yet, attachments are still loading";
