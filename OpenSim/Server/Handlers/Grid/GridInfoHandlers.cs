@@ -36,11 +36,15 @@ using Nini.Config;
 using Nwc.XmlRpc;
 using OpenSim.Framework;
 using OpenSim.Framework.Servers.HttpServer;
+using OpenSim.Services.Interfaces;
 using OpenSim.Services.Base;
+using OpenSim.Server.Base;
 
 using OpenMetaverse;
 using OpenMetaverse.StructuredData;
 using OpenSim.Data;
+
+using GridRegion = OpenSim.Services.Interfaces.GridRegion;
 
 namespace OpenSim.Server.Handlers.Grid
 {
@@ -55,7 +59,7 @@ namespace OpenSim.Server.Handlers.Grid
         private byte[] cachedStatAnswer = null;
         private bool stats_available = false;
         private int _lastrun;
-        protected IRegionData m_Database_regions = null;
+        protected IGridService m_GridService = null;
         protected IGridUserData m_Database_griduser = null;
 
         /// <summary>
@@ -85,30 +89,35 @@ namespace OpenSim.Server.Handlers.Grid
             if (stats_available)
             {
                 stats_available = false;
-                IConfig dbConfig = configSource.Configs["DatabaseService"];
-                if (dbConfig is not null)
+                string gridService = gridCfg.GetString("GridService", string.Empty);
+                if (!string.IsNullOrWhiteSpace(gridService))
                 {
-                    ServiceBase serviceBase = new(configSource);
-                    string dllName = dbConfig.GetString("StorageProvider", String.Empty);
-                    string connString = dbConfig.GetString("ConnectionString", String.Empty);
-
-                    if (dllName.Length != 0 && connString.Length != 0)
+                    object[] args = new object[] { configSource };
+                    m_GridService = ServerUtils.LoadPlugin<IGridService>(gridService, args);
+                    if (m_GridService != null)
                     {
-                        m_Database_regions = serviceBase.LoadPlugin<IRegionData>(dllName, [connString, "regions"]);
-                        if(m_Database_regions != null)
+                        IConfig dbConfig = configSource.Configs["DatabaseService"];
+                        if (dbConfig is not null)
                         {
-                            m_Database_griduser = serviceBase.LoadPlugin<IGridUserData>(dllName, [connString, "GridUser"]);
-                            if (m_Database_griduser != null)
+                            ServiceBase serviceBase = new(configSource);
+                            string dllName = dbConfig.GetString("StorageProvider", String.Empty);
+                            string connString = dbConfig.GetString("ConnectionString", String.Empty);
+
+                            if (dllName.Length != 0 && connString.Length != 0)
                             {
-                                stats_available = true;
-                                _log.Debug("[GRID INFO SERVICE]: Grid Stats enabled");
+                                m_Database_griduser = serviceBase.LoadPlugin<IGridUserData>(dllName, [connString, "GridUser"]);
+                                if (m_Database_griduser != null)
+                                {
+                                    stats_available = true;
+                                    _log.Debug("[GRID INFO SERVICE]: Grid Stats enabled");
+                                }
                             }
                         }
                     }
                 }
                 if (!stats_available)
                 {
-                    _log.Warn("[GRID INFO SERVICE]: Could not find or initialize Database Service config. Grid stats will be unavailable!");
+                    _log.Warn("[GRID INFO SERVICE]: Could not initialize. Grid stats will be unavailable!");
                 }
             }
 
@@ -274,13 +283,16 @@ namespace OpenSim.Server.Handlers.Grid
             try
             {
                 // Fetch region data
-                List<RegionData> regions = m_Database_regions.GetOnlineRegions(UUID.Zero);
-                foreach (RegionData region in regions)
+                if (m_GridService is not null)
                 {
-                    // Count individual region equivalent
-                    region_count += (region.sizeX * region.sizeY) >> 16;
+                    List<GridRegion> regions = m_GridService.GetOnlineRegions(UUID.Zero, 0, 0, int.MaxValue);
+                    foreach (GridRegion region in regions)
+                    {
+                        // Count individual region equivalent
+                        region_count += (region.RegionSizeX * region.RegionSizeY) >> 16;
+                    }
+                    regions = null;
                 }
-                regions = null;
 
                 // Fetch all grid users, can't do a simple query unfortunately
                 GridUserData[] gridusers = m_Database_griduser.GetAll(string.Empty);
