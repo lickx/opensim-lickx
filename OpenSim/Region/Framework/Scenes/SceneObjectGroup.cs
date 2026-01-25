@@ -3460,6 +3460,7 @@ namespace OpenSim.Region.Framework.Scenes
                 {
                     // Single prim left
                     RootPart.LinkNum = 0;
+                    RootPart.Inventory?.ForceInventoryPersistence(); // TODO remove need for this
                 }
                 else
                 {
@@ -3468,6 +3469,7 @@ namespace OpenSim.Region.Framework.Scenes
                         SceneObjectPart part = parts[i];
                         if (part.LinkNum > linkPart.LinkNum)
                             part.LinkNum--;
+                        part.Inventory?.ForceInventoryPersistence(); // TODO remove need for this
                     }
                 }
             }
@@ -3517,7 +3519,7 @@ namespace OpenSim.Region.Framework.Scenes
             if (m_rootPart.PhysActor is not null)
                 m_rootPart.PhysActor.Building = false;
 
-            linkPart.Inventory.ForceInventoryPersistence();
+            linkPart.Inventory.ForceInventoryPersistence(); // TODO remove need for this
             
             if (sendEvents)
                 linkPart.TriggerScriptChangedEvent(Changed.LINK);
@@ -4040,6 +4042,13 @@ namespace OpenSim.Region.Framework.Scenes
             //    (OpenMetaverse.PermissionMask)RootPart.OwnerMask, Name, Scene.Name);
             InvalidateEffectivePerms();
             RootPart.ScheduleFullUpdate();
+        }
+
+        public void SetPartsInventoryChanged()
+        {
+            SceneObjectPart[] parts = m_parts.GetArray();
+            for (int i = 0; i < parts.Length; i++)
+                parts[i].Inventory?.ForceInventoryPersistence();
         }
 
         public void UpdatePermissions(UUID AgentID, byte field, uint localID,
