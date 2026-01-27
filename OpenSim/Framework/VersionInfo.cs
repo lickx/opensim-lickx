@@ -32,7 +32,7 @@ namespace OpenSim
         public const string VersionNumber = "0.9.3.1";
         public const string AssemblyVersionNumber = "0.9.3.1";
 
-        public const Flavour VERSION_FLAVOUR = Flavour.Dev;
+        public const Flavour VERSION_FLAVOUR = Flavour.Lickx;
 
         public enum Flavour
         {
@@ -43,7 +43,8 @@ namespace OpenSim
             RC3,
             Release,
             Post_Fixes,
-            Extended
+            Extended,
+            Lickx
         }
 
         public static string Version
@@ -53,11 +54,11 @@ namespace OpenSim
 
         public static string GetVersionString(string versionNumber, Flavour flavour)
         {
-            string versionString = $"OpenSim/lickx {versionNumber} {flavour}";
+            string versionString = $"OpenSim {versionNumber} Nessie {flavour}";
             return versionString.PadRight(VERSIONINFO_VERSION_LENGTH);
         }
 
-        public const int VERSIONINFO_VERSION_LENGTH = 26;
+        public const int VERSIONINFO_VERSION_LENGTH = 29;
 
         /// <value>
         /// This is the external interface version.  It is separate from the OpenSimulator project version.
