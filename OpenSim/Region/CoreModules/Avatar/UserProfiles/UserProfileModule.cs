@@ -1909,11 +1909,18 @@ namespace OpenSim.Region.CoreModules.Avatar.UserProfiles
                     return false;
 
                 account = new UserAccount();
-                if (info.ContainsKey("user_flags"))
-                    account.UserFlags = (int)info["user_flags"];
 
-                if (info.ContainsKey("user_created"))
-                    account.Created = (int)info["user_created"];
+                // Needed, user may have changed name while our grid has old name cached
+                if (info.TryGetValue("user_firstname", out object firstname))
+                    account.FirstName = (string)firstname;
+                if (info.TryGetValue("user_lastname", out object lastname))
+                    account.LastName = (string)lastname;
+
+                if (info.TryGetValue("user_flags", out object uflags))
+                    account.UserFlags = (int)uflags;
+
+                if (info.TryGetValue("user_created", out object created))
+                    account.Created = (int)created;
 
                 account.UserTitle = "HG Visitor";
                 return true;
