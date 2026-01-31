@@ -1909,6 +1909,9 @@ namespace OpenSim.Region.CoreModules.Avatar.UserProfiles
                     return false;
 
                 account = new UserAccount();
+                if (info.ContainsKey("user_firstname") && info.ContainsKey("user_lastname"))
+                    account.FirstName = info["user_firstname"] + "." + info["user_lastname"];
+
                 if (info.ContainsKey("user_flags"))
                     account.UserFlags = (int)info["user_flags"];
 
