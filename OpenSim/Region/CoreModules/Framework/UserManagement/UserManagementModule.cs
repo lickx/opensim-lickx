@@ -1238,7 +1238,7 @@ namespace OpenSim.Region.CoreModules.Framework.UserManagement
                 if (string.IsNullOrEmpty(homeuri.Host)) // take this as local
                 {
                     UserAccount account = m_userAccountService.GetUserAccount(UUID.Zero, firstname, lastname);
-                    if (account != null)
+                    if (account != null && account.PrincipalID == id)
                     {
                         oldUser.FirstName = firstname;
                         oldUser.LastName = lastname;
