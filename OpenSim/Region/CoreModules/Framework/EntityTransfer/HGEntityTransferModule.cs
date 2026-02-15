@@ -758,32 +758,7 @@ namespace OpenSim.Region.CoreModules.Framework.EntityTransfer
                                     }
                                 }
 
-                                if (!newPosition.IsZero())
-                                    defso.RootPart.GroupPosition = newPosition;
-
-                                if (!Scene.AddSceneObject(defso))
-                                {
-                                    m_log.DebugFormat(
-                                    "[HG ENTITY TRANSFER MODULE]: Problem adding scene object {0} {1} into {2} ",
-                                        defso.Name, defso.UUID, Scene.Name);
- 
-                                     return;
-                                }
-
-                                if (defso.IsAttachment)
-                                {
-                                    ScenePresence sp = Scene.GetScenePresence(defso.OwnerID);
-                                    if (sp != null && !sp.IsChildAgent)
-                                    {
-                                         m_log.DebugFormat(
-                                             "[HG ENTITY TRANSFER MODULE]: Resuming scripts in attachment {0} for HG root agent {1}",
-                                             defso.Name, defso.OwnerID);
-                                         defso.RootPart.ParentGroup.CreateScriptInstances(
-                                             0, false, Scene.DefaultScriptEngine, GetStateSource(defso));
-                                         defso.aggregateScriptEvents();
-                                         defso.ResumeScripts();
-                                    }
-                                }
+                                base.HandleIncomingSceneObject(defso, newPosition);
 
                                 defso = null;
                                 aCircuit = null;

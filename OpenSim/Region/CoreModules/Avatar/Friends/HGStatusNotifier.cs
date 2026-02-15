@@ -70,6 +70,7 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                     if(client is not null)
                     {
                         m_log.DebugFormat("[HG STATUS NOTIFIER]: Notifying {0} friends in {1}", friendsOnline.Count, kvp.Key);
+                        m_FriendsModule.CacheFriendsOnline(userID, friendsOnline, online);
                         if(online)
                             client?.SendAgentOnline(friendsOnline.ToArray());
                         else
@@ -97,7 +98,6 @@ namespace OpenSim.Region.CoreModules.Avatar.Friends
                     HGFriendsServicesConnector fConn = new(friendsServerURI);
 
                     List<UUID> friendsOnline = fConn.StatusNotification(new List<string> { friendID.ToString() }, userID, online);
-
                     if (friendsOnline.Count > 0)
                     {
                         IClientAPI client = m_FriendsModule.LocateClientObject(userID);
